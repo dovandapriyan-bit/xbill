@@ -82,54 +82,63 @@
             to { transform: rotate(360deg); }
         }
         
-        /* ========== TOAST ========== */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            max-width: 350px;
-        }
-        
-        .toast {
-            background: white;
-            border-radius: var(--radius-sm);
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: var(--shadow-lg);
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-        }
-        
-        .toast.show {
-            transform: translateX(0);
-        }
-        
-        .toast-icon {
-            font-size: 20px;
-        }
-        
-        .toast-success .toast-icon { color: var(--success); }
-        .toast-error .toast-icon { color: var(--danger); }
-        .toast-warning .toast-icon { color: var(--warning); }
-        .toast-info .toast-icon { color: var(--info); }
-        
-        .toast-body {
-            flex: 1;
-        }
-        
-        .toast-title {
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-        
-        .toast-message {
-            font-size: 14px;
-            color: var(--gray);
-        }
+        /* ========== TOAST (FIX Z-INDEX) ========== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    /* ⭐ MAGIC NUMBER: Pastikan lebih tinggi dari modal (99999 > 9999) */
+    z-index: 99999; 
+    
+    max-width: 400px;
+    /* Tambah pointer-events: none agar klik tembus ke container, tapi tombol toast tetap klik */
+    pointer-events: none; 
+}
+
+.toast {
+    background: white;
+    border-radius: var(--radius-sm);
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); /* Bayangan lebih gelap biar kontras */
+    transform: translateX(400px);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Animasi sedikit bouncy */
+    
+    /* ⭐ PENTING: Balikin pointer-events supaya toast bisa diclick */
+    pointer-events: auto;
+    
+    /* Tambahkan border tipis biar kelihatan jelas di atas background modal gelap */
+    border-left: 4px solid var(--gray);
+}
+
+/* Warna border sesuai tipe toast */
+.toast-success { border-left-color: var(--success); }
+.toast-error { border-left-color: var(--danger); }
+.toast-warning { border-left-color: var(--warning); }
+.toast-info { border-left-color: var(--info); }
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 24px; /* Ikon sedikit lebih besar */
+}
+
+.toast-title {
+    font-weight: 700;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.toast-message {
+    font-size: 14px;
+    color: var(--gray);
+    line-height: 1.4;
+}
         
         /* ========== LOGIN PAGE ========== */
         #loginPage {
@@ -2034,8 +2043,8 @@ Terima kasih.
                     <div class="form-group">
                         <label>Bulan Generate *</label>
                         <input type="month" class="form-control" id="generateBulan" 
-                               value="<?php echo date('Y-m'); ?>" 
-                               onchange="updateArrearsTimeline()" required>
+       value="2025-01" 
+       onchange="updateArrearsTimeline()" required>
                         <small class="text-muted">Bulan saat generate tagihan</small>
                     </div>
                     <div class="form-group">
@@ -3508,36 +3517,22 @@ function toggleTunggakanFilter() {
                 <h2 class="page-title"><i class="fas fa-receipt"></i> Tagihan </h2>
                 <div class="action-buttons">
                     
-                    <button class="btn btn-primary" onclick="showModal('modalGenerateTagihan')" id="btnGenerateTagihan">
+                    <button class="btn btn-warning" onclick="resetGenerate()">
+                        <i class="fas fa-trash-restore"></i> Reset Generate
+                    </button>
+                    
+                    <button class="btn btn-primary" onclick="openGenerateModal()">
                         <i class="fas fa-bolt"></i> Generate Tagihan 
                     </button>
                 </div>
             </div>
             
-            <!-- INFO  -->
-            <div class="alert alert-info" style="background: #e7f3ff; border-left: 4px solid #4361ee; padding: 15px; margin-bottom: 20px;">
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
-                    <div>
-                        <i class="fas fa-calendar-check" style="color: #00b894;"></i>
-                        <strong> Bulan Pemakaian:</strong> Desember 2024
-                    </div>
-                    <div>
-                        <i class="fas fa-calendar-times" style="color: #ff6b6b;"></i>
-                        <strong> Jatuh Tempo:</strong> 10 Januari 2025
-                    </div>
-                </div>
-            </div>
-            
             <div class="card">
                 <div class="card-header">
-                    <h3>Daftar Tagihan</h3>
+                    <h3>Daftar Tagihan (Kelompok Pelanggan)</h3>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline" onclick="printTagihan()">
                             <i class="fas fa-print"></i> Print
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="exportTagihanPDF()">
-                            <i class="fas fa-file-pdf"></i> PDF
                         </button>
                     </div>
                 </div>
@@ -3546,27 +3541,81 @@ function toggleTunggakanFilter() {
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Invoice</th>
                                     <th>Pelanggan</th>
-                                    <th>Bulan</th>
-                                    <th>Jumlah</th>
-                                    <th>Jatuh Tempo</th>
-                                    <th>Status</th> <!-- KOLOM STATUS DITAMBAHKAN -->
+                                    <th>Daftar Bulan Tagihan</th>
+                                    <th>Total Tagihan</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tagihanTable">
-                                <!-- Data akan diisi -->
+                                <tr>
+                                    <td colspan="4" class="text-center">Memuat data...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                     
-                    <!-- PAGINATION -->
                     <div id="tagihanPagination" class="mt-3"></div>
                 </div>
             </div>
         </div>
     `;
+}
+
+async function resetGenerate() {
+    if (!confirm('PERINGATAN!\n\nIni akan MENGHAPUS SEMUA data tagihan yang belum lunas.\nData pelanggan tetap aman.\n\nLanjutkan?')) {
+        return;
+    }
+
+    try {
+        showLoading();
+        // Hapus hanya status 'belum'
+        const snapshot = await db.collection('tagihan').where('status', '==', 'belum').get();
+        const batch = db.batch();
+
+        snapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        hideLoading();
+        showToast('success', 'Reset Berhasil', `${snapshot.size} tagihan belum lunas telah dihapus.`);
+
+        if (currentPage === 'tagihan') {
+            await loadTagihanData();
+        }
+
+    } catch (error) {
+        hideLoading();
+        console.error("Error reset:", error);
+        showToast('error', 'Gagal', 'Gagal mereset tagihan: ' + error.message);
+    }
+}
+
+// Fungsi Khusus untuk Buka Modal Generate Tagihan (Fix Tidak Bisa Muncul)
+function openGenerateModal() {
+    console.log("🔘 Membuka Modal Generate Tagihan...");
+    
+    const modal = document.getElementById('modalGenerateTagihan');
+    if (!modal) {
+        showToast('error', 'Error', 'Modal tidak ditemukan di DOM');
+        return;
+    }
+
+    // Set nilai default
+    const bulanInput = document.getElementById('generateBulan');
+    if (bulanInput) bulanInput.value = moment().format('YYYY-MM'); // Sesuaikan format input type="month"
+
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Kunci scroll body
+
+    // Refresh data
+    setTimeout(() => {
+        loadTunggakanDataForModal();
+    }, 300);
 }
         
         // ============================================
@@ -3593,7 +3642,7 @@ async function getTunggakanHTML() {
             
             <!-- KARTU STATISTIK RINGKAS -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterTunggakanTable('ringan')" style="cursor: pointer;">
                     <div class="stat-icon warning">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -3603,7 +3652,7 @@ async function getTunggakanHTML() {
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterTunggakanTable('sedang')" style="cursor: pointer;">
                     <div class="stat-icon danger">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
@@ -3613,7 +3662,7 @@ async function getTunggakanHTML() {
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterTunggakanTable('berat')" style="cursor: pointer;">
                     <div class="stat-icon primary">
                         <i class="fas fa-ban"></i>
                     </div>
@@ -3623,13 +3672,32 @@ async function getTunggakanHTML() {
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterTunggakanTable('semua')" style="cursor: pointer;">
                     <div class="stat-icon info">
                         <i class="fas fa-money-bill-wave"></i>
                     </div>
                     <div class="stat-content">
                         <div class="stat-value" id="totalTunggakanUang">Rp 0</div>
-                        <div class="stat-label">Total Nominal Tunggakan</div>
+                        <div class="stat-label">Total Nominal</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BAGIAN FILTER DROPDOWN -->
+            <div class="filters-card">
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>Filter Kategori</label>
+                        <select class="form-control" id="filterKategoriTunggakan" onchange="filterTunggakanTable(this.value)">
+                            <option value="semua">Semua Kategori</option>
+                            <option value="ringan">Ringan (1-30 Hari)</option>
+                            <option value="sedang">Sedang (31-60 Hari)</option>
+                            <option value="berat">Berat (>60 Hari)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cari Pelanggan</label>
+                        <input type="text" class="form-control" id="searchTunggakan" placeholder="Nama atau No. Telepon..." oninput="loadTunggakanData()">
                     </div>
                 </div>
             </div>
@@ -3660,6 +3728,9 @@ async function getTunggakanHTML() {
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- PAGINATION CONTAINER -->
+                    <div id="tunggakanPagination"></div>
                 </div>
             </div>
         </div>
@@ -3670,140 +3741,111 @@ async function getTunggakanHTML() {
 // FUNGSI LOAD DATA TUNGGAKAN (FIX ERROR NULL & LENGKAP)
 // ============================================
 
-async function loadTunggakanData(filterKategori = 'semua') {
-    const table = document.getElementById('tunggakanTable');
+async function loadTagihanData() {
+    const table = document.getElementById('tagihanTable');
+    if (!table) return;
     
-    // CEGAH ERROR NULL: Kalau tabel belom ada, berhenti.
-    if (!table) {
-        console.warn("Tabel tunggakanTable belum siap.");
-        return;
-    }
-    
-    // Setup Pagination Container
-    let paginationContainer = document.getElementById('tunggakanPagination');
-    if (!paginationContainer) {
-        paginationContainer = document.createElement('div');
-        paginationContainer.id = 'tunggakanPagination';
-        paginationContainer.style.marginTop = '20px';
-        paginationContainer.style.textAlign = 'center';
-        table.parentNode.insertBefore(paginationContainer, table.nextSibling);
-    }
-    
+    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div></td></tr>`;
+
     try {
-        showLoading();
-        const snapshot = await db.collection('tagihan')
-            .where('status', 'in', ['belum', 'telat'])
-            .get();
+        // 1. AMBIL DATA TAGIHAN
+        const snapshot = await db.collection('tagihan').get();
         
         if (snapshot.empty) {
-            table.innerHTML = `<tr><td colspan="7" class="text-center">Tidak ada data.</td></tr>`;
-            paginationContainer.innerHTML = '';
-            hideLoading();
+            table.innerHTML = `<tr><td colspan="6" class="text-center">Belum ada tagihan.</td></tr>`;
             return;
         }
-        
-        // Proses Data
-        let semuaData = [];
-        let ringanCount = 0;
-        let sedangCount = 0;
-        let beratCount = 0;
-        let totalUang = 0;
-        
+
+        // 2. GROUP BY PELANGGAN
+        const groupedMap = {};
         snapshot.forEach(doc => {
             const t = doc.data();
-            let hariTelat = 0;
-            if (t.tanggal_jatuh_tempo) {
-                hariTelat = moment().diff(moment(t.tanggal_jatuh_tempo), 'days');
-                if (hariTelat < 0) hariTelat = 0;
+            const pid = t.pelanggan_id;
+            
+            if (!groupedMap[pid]) {
+                groupedMap[pid] = {
+                    pelanggan_id: pid,
+                    pelanggan_nama: t.pelanggan_nama || 'Tanpa Nama',
+                    pelanggan_telepon: t.pelanggan_telepon || '-',
+                    list_tagihan: [], 
+                    total_nominal: 0
+                };
             }
             
-            let kategori = 'aman';
-            if (hariTelat > 0 && hariTelat <= 30) kategori = 'ringan';
-            else if (hariTelat > 30 && hariTelat <= 60) kategori = 'sedang';
-            else if (hariTelat > 60) kategori = 'berat';
-            
-            semuaData.push({ ...t, hariTelat, kategori });
-            
-            if (kategori === 'ringan') ringanCount++;
-            else if (kategori === 'sedang') sedangCount++;
-            else if (kategori === 'berat') beratCount++;
-            
-            totalUang += Number(t.jumlah) || 0;
+            groupedMap[pid].list_tagihan.push(t);
+            groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
         });
+
+        const groupedData = Object.values(groupedMap);
         
-        // Filter Data
-        let dataFilter = [];
-        if (filterKategori === 'semua') {
-            dataFilter = semuaData;
-        } else {
-            dataFilter = semuaData.filter(item => item.kategori === filterKategori);
-        }
-        
-        // Pagination Logic
+        // 3. PAGINATION
         const itemsPerPage = 10;
-        const totalData = dataFilter.length;
+        const totalData = groupedData.length; 
         const totalPages = Math.ceil(totalData / itemsPerPage);
         
-        if (halamanTunggakanSaatIni > totalPages) {
-            halamanTunggakanSaatIni = 1;
-        }
-        
-        const startIndex = (halamanTunggakanSaatIni - 1) * itemsPerPage;
+        if (currentPageTagihan > totalPages) currentPageTagihan = 1;
+        const startIndex = (currentPageTagihan - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const pageData = dataFilter.slice(startIndex, endIndex);
-        
-        // Update Stats
-        document.getElementById('tunggakanRingan').textContent = ringanCount;
-        document.getElementById('tunggakanSedang').textContent = sedangCount;
-        document.getElementById('tunggakanBerat').textContent = beratCount;
-        document.getElementById('totalTunggakanUang').textContent = formatRupiah(totalUang);
-        
-        // Render Table
-        table.innerHTML = pageData.map(item => {
-            let badgeColor = '#00b894';
-            let statusLabel = 'AMAN';
-            if (item.kategori === 'ringan') { badgeColor = '#fdcb6e'; statusLabel = 'RINGAN'; }
-            else if (item.kategori === 'sedang') { badgeColor = '#e17055'; statusLabel = 'SEDANG'; }
-            else if (item.kategori === 'berat') { badgeColor = '#d63031'; statusLabel = 'BERAT'; }
+        const pageData = groupedData.slice(startIndex, endIndex);
+
+        // 4. RENDER TABEL (LOGIC PERINTAH: HILANGKAN TEKS JIKA LUNAS)
+        table.innerHTML = pageData.map((item) => {
+            const jumlahBulan = item.list_tagihan.length;
+            const adaBelum = item.list_tagihan.some(t => t.status !== 'lunas');
+            let tombolBayar = '';
+
+            if (adaBelum) {
+                tombolBayar = `
+                    <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
+                        <i class="fas fa-money-bill-wave"></i> Bayar
+                    </button>
+                `;
+            }
+
+            // LOGIKA INTI:
+            // Cek apakah SEMUA tagihan di grup ini sudah LUNAS
+            const isAllLunas = !item.list_tagihan.some(t => t.status !== 'lunas');
             
-            let statusBadge = 'badge-warning';
-            if (item.status === 'telat') statusBadge = 'badge-danger';
-            
+            // Tentukan Tampilan Bulan & Nominal
+            let displayBulan = `<strong>${jumlahBulan} Bulan</strong>`;
+            let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
+
+            if (isAllLunas) {
+                // JIKA LUNAS: Kosongkan Bulan & Nominal, Ganti jadi Tanda Lunas
+                displayBulan = `<span style="color: var(--gray);">-</span>`;
+                displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
+            }
+
             return `
                 <tr>
-                    <td><strong>${item.pelanggan_nama || '-'}</strong><br><small>${item.pelanggan_telepon || '-'}</small></td>
-                    <td>${moment(item.bulan+'-2026').format('MMM YYYY')}</td>
-                    <td><strong>${formatRupiah(item.jumlah || 0)}</strong></td>
-                    <td>${moment(item.tanggal_jatuh_tempo).format('DD MMM YYYY')}</td>
-                    <td><span style="background: ${badgeColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${item.hariTelat} Hari</span></td>
-                    <td><span class="badge ${statusBadge}">${statusLabel}</span></td>
+                    <td>
+                        <strong>${item.pelanggan_nama}</strong><br>
+                        <small class="text-muted">${item.pelanggan_telepon}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
+                            ${displayBulan}
+                        </span>
+                    </td>
+                    <td>${displayNominal}</td>
                     <td>
                         <div class="btn-group">
-                            <button class="btn btn-sm btn-success" onclick="bayarTagihan('${item.id}')"><i class="fas fa-money-bill-wave"></i></button>
-                            <button class="btn btn-sm btn-warning" onclick="sendReminderSingle('${item.pelanggan_id}')"><i class="fas fa-envelope"></i></button>
+                            ${tombolBayar}
+                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
+                                <i class="fas fa-list"></i> Detail
+                            </button>
                         </div>
                     </td>
                 </tr>
             `;
         }).join('');
+
+        // 5. RENDER PAGINATION
+        renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
         
-        // Render Pagination Buttons
-        let paginationHTML = '<div class="pagination">';
-        if (halamanTunggakanSaatIni > 1) {
-            paginationHTML += `<a class="page-link" onclick="gantiHalamanTunggakan(${halamanTunggakanSaatIni - 1}, '${filterKategori}')">&laquo; Prev</a>`;
-        }
-        paginationHTML += `<span style="padding: 8px 15px;">Halaman ${halamanTunggakanSaatIni} dari ${totalPages}</span>`;
-        if (halamanTunggakanSaatIni < totalPages) {
-            paginationHTML += `<a class="page-link" onclick="gantiHalamanTunggakan(${halamanTunggakanSaatIni + 1}, '${filterKategori}')">Next &raquo;</a>`;
-        }
-        paginationHTML += '</div>';
-        paginationContainer.innerHTML = paginationHTML;
-        
-        hideLoading();
     } catch (error) {
-        console.error("❌ Error load tunggakan:", error);
-        table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
-        hideLoading();
+        console.error("Error load tagihan:", error);
+        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -3830,189 +3872,116 @@ let halamanTunggakanSaatIni = 1;
 const jumlahDataPerHalaman = 10; // Bisa diubah sesuai keinginan (misal 20)
 
 async function loadTunggakanData(filterKategori = 'semua') {
-    console.log("🔄 Memuat data tunggakan halaman:", halamanTunggakanSaatIni);
-    
     const table = document.getElementById('tunggakanTable');
     const paginationContainer = document.getElementById('tunggakanPagination');
     
-    if (!table) {
-        console.error("Tabel tunggakanTable tidak ditemukan!");
-        return;
-    }
-    
-    // Buat container pagination kalau belum ada
-    if (!document.getElementById('tunggakanPagination')) {
-        const paginationDiv = document.createElement('div');
-        paginationDiv.id = 'tunggakanPagination';
-        paginationDiv.style.marginTop = '20px';
-        paginationDiv.style.textAlign = 'center';
-        // Masukkan setelah tabel
-        table.parentNode.insertBefore(paginationDiv, table.nextSibling);
+    if (!table) return;
+
+    const pageElement = document.querySelector('.tunggakan-page');
+    if (!pageElement) return;
+
+    if (!paginationContainer) {
+        const newPagination = document.createElement('div');
+        newPagination.id = 'tunggakanPagination';
+        newPagination.style.marginTop = '20px';
+        newPagination.style.textAlign = 'center';
+        table.parentNode.insertBefore(newPagination, table.nextSibling);
     }
     
     try {
         showLoading();
         
-        // 1. AMBIL SEMUA DATA TAGIHAN YANG BELUM LUNAS
+        // Ambil data tunggakan
         const snapshot = await db.collection('tagihan')
             .where('status', 'in', ['belum', 'telat'])
             .get();
         
         if (snapshot.empty) {
-            table.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center" style="padding: 40px;">
-                        <i class="fas fa-check-circle" style="font-size: 48px; color: #e9ecef;"></i>
-                        <h4 style="margin-top: 15px;">Tidak Ada Tunggakan</h4>
-                    </td>
-                </tr>
-            `;
-            paginationContainer.innerHTML = ''; // Kosongkan pagination
+            table.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Tidak ada tunggakan.</td></tr>`;
+            paginationContainer.innerHTML = '';
             hideLoading();
             return;
         }
         
-        // 2. PROSES DATA (HITUNG HARI & KATEGORI)
-        let semuaData = [];
-        let ringanCount = 0;
-        let sedangCount = 0;
-        let beratCount = 0;
-        let totalUang = 0;
+        // Group by Pelanggan
+        const groupedMap = {};
         
         snapshot.forEach(doc => {
             const t = doc.data();
+            const pid = t.pelanggan_id;
             
-            let hariTelat = 0;
-            if (t.tanggal_jatuh_tempo) {
-                hariTelat = moment().diff(moment(t.tanggal_jatuh_tempo), 'days');
-                if (hariTelat < 0) hariTelat = 0;
+            if (!groupedMap[pid]) {
+                groupedMap[pid] = {
+                    pelanggan_id: pid,
+                    pelanggan_nama: t.pelanggan_nama || 'Tanpa Nama',
+                    pelanggan_telepon: t.pelanggan_telepon || '-',
+                    list_tagihan: [],
+                    total_nominal: 0
+                };
             }
             
-            let kategori = 'aman';
-            if (hariTelat > 0 && hariTelat <= 30) kategori = 'ringan';
-            else if (hariTelat > 30 && hariTelat <= 60) kategori = 'sedang';
-            else if (hariTelat > 60) kategori = 'berat';
-            
-            semuaData.push({
-                id: doc.id,
-                ...t,
-                hariTelat: hariTelat,
-                kategori: kategori
-            });
-            
-            if (kategori === 'ringan') ringanCount++;
-            else if (kategori === 'sedang') sedangCount++;
-            else if (kategori === 'berat') beratCount++;
-            
-            totalUang += Number(t.jumlah) || 0;
+            groupedMap[pid].list_tagihan.push(t);
+            groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
         });
+
+        let groupedData = Object.values(groupedMap);
         
-        // 3. FILTER DATA (JIKA USER PILIH KATEGORI TERTENTU)
-        let dataFilter = [];
-        if (filterKategori === 'semua') {
-            dataFilter = semuaData;
-        } else {
-            dataFilter = semuaData.filter(item => item.kategori === filterKategori);
-        }
+        // Pagination
+        const itemsPerPage = 10;
+        const totalData = groupedData.length;
+        const totalPages = Math.ceil(totalData / itemsPerPage);
         
-        // 4. LOGIKA PAGINATION
-        const totalData = dataFilter.length;
-        const totalHalaman = Math.ceil(totalData / jumlahDataPerHalaman);
-        
-        // Reset ke halaman 1 jika filter berubah atau data kurang
-        if (halamanTunggakanSaatIni > totalHalaman) {
-            halamanTunggakanSaatIni = 1;
-        }
-        
-        const indexAwal = (halamanTunggakanSaatIni - 1) * jumlahDataPerHalaman;
-        const indexAkhir = indexAwal + jumlahDataPerHalaman;
-        const dataDiHalamanIni = dataFilter.slice(indexAwal, indexAkhir);
-        
-        // 5. UPDATE UI STATISTIK
-        document.getElementById('tunggakanRingan').textContent = ringanCount;
-        document.getElementById('tunggakanSedang').textContent = sedangCount;
-        document.getElementById('tunggakanBerat').textContent = beratCount;
-        document.getElementById('totalTunggakanUang').textContent = formatRupiah(totalUang);
-        
-        // 6. RENDER TABEL
-        if (dataDiHalamanIni.length === 0) {
-            table.innerHTML = `
+        if (halamanTunggakanSaatIni > totalPages) halamanTunggakanSaatIni = 1;
+        const startIndex = (halamanTunggakanSaatIni - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = groupedData.slice(startIndex, endIndex);
+
+        // Render Table
+        table.innerHTML = pageData.map((item) => {
+            const jumlahBulan = item.list_tagihan.length;
+            
+            return `
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 20px;">
-                        <p>Tidak ada data pada halaman ini.</p>
+                    <td>
+                        <strong>${item.pelanggan_nama}</strong><br>
+                        <small class="text-muted">${item.pelanggan_telepon}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-danger" style="font-size:14px; padding:8px 12px;">
+                            ${jumlahBulan} Bulan
+                        </span>
+                    </td>
+                    <td><strong>${formatRupiah(item.total_nominal)}</strong></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
+                                <i class="fas fa-money-bill-wave"></i> Bayar
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
+                                <i class="fas fa-list"></i> Detail
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
-        } else {
-            table.innerHTML = dataDiHalamanIni.map(item => {
-                let badgeColor = '#00b894';
-                let statusLabel = 'AMAN';
-                
-                if (item.kategori === 'ringan') { badgeColor = '#fdcb6e'; statusLabel = 'RINGAN'; }
-                else if (item.kategori === 'sedang') { badgeColor = '#e17055'; statusLabel = 'SEDANG'; }
-                else if (item.kategori === 'berat') { badgeColor = '#d63031'; statusLabel = 'BERAT'; }
-                
-                let statusBadge = 'badge-warning';
-                if (item.status === 'telat') statusBadge = 'badge-danger';
-
-                return `
-                    <tr>
-                        <td>
-                            <strong>${item.pelanggan_nama || '-'}</strong>
-                            <br>
-                            <small class="text-muted">${item.pelanggan_telepon || '-'}</small>
-                        </td>
-                        <td>${item.bulan || '-'}</td>
-                        <td><strong>${formatRupiah(item.jumlah || 0)}</strong></td>
-                        <td>${moment(item.tanggal_jatuh_tempo).format('DD MMM YYYY')}</td>
-                        <td>
-                            <span style="background: ${badgeColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">
-                                ${item.hariTelat} Hari
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge ${statusBadge}">${statusLabel}</span>
-                        </td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-success" onclick="bayarTagihan('${item.id}')" title="Bayar">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </button>
-                                <button class="btn btn-sm btn-warning" onclick="sendReminderSingle('${item.pelanggan_id}')" title="Kirim WA">
-                                    <i class="fas fa-envelope"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+        }).join('');
         
-        // 7. RENDER PAGINATION BUTTONS
+        // Render Pagination
         let paginationHTML = '<div class="pagination">';
-        
-        // Tombol Sebelumnya
         if (halamanTunggakanSaatIni > 1) {
             paginationHTML += `<a class="page-link" onclick="gantiHalamanTunggakan(${halamanTunggakanSaatIni - 1}, '${filterKategori}')">&laquo; Prev</a>`;
         }
-        
-        // Info Halaman
-        paginationHTML += `<span style="padding: 8px 15px; color: var(--gray);">Halaman ${halamanTunggakanSaatIni} dari ${totalHalaman}</span>`;
-        
-        // Tombol Selanjutnya
-        if (halamanTunggakanSaatIni < totalHalaman) {
+        paginationHTML += `<span style="padding: 8px 15px;">Halaman ${halamanTunggakanSaatIni} dari ${totalPages}</span>`;
+        if (halamanTunggakanSaatIni < totalPages) {
             paginationHTML += `<a class="page-link" onclick="gantiHalamanTunggakan(${halamanTunggakanSaatIni + 1}, '${filterKategori}')">Next &raquo;</a>`;
         }
-        
         paginationHTML += '</div>';
         paginationContainer.innerHTML = paginationHTML;
         
         hideLoading();
-        console.log(`✅ Halaman ${halamanTunggakanSaatIni} ditampilkan (${dataDiHalamanIni.length} data).`);
-        
     } catch (error) {
         console.error("❌ Error load tunggakan:", error);
-        table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+        table.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error: ${error.message}</td></tr>`;
         hideLoading();
     }
 }
@@ -4921,50 +4890,77 @@ function updateElementText(selector, value) {
 // ============================================
 
 async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
-    console.log("📊 Rendering charts dengan data REAL dari Database...");
-    
+    console.log("📊 Rendering charts (FIX: Smart Match Format Tanggal)...");
+
     // 1. CHART TAGIHAN (6 BULAN TERAKHIR)
     const ctx1 = document.getElementById('chartTagihan');
     if (ctx1) {
         try {
-            if (window.tagihanChart) {
-                window.tagihanChart.destroy();
+            // Hancurkan chart lama jika ada
+            if (window.tagihanChartInstance) {
+                window.tagihanChartInstance.destroy();
             }
-            
-            // Siapkan 6 bulan terakhir dari hari ini
+
+            // Siapkan array 6 bulan terakhir (FORMAT TARGET: YYYY-MM)
             const last6Months = [];
+            const displayLabels = []; // Untuk tampilan di chart (MMM YYYY)
+            
             for (let i = 5; i >= 0; i--) {
-                const month = moment().subtract(i, 'months').format('YYYY-MM');
-                last6Months.push(month);
+                const m = moment().subtract(i, 'months');
+                last6Months.push(m.format('YYYY-MM')); // "2024-12"
+                displayLabels.push(m.format('MMM YYYY'));  // "Des 2024"
             }
             
-            // Ambil data real dari database
+            console.log("Target Bulan:", last6Months);
+
+            // Ambil semua data tagihan
             const snapshot = await db.collection('tagihan').get();
             
-            // Siapkan array data chart (Default 0)
+            // Reset data chart
             const dataChart = last6Months.map(() => 0);
-            
-            // Loop data real dan masukkan ke chart
-            snapshot.forEach(doc => {
-                const t = doc.data();
-                // Cek apakah bulan tagihan ada di 6 bulan terakhir
-                const idx = last6Months.indexOf(t.bulan);
-                if (idx !== -1) {
-                    dataChart[idx] += Number(t.jumlah) || 0;
-                }
-            });
-            
-            // Ubah format bulan untuk label (Jan 2026, dst)
-            const labels = last6Months.map(m => moment(m).format('MMM YYYY'));
-            
+
+            if (!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const t = doc.data();
+                    const dbMonth = t.bulan; // Format DB: misal "12-2024" atau "12-2025"
+
+                    if (!dbMonth) return;
+
+                    // LOGIKA PENCOCOKAN CERDAS (SMART MATCH)
+                    let idx = -1;
+
+                    // Coba 1: Format Standar (YYYY-MM)
+                    if (last6Months.includes(dbMonth)) {
+                        idx = last6Months.indexOf(dbMonth);
+                    } 
+                    // Coba 2: Format Terbalik (MM-YYYY) -> Ganti jadi (YYYY-MM)
+                    else if (dbMonth.includes('-')) {
+                        const parts = dbMonth.split('-');
+                        if (parts.length === 2) {
+                            const flipped = `${parts[1]}-${parts[0]}`; // "2024-12"
+                            if (last6Months.includes(flipped)) {
+                                idx = last6Months.indexOf(flipped);
+                            }
+                        }
+                    }
+
+                    // Jika ketemu, tambahkan datanya
+                    if (idx !== -1) {
+                        dataChart[idx] += Number(t.jumlah) || 0;
+                    }
+                });
+            }
+
+            console.log("Data Chart Final:", dataChart);
+
             // Render Chart
-            window.tagihanChart = new Chart(ctx1, {
+            window.tagihanChartInstance = new Chart(ctx1, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: displayLabels,
                     datasets: [{
                         label: 'Tagihan (Rp)',
-                        data: dataChart, // <--- DATA REAL DARI DB
+                        data: dataChart,
                         borderColor: '#4361ee',
                         backgroundColor: 'rgba(67, 97, 238, 0.1)',
                         borderWidth: 3,
@@ -4998,8 +4994,7 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
                     }
                 }
             });
-            
-            console.log("✅ Chart Tagihan (Real Data) Berhasil.");
+
         } catch (error) {
             console.error("❌ Error Chart Tagihan:", error);
         }
@@ -5009,11 +5004,11 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
     const ctx2 = document.getElementById('chartStatus');
     if (ctx2) {
         try {
-            if (window.statusChart) {
-                window.statusChart.destroy();
+            if (window.statusChartInstance) {
+                window.statusChartInstance.destroy();
             }
             
-            window.statusChart = new Chart(ctx2, {
+            window.statusChartInstance = new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
                     labels: ['Aktif', 'Tunggak', 'Nonaktif'],
@@ -5043,7 +5038,6 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
                 }
             });
             
-            console.log("✅ Chart Status Berhasil.");
         } catch (error) {
             console.error("❌ Error Chart Status:", error);
         }
@@ -5480,8 +5474,10 @@ document.addEventListener('click', function(e) {
         
         const modal = e.target.closest('.modal-overlay');
         if (modal) {
-            // HAPUS ELEMENT MODAL DARI DOM (PAKSA MATI)
-            modal.remove(); 
+           modal.classList.remove('show');      // Hilangkan animasi
+    modal.classList.add('hidden');       // Sembunyikan dengan class CSS
+    // JANGAN PAKAI modal.remove()
+    document.body.style.overflow = 'auto'; // Kembalikan scroll
         }
         return;
     }
@@ -5579,25 +5575,38 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Fungsi Helper untuk Paksa Tutup Modal
-// PERBAIKAN TOTAL untuk fungsi forceCloseModal
+// ============================================
+// FUNGSI TUTUP MODAL (SMART VERSION)
+// ============================================
+
 function forceCloseModal(modalId) {
-    console.log("🔄 Force closing modal:", modalId);
+    console.log("🔒 Force closing modal:", modalId);
     
-    const modalEl = document.getElementById(modalId);
+    // 1. Coba cari berdasarkan ID
+    let modalEl = document.getElementById(modalId);
+    
+    // 2. Jika tidak ketemu (mungkin ID salah/berubah), cari manual semua modal
     if (!modalEl) {
-        console.error("❌ Modal tidak ditemukan:", modalId);
+        console.warn("⚠️ Modal ID tidak ditemukan, mencari elemen modal overlay...");
+        modalEl = document.querySelector('.modal-overlay.show'); // Ambil modal yang sedang terbuka
+    }
+
+    // 3. Jika masih tidak ketemu, stop
+    if (!modalEl) {
+        console.error("❌ Tidak ada modal aktif yang bisa ditutup.");
         return;
     }
     
-    // HANYA ganti class, JANGAN ubah style langsung
+    // 4. Lakukan Penutupan
     modalEl.classList.remove('show');
     modalEl.classList.add('hidden');
     
     // Restore body scroll
     document.body.style.overflow = 'auto';
     
-    console.log("✅ Modal ditutup");
+    
+    
+    console.log("✅ Modal ditutup.");
 }
 
 // Fungsi untuk show modal yang bener
@@ -6455,130 +6464,7 @@ function renderPaketTable(data) {
     }).join('');
 }
         
-        // ============================================
-// FUNGSI TAMPILKAN TAGIHAN (GROUP BY PELANGGAN)
-// ============================================
 
-async function loadTagihanData() {
-    console.log("🔄 Memuat data tagihan (MODE AMAN: SKIP ERROR TANGGAL)...");
-
-    const table = document.getElementById('tagihanTable');
-    if (!table) return;
-    
-    try {
-        // 1. AMBIL DATA
-        const snapshot = await db.collection('tagihan').get();
-        
-        if (snapshot.empty) {
-            table.innerHTML = `<tr><td colspan="7" class="text-center">Belum ada tagihan.</td></tr>`;
-            return;
-        }
-
-        // 2. KELOMPOKKAN DATA
-        const groupedMap = {};
-        
-        snapshot.forEach(doc => {
-            const t = doc.data();
-            const pid = t.pelanggan_id;
-            
-            if (!groupedMap[pid]) {
-                groupedMap[pid] = {
-                    pelanggan_id: pid,
-                    pelanggan_nama: t.pelanggan_nama || '-',
-                    pelanggan_telepon: t.pelanggan_telepon || '-',
-                    list_tagihan: [], 
-                    total_nominal: 0
-                };
-            }
-            
-            // Push data mentah
-            groupedMap[pid].list_tagihan.push(t);
-            groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
-        });
-
-        const groupedData = Object.values(groupedMap);
-        
-        // 3. PAGINASI
-        const itemsPerPage = 10;
-        const totalData = groupedData.length; 
-        const totalPages = Math.ceil(totalData / itemsPerPage);
-        
-        if (currentPageTagihan > totalPages) currentPageTagihan = 1;
-        const startIndex = (currentPageTagihan - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageData = groupedData.slice(startIndex, endIndex);
-
-        // 4. RENDER TABEL (Dengan SAFE CHECK)
-        table.innerHTML = pageData.map((item) => {
-            const tagihanTerakhir = item.list_tagihan[item.list_tagihan.length - 1];
-            let tglText = '-';
-            
-            // SAFE CHECK: Cek ada field tanggal?
-            if (tagihanTerakhir && tagihanTerakhir.tanggal_jatuh_tempo) {
-                // TRY-CATCH MOMENT: Kalau error (tanggal invalid), langsung return '-', JANGAN THROW ERROR
-                try {
-                    const m = moment(tagihanTerakhir.tanggal_jatuh_tempo);
-                    if (m.isValid()) {
-                        tglText = m.format('DD/MM/YYYY');
-                    } else {
-                        // Tanggal Invalid, TAPI JANGAN ERROR. Tulis "-" saja.
-                        tglText = '-';
-                        console.warn(`⚠️ Tanggal Invalid: ${tagihanTerakhir.id}`);
-                    }
-                } catch (e) {
-                    tglText = '-';
-                }
-            }
-
-            // Render Kolom Lainnya
-            const kolomInvoice = `<strong>CUST-${item.pelanggan_id.substring(0,8)}...</strong>`;
-            const kolomPelanggan = `<strong>${item.pelanggan_nama}</strong><br><small class="text-muted">${item.pelanggan_telepon}</small>`;
-            const kolomBulan = item.list_tagihan.map(t => `<span class="badge badge-primary" style="margin-right:2px;">${t.bulan}</span>`).join('');
-            const kolomJumlah = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
-            const kolomJatuhTempo = tglText;
-            
-            // Status
-            const adaTelat = item.list_tagihan.some(t => t.status === 'telat');
-            const adaBelum = item.list_tagihan.some(t => t.status !== 'lunas');
-            let statusBadge = '<span class="badge badge-success">LUNAS</span>';
-            if (adaTelat) statusBadge = '<span class="badge badge-danger">ADA TELAT</span>';
-            else if (adaBelum) statusBadge = '<span class="badge badge-warning">BELUM LUNAS</span>';
-
-            const kolomStatus = statusBadge;
-            const kolomAksi = `
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
-                        <i class="fas fa-list"></i> Detail
-                    </button>
-                    ${adaBelum ? `
-                        <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
-                            <i class="fas fa-money-bill-wave"></i> Bayar
-                        </button>
-                    ` : ''}
-                </div>
-            `;
-
-            return `
-                <tr>
-                    <td>${kolomInvoice}</td>
-                    <td>${kolomPelanggan}</td>
-                    <td>${kolomBulan}</td>
-                    <td>${kolomJumlah}</td>
-                    <td>${kolomJatuhTempo}</td>
-                    <td>${kolomStatus}</td>
-                    <td>${kolomAksi}</td>
-                </tr>
-            `;
-        }).join('');
-
-        // 5. RENDER PAGINATION
-        renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
-        
-    } catch (error) {
-        console.error("Error load tagihan:", error);
-        showToast('error', 'Error', 'Gagal memuat data: ' + error.message);
-    }
-}
 
 
 
@@ -6665,16 +6551,15 @@ function renderTagihanTable(data) {
 }
 
 async function viewTagihanDetails(pelangganId) {
-    console.log("👁️ Melihat detail tagihan untuk:", pelangganId);
+    console.log("👁️ MEMBUKA DETAIL (TAMPILKAN DATA LENGKAP + SHARE WA)...");
 
     try {
-        // 1. AMBIL DATA TAGIHAN
         const snapshot = await db.collection('tagihan')
             .where('pelanggan_id', '==', pelangganId)
             .get();
 
         if (snapshot.empty) {
-            showToast('info', 'Info', 'Tidak ada riwayat tagihan.');
+            showToast('info', 'Info', 'Riwayat tagihan kosong.');
             return;
         }
 
@@ -6683,121 +6568,249 @@ async function viewTagihanDetails(pelangganId) {
             tagihanList.push({ id: doc.id, ...doc.data() });
         });
 
-        // Urutkan (Terbaru di atas)
-        tagihanList.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        // 1. SORTING: LAMA -> BARU (FIFO)
+        tagihanList.sort((a, b) => {
+            const bulanA = a.bulan || '';
+            const bulanB = b.bulan || '';
+            return bulanA.localeCompare(bulanB); 
+        });
 
-        // 2. KUMPULKAN DATA STATISTIK (Utk Footer)
-        let totalSemua = 0;
-        let totalBelumLunas = 0;
-        let daftarIdBelumLunas = [];
-        let listBulanBelumLunas = [];
+        // 2. PISAHKAN: LUNAS vs BELUM
+        const lunasItems = tagihanList.filter(t => t.status === 'lunas');
+        const belumItems = tagihanList.filter(t => t.status !== 'lunas');
         
-        tagihanList.forEach(t => {
-            const jumlah = Number(t.jumlah) || 0;
-            totalSemua += jumlah;
+        // 3. GABUNGKAN: Belum di atas, Lunas di bawah
+        const finalList = [...belumItems, ...lunasItems];
 
-            if (t.status !== 'lunas') {
-                totalBelumLunas += jumlah;
-                daftarIdBelumLunas.push(t.id);
-                listBulanBelumLunas.push(t.bulan);
-            }
-        });
+        // 4. SETUP MODAL
+        const modalId = 'modalDetailTagihanFull';
+        const oldModal = document.getElementById(modalId);
+        if (oldModal) oldModal.remove();
 
-        // 3. SUSUN HTML TABEL
-        let detailHTML = `
-            <div style="max-height: 400px; overflow-y: auto;">
-                <table class="table" style="margin-bottom: 0;">
-                    <thead>
-                        <tr>
-                            <th>Bulan Tagihan</th>
-                            <th>Jumlah</th>
-                            <th>Status</th>
-                            <th>Jatuh Tempo</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        tagihanList.forEach(t => {
-            let badgeClass = 'badge-warning';
-            let statusText = 'BELUM';
-            
-            if (t.status === 'lunas') { 
-                badgeClass = 'badge-success'; 
-                statusText = 'LUNAS'; 
-            } else if (t.status === 'telat') { 
-                badgeClass = 'badge-danger'; 
-                statusText = 'TELAT'; 
-            }
-
-            // TOMBOL BAYAR SINGLE (SEKARANG PANGGIL FUNGSI BARU YG ADA STRUK)
-            let btnBayarItem = '';
-            if (t.status !== 'lunas') {
-                btnBayarItem = `
-                    <button class="btn btn-sm btn-success" onclick="bayarTagihanDenganStruk('${t.id}', '${t.pelanggan_id}', '${t.pelanggan_nama}', ${t.jumlah}, '${t.bulan}')">
-                        <i class="fas fa-money-bill-wave"></i> Bayar
-                    </button>
-                `;
-            }
-
-            detailHTML += `
-                <tr>
-                    <td><strong>${t.bulan}</strong></td>
-                    <td>${formatRupiah(t.jumlah)}</td>
-                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
-                    <td>${moment(t.tanggal_jatuh_tempo).format('DD MMM YYYY')}</td>
-                    <td>${btnBayarItem}</td>
-                </tr>
-            `;
-        });
-
-        detailHTML += `
-                    </tbody>
-                </table>
-            </div>
-            <div style="margin-top: 15px; text-align: right; font-weight: bold; font-size: 18px; padding-top:10px; border-top:1px solid #eee;">
-                Total: ${formatRupiah(totalSemua)}
-            </div>
-        `;
-
-        // 4. TOMBOL FOOTER (PAYALL)
-        let btnPayAllHTML = '';
-        if (daftarIdBelumLunas.length > 0) {
-             // Panggil prepareModalPayAll (seperti sebelumnya)
-             btnPayAllHTML = `
-                <button class="btn btn-primary" onclick="prepareModalPayAll('${pelangganId}', '${daftarIdBelumLunas.join(',')}', ${totalBelumLunas}, '${listBulanBelumLunas.join(',')}')">
-                    <i class="fas fa-check-double"></i> Bayar Lunas Semua
-                </button>
-            `;
-        }
-
-        // 5. BUKA MODAL DETAIL
         const modal = document.createElement('div');
+        modal.id = modalId;
         modal.className = 'modal-overlay show';
-        modal.id = 'modalDetailTagihan';
-        modal.style.zIndex = '1050'; 
+        modal.style.zIndex = '1060';
         modal.innerHTML = `
             <div class="modal modal-lg">
                 <div class="modal-header">
-                    <h3 class="modal-title"><i class="fas fa-list-ul"></i> Rincian Tagihan</h3>
-                    <button class="modal-close" onclick="forceCloseModal('modalDetailTagihan')">&times;</button>
+                    <h3 class="modal-title"><i class="fas fa-list"></i> Riwayat Tagihan</h3>
+                    <button class="modal-close" onclick="document.getElementById('${modalId}').remove()">&times;</button>
                 </div>
                 <div class="modal-body">
-                    ${detailHTML}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 20%;">Bulan</th>
+                                    <th style="width: 20%;">Nominal</th>
+                                    <th style="width: 15%;">Status</th>
+                                    <th style="width: 15%;">Jatuh Tempo</th>
+                                    <th style="width: 15%;">Tanggal Bayar</th>
+                                    <th style="width: 15%;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="detailPagination" style="margin-top: 15px; text-align: center;"></div>
                 </div>
-                <div class="modal-footer">
-                    ${btnPayAllHTML}
-                    <button class="btn btn-outline" onclick="forceCloseModal('modalDetailTagihan')">Tutup</button>
-                </div>
+                <div class="modal-footer" id="modalFooterContent"></div>
             </div>
         `;
         
         document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        // 5. FUNGSI RENDER
+        window.renderDetailTable = function(page) {
+            const tbody = document.getElementById('detailTableBody');
+            const paginationDiv = document.getElementById('detailPagination');
+            const footerDiv = document.getElementById('modalFooterContent');
+            
+            const itemsPerPage = 10;
+            const totalPages = Math.ceil(finalList.length / itemsPerPage);
+            if (page > totalPages) page = totalPages;
+            
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = finalList.slice(start, end);
+
+            // Render Table
+            tbody.innerHTML = pageData.map(t => {
+                const isLunas = t.status === 'lunas';
+                const tglJatuhTempo = t.tanggal_jatuh_tempo ? moment(t.tanggal_jatuh_tempo).format('DD MMM YYYY') : '-';
+                
+                // Tanggal Bayar (Muncul jika Lunas)
+                let tglBayarDisplay = '-';
+                if (isLunas && t.tanggal_bayar) {
+                    tglBayarDisplay = moment(t.tanggal_bayar).format('DD MMM YYYY');
+                }
+
+                // Tampilan Data (Bulan & Nominal SELALU MUNCUL sesuai perintah)
+                let rowStyle = '';
+                let statusBadge = '<span class="badge badge-danger">BELUM</span>';
+                
+                if (isLunas) {
+                    rowStyle = 'background-color: #f0fff4;';
+                    statusBadge = '<span class="badge badge-success">LUNAS</span>';
+                } else {
+                    rowStyle = 'background-color: #fff0f0;';
+                }
+
+                // Tombol Aksi
+                let btnAksi = '';
+                
+                if (!isLunas) {
+                    // JIKA BELUM: TOMBOL BAYAR (Langsung Share WA Gambar)
+                    btnAksi = `
+                        <button class="btn btn-sm btn-success" onclick="bayarTagihanDenganStruk('${t.id}', '${pelangganId}', '${t.pelanggan_nama}', ${t.jumlah}, '${t.bulan}')">
+                            <i class="fab fa-whatsapp"></i> Bayar
+                        </button>
+                    `;
+                } else {
+                    // JIKA LUNAS: TOMBOL SHARE STRUK ULANG
+                    btnAksi = `
+                        <button class="btn btn-sm btn-info" onclick="kirimUlangStruk('${t.id}', '${t.pelanggan_nama}', ${t.jumlah}, '${t.bulan}')">
+                            <i class="fas fa-share-alt"></i> Kirim
+                        </button>
+                    `;
+                }
+
+                return `
+                    <tr style="${rowStyle}">
+                        <td><strong>${t.bulan}</strong></td>
+                        <td>${formatRupiah(t.jumlah)}</td>
+                        <td>${statusBadge}</td>
+                        <td>${tglJatuhTempo}</td>
+                        <td>${tglBayarDisplay}</td>
+                        <td>${btnAksi}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Footer (Bayar Semua)
+            const idsBelumUrut = belumItems.map(item => item.id).join(',');
+            const totalBelum = belumItems.reduce((sum, item) => sum + (item.jumlah || 0), 0);
+
+            if (footerDiv) {
+                let footerHTML = `<button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove()">Tutup</button>`;
+                
+                if (belumItems.length > 0) {
+                    footerHTML = `
+                        <button class="btn btn-success" onclick="executePayAllDirect('${pelangganId}', '${idsBelumUrut}', ${totalBelum}, 'Riwayat')">
+                            <i class="fas fa-money-bill-wave"></i> Bayar Semua
+                        </button>
+                        <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove()">Tutup</button>
+                    `;
+                }
+                footerDiv.innerHTML = footerHTML;
+            }
+
+            // Pagination
+            if (paginationDiv) {
+                let pagHTML = '<div class="pagination">';
+                if (page > 1) pagHTML += `<a class="page-link" onclick="window.renderDetailTable(${page - 1})">&laquo;</a>`;
+                pagHTML += `<span style="padding: 8px;">Hal ${page} / ${totalPages}</span>`;
+                if (page < totalPages) pagHTML += `<a class="page-link" onclick="window.renderDetailTable(${page + 1})">&raquo;</a>`;
+                pagHTML += '</div>';
+                paginationDiv.innerHTML = pagHTML;
+            }
+        };
+
+        window.renderDetailTable(1);
 
     } catch (error) {
-        console.error("Error view detail:", error);
-        showToast('error', 'Error', 'Gagal memuat detail tagihan');
+        console.error("❌ Error view detail:", error);
+        showToast('error', 'Gagal', 'Gagal memuat detail: ' + error.message);
+    }
+}
+
+
+async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanString) {
+    console.log("💳 PROSES BAYAR (LOGIKA FIFO: BAYAR TAGIHAN TERLAMA DULU)...");
+
+    if (!confirm(`Konfirmasi pembayaran lunas sebesar ${formatRupiah(totalNominal)}?`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+
+        // 1. AMBIL SEMUA TAGIHAN PELANGGAN INI
+        const snapshot = await db.collection('tagihan')
+            .where('pelanggan_id', '==', pelangganId)
+            .get();
+
+        if (snapshot.empty) {
+            hideLoading();
+            showToast('info', 'Info', 'Tidak ada tagihan.');
+            return;
+        }
+
+        let tagihanList = [];
+        snapshot.forEach(doc => {
+            tagihanList.push({ id: doc.id, ...doc.data() });
+        });
+
+        // 2. URUTKAN TAGIHAN: DARI YANG PALING LAMA KE PALING BARU (ASCENDING)
+        // Agar Januari berada di Index 0, Februari di Index 1, dst.
+        tagihanList.sort((a, b) => {
+            return (a.bulan || '').localeCompare(b.bulan || '');
+        });
+
+        // 3. FILTER HANYA YANG BELUM LUNAS
+        const tagihanBelumLunas = tagihanList.filter(t => t.status !== 'lunas');
+
+        // 4. AMBIL SEBANYAK JUMLAH YANG INGIN DIBAYAR (SESUAI PARAMETER idsString)
+        // idsString biasanya berisi ID tagihan yang dipilih user.
+        // Kita cek berapa banyak ID di string tersebut.
+        const idDipilih = idsString ? idsString.split(',') : [];
+        const jumlahYangDibayar = Math.min(idDipilih.length, tagihanBelumLunas.length);
+
+        if (jumlahYangDibayar === 0) {
+            hideLoading();
+            showToast('warning', 'Info', 'Tidak ada tagihan yang valid untuk dibayar.');
+            return;
+        }
+
+        // 5. SIAPKAN BATCH UPDATE
+        const batch = db.batch();
+        const now = new Date().toISOString();
+        const tglHariIni = moment().format('DD-MM-YYYY HH:mm');
+        
+        // Kita ambil item dari array yang SUDAH DIURUTKAN (Index 0, 1, dst)
+        // Ini menjamin kita membayar Januari, lalu Februari, dst.
+        for (let i = 0; i < jumlahYangDibayar; i++) {
+            const item = itemBerurut[i]; 
+            const ref = db.collection('tagihan').doc(item.id);
+            
+            batch.update(ref, {
+                status: 'lunas',
+                tanggal_bayar: tglHariIni,
+                metode_bayar: 'Tunai (Bulk)',
+                catatan_bayar: 'Pelunasan otomatis terurut (FIFO)',
+                updated_at: now
+            });
+        }
+
+        await batch.commit();
+
+        hideLoading();
+        
+        // Tutup Modal Detail
+        forceCloseModal('modalDetailTagihanFull');
+
+        showToast('success', 'Berhasil', `${jumlahYangDibayar} Tagihan (Terlama ke Terbaru) berhasil dilunasi.`);
+
+        // Refresh Data
+        if (currentPage === 'tagihan') await loadTagihanData();
+        if (currentPage === 'dashboard') await renderDashboard();
+
+    } catch (error) {
+        hideLoading();
+        console.error("Error execute pay all direct:", error);
+        showToast('error', 'Gagal', error.message);
     }
 }
 
@@ -6865,135 +6878,360 @@ async function prepareModalPayAll(pelangganId, idsString, totalNominal, bulanStr
 // ============================================
 
 async function bayarTagihanDenganStruk(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
-    console.log("💳 Proses Bayar (Kompres Gambar)...");
+    console.log("💳 Proses Bayar & DOWNLOAD/LINK WA...");
 
-    if (!confirm(`Konfirmasi pembayaran tagihan ${bulan} sebesar ${formatRupiah(nominal)}?`)) {
+    // 1. KONFIRMASI
+    if (!confirm(`Bayar tagihan ${bulan} sebesar ${formatRupiah(nominal)} untuk ${namaPelanggan}?\n\nStruk akan di-download dan Link WhatsApp disiapkan.`)) {
         return;
     }
 
     try {
         showLoading();
 
-        // 1. UPDATE DATABASE
+        // 2. UPDATE DATABASE
         const ref = db.collection('tagihan').doc(tagihanId);
-        const now = new Date().toISOString();
-        const tglHariIni = moment().format('DD-MM-YYYY HH:mm');
+        const now = new Date();
+        const tglHariIni = moment(now).format('DD-MM-YYYY HH:mm');
 
         await ref.update({
             status: 'lunas',
             tanggal_bayar: tglHariIni,
-            metode_bayar: 'Tunai',
-            catatan_bayar: 'Bayar Single',
-            updated_at: now
+            metode_bayar: 'Tunai/Transfer',
+            catatan_bayar: 'Lunas via Web App',
+            updated_at: now.toISOString()
         });
 
-        // 2. AMBIL NOMOR HP
+        // 3. GENERATE HTML STRUK
+        const strukContainer = document.createElement('div');
+        // Styling Pasti Muncul di Canvas
+        strukContainer.style.width = '320px'; 
+        strukContainer.style.padding = '20px';
+        strukContainer.style.background = '#ffffff';
+        strukContainer.style.fontFamily = 'monospace, Courier New';
+        strukContainer.style.fontSize = '14px';
+        strukContainer.style.color = '#000000';
+        strukContainer.style.border = '2px solid #000';
+        strukContainer.style.position = 'absolute';
+        strukContainer.style.left = '-9999px';
+        strukContainer.style.top = '0';
+        
+        // Ambil No HP
+        let noHp = '08xxxxxxxxxx';
+        try {
+            const docPel = await db.collection('pelanggan').doc(pelangganId).get();
+            if(docPel.exists && docPel.data().telepon) {
+                noHp = docPel.data().telepon;
+            }
+        } catch(e) {}
+
+        strukContainer.innerHTML = `
+            <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">X-BILL ISP</h2>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">Jl. Internet Cepat No. 1</p>
+            </div>
+            
+            <div style="margin-bottom: 15px; font-size: 13px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Pelanggan:</span>
+                    <strong>${namaPelanggan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>Tgl Bayar:</span>
+                    <span>${tglHariIni}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Periode:</span>
+                    <strong>${bulan}</strong>
+                </div>
+            </div>
+
+            <div style="border: 2px solid #000; padding: 10px; text-align: center; background: #f0f0f0; margin-bottom: 15px;">
+                <h3 style="margin: 0; font-size: 16px; text-transform: uppercase;">LUNAS</h3>
+            </div>
+
+            <div style="text-align: right; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 12px;">Total Tagihan</p>
+                <h2 style="margin: 5px 0 0 0; font-size: 24px;">${formatRupiah(nominal)}</h2>
+            </div>
+            
+            <div style="text-align: center; font-size: 11px; border-top: 1px solid #ccc; padding-top: 10px;">
+                <p style="margin: 0;">Terima Kasih atas kepercayaan Anda.</p>
+                <p style="margin: 5px 0 0 0; font-weight: bold;">Simpan struk ini sebagai bukti pembayaran sah.</p>
+            </div>
+        `;
+        
+        document.body.appendChild(strukContainer);
+        await new Promise(r => setTimeout(r, 500));
+
+        // 4. RENDER GAMBAR
+        const canvas = await html2canvas(strukContainer, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true
+        });
+
+        // Hapus Element HTML
+        document.body.removeChild(strukContainer);
+        hideLoading();
+
+        // 5. BUKA MODAL PILIHAN (DOWNLOAD vs WHATSAPP)
+        const modalId = 'modalPilihanStruk';
+        const oldModal = document.getElementById(modalId);
+        if (oldModal) oldModal.remove();
+
+        // Buat Link WA
+        const noWAClean = noHp.replace(/^0/, '62'); // Format 62...
+        const pesanWA = encodeURIComponent(`Halo ${namaPelanggan}, berikut bukti pelunasan tagihan bulan ${bulan} sebesar ${formatRupiah(nominal)}. Terima kasih.`);
+        const linkWA = `https://wa.me/${noWAClean}?text=${pesanWA}`;
+
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal-overlay show';
+        modal.style.zIndex = '1070'; // Di atas modal detail
+        modal.innerHTML = `
+            <div class="modal" style="max-width: 400px;">
+                <div class="modal-header" style="background: var(--primary); color: white;">
+                    <h3 class="modal-title" style="color: white; margin: 0;">Pembayaran Sukses</h3>
+                    <button class="modal-close" style="color: white;" onclick="document.getElementById('${modalId}').remove()">&times;</button>
+                </div>
+                <div class="modal-body" style="text-align: center; padding: 30px;">
+                    <i class="fas fa-check-circle" style="font-size: 60px; color: var(--success); margin-bottom: 20px;"></i>
+                    <h4>Pembayaran Terverifikasi</h4>
+                    <p class="text-muted">Silakan pilih tindakan selanjutnya:</p>
+                    
+                    <div style="display: grid; gap: 15px; margin-top: 30px;">
+                        <button id="btnDownloadStruk" class="btn btn-success btn-block" style="padding: 15px;">
+                            <i class="fas fa-download"></i> Download Struk (Gambar)
+                        </button>
+                        
+                        <a href="${linkWA}" target="_blank" class="btn btn-info btn-block" style="padding: 15px; text-decoration: none; display: inline-block; color: white;">
+                            <i class="fab fa-whatsapp"></i> Buka WhatsApp & Kirim
+                        </a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); forceCloseModal('modalDetailTagihanFull'); loadTagihanData();">Selesai</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+
+        // Logic Download Gambar (Convert Canvas ke Data URL agar bisa di-download)
+        const imgData = canvas.toDataURL("image/jpeg", 0.9);
+        const downloadBtn = document.getElementById('btnDownloadStruk');
+        
+        if (downloadBtn) {
+            downloadBtn.onclick = function() {
+                const link = document.createElement('a');
+                link.download = `STRUK_${bulan}_${namaPelanggan.replace(/\s+/g, '_')}.jpg`;
+                link.href = imgData;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        }
+
+    } catch (error) {
+        hideLoading();
+        console.error("Error bayar:", error);
+        showToast('error', 'Gagal', 'Gagal proses pembayaran: ' + error.message);
+    }
+}
+
+async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
+    console.log("📤 Kirim Ulang Struk...");
+    
+    // Ambil data tanggal bayar terbaru untuk ditampilkan di struk
+    let tglBayarStr = moment().format('DD-MM-YYYY');
+    
+    try {
+        showLoading();
+        
+        // GENERATE GAMBAR STRUK (Sama logic dengan bayar, tapi tidak update DB)
+        const strukContainer = document.createElement('div');
+        strukContainer.style.width = '300px';
+        strukContainer.style.padding = '15px';
+        strukContainer.style.background = '#ffffff';
+        strukContainer.style.fontFamily = 'monospace';
+        strukContainer.style.fontSize = '14px';
+        strukContainer.style.color = '#000000';
+        strukContainer.style.border = '1px solid #000';
+        strukContainer.style.position = 'absolute';
+        strukContainer.style.left = '-9999px'; 
+        
+        strukContainer.innerHTML = `
+            <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: bold;">X-BILL ISP</h2>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Pelanggan:</span>
+                    <strong>${namaPelanggan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Tanggal:</span>
+                    <span>${tglBayarStr}</span>
+                </div>
+            </div>
+            <div style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; margin-bottom: 10px; font-weight: bold;">
+                STATUS: LUNAS
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Periode:</span>
+                    <span>${bulan}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 16px; font-weight: bold;">
+                    <span>Total:</span>
+                    <span>${formatRupiah(nominal)}</span>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px; font-size: 11px;">
+                <p style="margin: 0;">Terima Kasih</p>
+            </div>
+        `;
+        
+        document.body.appendChild(strukContainer);
+        await new Promise(r => setTimeout(r, 300));
+
+        const canvas = await html2canvas(strukContainer, { scale: 2, backgroundColor: "#ffffff" });
+        document.body.removeChild(strukContainer);
+
+        canvas.toBlob(async function(blob) {
+            const file = new File([blob], "struk_ulang.jpg", { type: "image/jpeg" });
+
+            if (navigator.share) {
+                const pesanWA = `Bukti pelunasan tagihan bulan ${bulan} - ${namaPelanggan}`;
+                await navigator.share({
+                    title: 'Bukti Lunas',
+                    text: pesanWA,
+                    files: [file]
+                });
+                hideLoading();
+            } else {
+                hideLoading();
+                alert("Browser tidak support share.");
+            }
+        }, 'image/jpeg', 0.8);
+
+    } catch (error) {
+        hideLoading();
+        console.error("Error:", error);
+        showToast('error', 'Gagal', error.message);
+    }
+}
+
+async function bayarTagihanDenganStruk(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
+    console.log("💳 PROSES BAYAR & WA (ONE CLICK)...");
+
+    try {
+        // 1. GENERATE HTML STRUK DULU (SEBELUM CONFIRM)
+        const strukContainer = document.createElement('div');
+        strukContainer.id = 'strukOverlay';
+        strukContainer.style.position = 'fixed';
+        strukContainer.style.top = '0';
+        strukContainer.style.left = '0';
+        strukContainer.style.width = '100%';
+        strukContainer.style.height = '100%';
+        strukContainer.style.background = 'rgba(0,0,0,0.85)';
+        strukContainer.style.zIndex = '99999';
+        strukContainer.style.display = 'flex';
+        strukContainer.style.alignItems = 'center';
+        strukContainer.style.justifyContent = 'center';
+        strukContainer.style.fontFamily = 'Courier New, monospace';
+        
+        // Ambil No HP Dulu (Agar bisa langsung WA)
         let teleponPelanggan = "";
         try {
             const docPel = await db.collection('pelanggan').doc(pelangganId).get();
             if(docPel.exists) teleponPelanggan = docPel.data().telepon || "";
         } catch(e) {}
-
-        if(!teleponPelanggan) {
-            hideLoading();
-            alert("Nomor HP Pelanggan kosong!");
-            return;
-        }
-
-        // 3. GENERATE HTML STRUK (HIDDEN)
-        const strukContainer = document.createElement('div');
-        strukContainer.style.width = '300px';
-        strukContainer.style.padding = '10px'; // Padding tipis supaya gak gede
-        strukContainer.style.background = 'white';
-        strukContainer.style.fontFamily = 'Courier New, monospace';
-        strukContainer.style.fontSize = '12px'; // Font kecil
-        strukContainer.style.color = 'black';
-        // Hidden
-        strukContainer.style.position = 'absolute';
-        strukContainer.style.left = '-9999px';
         
+        const noWA = teleponPelanggan ? "62" + teleponPelanggan.replace(/^0/, '') : '';
+        const pesan = `Halo ${namaPelanggan}, berikut bukti lunas tagihan ${bulan} sebesar ${formatRupiah(nominal)}.`;
+        const urlWA = `https://wa.me/${noWA}?text=${encodeURIComponent(pesan)}`;
+
+        // ISI HTML STRUK
         strukContainer.innerHTML = `
-            <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px;">
-                <h2 style="margin: 0; font-size: 18px;">X-BILL ISP</h2>
-            </div>
-            
-            <div style="margin-bottom: 10px; font-size: 12px;">
-                <div><strong>${namaPelanggan}</strong></div>
-                <div>${tglHariIni}</div>
-            </div>
+            <div style="background: white; width: 320px; padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: center; position: relative;">
+                <button onclick="document.getElementById('strukOverlay').remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+                
+                <div style="border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 22px;">X-BILL ISP</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 12px;">Billing System</p>
+                </div>
+                
+                <div style="margin-bottom: 15px; text-align: left; font-size: 14px;">
+                    <div><strong>${namaPelanggan}</strong></div>
+                    <div style="margin-top: 5px;">Periode: ${bulan}</div>
+                </div>
 
-            <div style="border: 1px solid #000; padding: 5px; text-align: center; background: #f0f0f0; margin-bottom: 10px;">
-                <strong style="font-size: 14px;">LUNAS</strong>
-            </div>
+                <div style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #f0fff4;">
+                    <strong>LUNAS</strong>
+                </div>
 
-            <div style="margin-bottom: 10px; font-size: 12px;">
-                <div>${bulan}</div>
-                <div style="font-size: 18px; font-weight: bold;">${formatRupiah(nominal)}</div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 15px;">
-                <button id="btn-snap" class="btn btn-success" style="width: 100%;">
-                    Ambil Gambar
+                <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">
+                    ${formatRupiah(nominal)}
+                </div>
+                
+                <!-- TOMBOL WA (LANGSUNG TRIGGER) -->
+                <a href="${urlWA}" target="_blank" id="linkWADirect" style="display: block; background: #25D366; color: white; text-decoration: none; padding: 12px; border-radius: 5px; font-weight: bold; margin-bottom: 10px;">
+                    <i class="fab fa-whatsapp"></i> BUKA WHATSAPP
+                </a>
+                
+                <!-- TOMBOL KONFIRMASI DATABASE (HANYA SETELAH LIHAT STRUK) -->
+                <button id="btnSimpanDB" style="background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; cursor: pointer; margin-bottom: 5px;">
+                    <i class="fas fa-save"></i> SIMPAN STATUS LUNAS
                 </button>
+                
+                <p style="font-size: 11px; color: #666; margin: 0;">
+                    1. Buka WA dulu<br>2. Screenshot gambar ini<br>3. Kirim ke pelanggan<br>4. Klik "Simpan Status Lunas"
+                </p>
             </div>
         `;
         
         document.body.appendChild(strukContainer);
 
-        // 4. RENDER KE CANVAS (SCALE 1.5 SAJA, JANGAN 2)
-        const canvas = await html2canvas(strukContainer, {
-            scale: 1.5, // Turunkan skala biar gambar kecil (ringkas)
-            backgroundColor: "#ffffff",
-            logging: false,
-            useCORS: true
-        });
+        // LOGIC TOMBOL SIMPAN DB
+        document.getElementById('btnSimpanDB').onclick = async function() {
+            try {
+                showLoading();
+                // Update DB
+                const ref = db.collection('tagihan').doc(tagihanId);
+                const now = new Date().toISOString();
+                const tglHariIni = moment().format('DD-MM-YYYY HH:mm');
 
-        // 5. CONVERT KE DATA URI (IMAGE/JPG QUALITAS RENDAH)
-        // JPG lebih ringan dari PNG
-        const imgDataUrl = canvas.toDataURL("image/jpeg", 0.7); 
-
-        // Hapus Container
-        document.body.removeChild(strukContainer);
-
-        console.log("🖼️ Gambar siap (Kompres JPG)");
-
-        // 6. SHARE NATIVE (LANGSUNG SHARE GAMBAR)
-        // Kita pakai File object agar bisa share
-        canvas.toBlob(function(blob) {
-            const file = new File([blob], "struk.jpg", { type: "image/jpeg" });
-
-            if (navigator.share) {
-                const nomorWA = "62" + teleponPelanggan.replace(/^0/, '');
-                const pesan = `Bukti lunas ${bulan} sebesar ${formatRupiah(nominal)}`;
-                
-                // SHARE LANGSUNG
-                navigator.share({
-                    title: 'Struk Pembayaran',
-                    text: pesan,
-                    files: [file] // <-- INI YANG PENTING, FILE GAMBAR LANGSUNG
-                })
-                .then(() => {
-                    hideLoading();
-                    showToast('success', 'Sukses', 'Membuka menu Share WA...');
-                })
-                .catch((error) => {
-                    console.error("Error sharing:", error);
-                    hideLoading();
-                    alert("Gagal membuka menu share (diblokir browser).");
+                await ref.update({
+                    status: 'lunas',
+                    tanggal_bayar: tglHariIni,
+                    metode_bayar: 'Tunai',
+                    catatan_bayar: 'Lunas via Web App',
+                    updated_at: now
                 });
-            } else {
-                hideLoading();
-                alert("Browser tidak mendukung fitur Share. Gunakan Chrome/Edge Android.");
-            }
 
-        }, 'image/jpeg');
+                document.getElementById('strukOverlay').remove();
+                hideLoading();
+                showToast('success', 'Berhasil', 'Status tagihan diperbarui menjadi LUNAS.');
+                
+                // Refresh Data
+                if (currentPage === 'tagihan') await loadTagihanData();
+                forceCloseModal('modalDetailTagihanFull');
+
+            } catch (error) {
+                hideLoading();
+                alert("Gagal menyimpan: " + error.message);
+            }
+        };
 
     } catch (error) {
-        hideLoading();
-        console.error("Error bayar:", error);
-        showToast('error', 'Gagal', error.message);
+        console.error("Error:", error);
+        showToast('error', 'Error', error.message);
     }
 }
+
+
 // ============================================
 // FUNGSI BARU: EKSEKUSI LANGSUNG (LANGSUNG PROSES, GAK PAKE FORM)
 // ============================================
@@ -7095,100 +7333,90 @@ function applyTagihanFilters() {
     if (!table) return;
     
     if (tagihanData.length === 0) {
-        table.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center" style="padding: 40px;">
-                    <i class="fas fa-inbox" style="font-size: 48px; color: #e9ecef;"></i>
-                    <h4 class="mt-3" style="color: var(--gray);">Tidak ada tagihan</h4>
-                    <p>Belum ada tagihan untuk ditampilkan</p>
-                    <button class="btn btn-primary mt-2" onclick="showModal('modalGenerateTagihan')">
-                        <i class="fas fa-bolt"></i> Generate Tagihan
-                    </button>
-                </td>
-            </tr>
-        `;
+        table.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Tidak ada data tagihan</td></tr>`;
         return;
     }
     
-    table.innerHTML = tagihanData.map(tagihan => {
-        const jatuhTempo = moment(tagihan.tanggal_jatuh_tempo);
-        const hariTerlambat = tagihan.status === 'telat' ? moment().diff(jatuhTempo, 'days') : 0;
-        const denda = tagihan.status === 'telat' ? Math.round(tagihan.jumlah * 0.02) : 0;
-        const totalBayar = tagihan.jumlah + denda;
+    table.innerHTML = tagihanData.map((tagihan, index) => {
+        // Format Data Aman
+        const id = tagihan.id || `TAGIHAN_${index}`;
+        const nama = (tagihan.pelanggan_nama || 'Pelanggan').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const nominal = tagihan.jumlah || 0;
+        const bulan = tagihan.bulan || '-';
         
+        // Logic Status
+        const isLunas = tagihan.status === 'lunas';
+        let tombolBayar = '';
+
+        // --- PERBAIKAN DISINI ---
+        // Kita simpan SEMUA data yang dibutuhkan di dalam atribut 'data-' pada tombol
+        // Kemudian kita gunakan fungsi pembantu 'handleBayarClick' yang lebih aman
+        if (!isLunas) {
+            tombolBayar = `
+                <button class="btn btn-sm btn-success" 
+                    data-id="${id}"
+                    data-pid="${tagihan.pelanggan_id || ''}"
+                    data-nama="${nama}"
+                    data-nominal="${nominal}"
+                    data-bulan="${bulan}"
+                    onclick="handleBayarClick(this)"
+                    title="Bayar Sekarang">
+                    <i class="fas fa-money-bill-wave"></i> Bayar
+                </button>
+            `;
+        }
+
         return `
             <tr>
+                <td>${id.substring(0, 10)}...</td>
+                <td><strong>${nama}</strong></td>
+                <td>${bulan}</td>
+                <td>${formatRupiah(nominal)}</td>
                 <td>
-                    <strong>${tagihan.id.substring(0, 12)}...</strong>
-                    <br>
-                    <small class="text-muted">${tagihan.pelanggan_id?.substring(0, 8) || ''}</small>
-                </td>
-                <td>
-                    <strong>${tagihan.pelanggan_nama || '-'}</strong>
-                    <br>
-                    <small class="text-muted">${tagihan.pelanggan_telepon || ''}</small>
-                </td>
-                <td>
-                    ${tagihan.bulan || '-'}
-                    <br>
-                    <small class="badge ${tagihan.prorata ? 'badge-info' : 'badge-secondary'}">
-                        ${tagihan.prorata ? 'Prorata' : 'Normal'}
-                    </small>
-                </td>
-                <td>
-                    <strong>${formatRupiah(tagihan.jumlah || 0)}</strong>
-                    ${denda > 0 ? `<br><small class="text-danger">Denda: ${formatRupiah(denda)}</small>` : ''}
-                </td>
-                <td>
-                    ${jatuhTempo.format('DD/MM/YYYY')}
-                    ${hariTerlambat > 0 ? `
-                        <br>
-                        <span class="badge badge-danger">
-                            <i class="fas fa-clock"></i> Telat ${hariTerlambat} hari
-                        </span>
-                    ` : ''}
-                </td>
-                <td>
-                    <span class="badge ${tagihan.status === 'lunas' ? 'badge-success' : 
-                                       tagihan.status === 'telat' ? 'badge-danger' : 'badge-warning'}">
-                        <i class="fas ${tagihan.status === 'lunas' ? 'fa-check-circle' : 
-                                      tagihan.status === 'telat' ? 'fa-exclamation-triangle' : 'fa-clock'}"></i>
-                        ${tagihan.status === 'lunas' ? 'Lunas' : 
-                         tagihan.status === 'telat' ? 'Telat' : 'Belum Bayar'}
+                    <span class="badge ${isLunas ? 'badge-success' : 'badge-warning'}">
+                        ${isLunas ? 'Lunas' : 'Belum'}
                     </span>
                 </td>
                 <td>
                     <div class="btn-group">
-                        <!-- TOMBOL BAYAR - HANYA UNTUK YANG BELUM LUNAS -->
-                        ${tagihan.status !== 'lunas' ? `
-                            <button class="btn btn-sm btn-success" onclick="bayarTagihan('${tagihan.id}')" title="Bayar Tagihan">
-                                <i class="fas fa-money-bill-wave"></i>
-                            </button>
-                        ` : ''}
-                        
-                        <!-- TOMBOL DETAIL - SEMUA TAGIHAN -->
-                        <button class="btn btn-sm btn-info" onclick="viewInvoice('${tagihan.id}')" title="Lihat Detail">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        
-                        <!-- TOMBOL REMINDER - UNTUK YANG BELUM LUNAS -->
-                        ${tagihan.status !== 'lunas' ? `
-                            <button class="btn btn-sm btn-warning" onclick="sendReminderSingle('${tagihan.pelanggan_id}')" title="Kirim Reminder">
-                                <i class="fas fa-envelope"></i>
-                            </button>
-                        ` : ''}
-                        
-                        <!-- TOMBOL PRINT - KHUSUS YANG SUDAH LUNAS -->
-                        ${tagihan.status === 'lunas' ? `
-                            <button class="btn btn-sm btn-secondary" onclick="printInvoice('${tagihan.id}')" title="Print Invoice">
-                                <i class="fas fa-print"></i>
-                            </button>
-                        ` : ''}
+                        ${tombolBayar}
+                        <button class="btn btn-sm btn-info" onclick="viewInvoice('${id}')"><i class="fas fa-eye"></i></button>
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+
+// ============================================
+// FUNGSI PEMBANTU CLICK TOMBOL BAYAR
+// ============================================
+
+function handleBayarClick(btnElement) {
+    // Ambil data dari atribut tombol
+    const id = btnElement.getAttribute('data-id');
+    const pid = btnElement.getAttribute('data-pid');
+    const nama = btnElement.getAttribute('data-nama'); // Sudah aman dari spasi
+    const nominal = parseInt(btnElement.getAttribute('data-nominal')) || 0;
+    const bulan = btnElement.getAttribute('data-bulan');
+
+    console.log("🖱️ Tombol Bayar diklik:", { id, pid, nama, nominal, bulan });
+
+    // Validasi sederhana
+    if (!id || !pid || !nominal) {
+        showToast('error', 'Error Data', 'Data tagihan tidak lengkap. Silakan refresh halaman.');
+        return;
+    }
+
+    // Panggil fungsi utama pembayaran dengan struk
+    // Pastikan fungsi 'bayarTagihanDenganStruk' ada di kode Anda
+    if (typeof bayarTagihanDenganStruk === 'function') {
+        bayarTagihanDenganStruk(id, pid, nama, nominal, bulan);
+    } else {
+        console.error("❌ Fungsi 'bayarTagihanDenganStruk' tidak ditemukan!");
+        showToast('error', 'System Error', 'Modul pembayaran belum terload. Refresh halaman (F5).');
+    }
 }
         
  
@@ -7709,7 +7937,7 @@ async function loadPage(page) {
         case 'dashboard':
             mainContent.innerHTML = await getDashboardHTML();
             
-            // ⭐ PERBAIKAN: JANGAN AWAIT initializeDatabase, JALANKAN DI BACKGROUND SAJA ⭐
+            // Init DB
             if (!window.databaseInitialized) {
                 initializeDatabase().then(() => {
                     window.databaseInitialized = true;
@@ -7719,7 +7947,6 @@ async function loadPage(page) {
                 });
             }
             
-            // ⭐ PERBAIKAN: RENDER DASHBOARD SEKARANG JUGA (JANGAN TUNGGU DB) ⭐
             await renderDashboard();
             break;
             
@@ -7741,7 +7968,10 @@ async function loadPage(page) {
             
         case 'tunggakan':
             mainContent.innerHTML = await getTunggakanHTML();
-            await loadTunggakanData();
+            // ⭐ TAMBAH DELAY SEDERHANA SUPAYA HTML SIAP DULU ⭐
+            setTimeout(async () => {
+                await loadTunggakanData();
+            }, 50); 
             break;
             
         case 'laporan':
@@ -8618,130 +8848,162 @@ async function executeDelete(id) {
             });
         }
         
-        // ============================================
-// TAGIHAN FUNCTIONS - PRORATA OTOMATIS
+     // ============================================
+// FUNGSI GENERATE TAGIHAN BULK (FIX: URUT TERBALIK & PRORATA)
 // ============================================
 
 async function generateTagihanBulk() {
-    console.log("🚀 Generate Tagihan: Mode Prorata (Hitung Tanggal)...");
-    
     const submitBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
     const originalText = submitBtn ? submitBtn.innerHTML : '';
     
     try {
-        // 1. AMBIL INPUT (Misal: Februari 2026)
-        const bulanInput = document.getElementById('generateBulan').value; 
-        const jatuhTempoHari = parseInt(document.getElementById('generateJatuhTempo').value);
+        showLoading();
         
-        if (!bulanInput || !jatuhTempoHari) {
-            showToast('error', 'Error', 'Harap isi bulan dan jatuh tempo');
-            return;
-        }
+        // 1. TARGET BULAN: GENERATE SAMPAI BULAN INI (Saat ini)
+        const todayMoment = moment();
+        const bulanTargetString = todayMoment.format('YYYY-MM'); // "2024-10"
         
-        // 2. LOGIKA: Input Februari -> Tagih Pemakaian Januari
-        const bulanTagihan = moment(bulanInput).subtract(1, 'month').format('MM-YYYY'); 
-        const tanggalJatuhTempo = `${bulanInput}-${jatuhTempoHari.toString().padStart(2, '0')}`;
+        const jatuhTempoHari = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
+        const now = new Date();
         
-        console.log(`📅 Generate untuk pemakaian bulan: ${bulanTagihan}`);
-        
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        }
-        
-        // 3. AMBIL SEMUA PELANGGAN
-        const snapshot = await db.collection('pelanggan').get();
+        // Ambil semua pelanggan aktif
+        const snapshot = await db.collection('pelanggan').where('status', '==', 'aktif').get();
         
         if (snapshot.empty) {
-            showToast('warning', 'Peringatan', 'Tidak ada pelanggan');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+            hideLoading();
+            showToast('warning', 'Kosong', 'Tidak ada pelanggan aktif.');
             return;
         }
-        
-        // 4. LOOP & HITUNG PRORATA
-        const batch = db.batch();
-        const tagihanList = [];
-        const now = new Date();
-        let totalTagihan = 0;
-        
-        snapshot.forEach(doc => {
+
+        // Lock tombol biar gak double click
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Proses...';
+        }
+
+        let allTagihanOperations = [];
+
+        for (const doc of snapshot.docs) {
             const pelanggan = doc.data();
             const pelangganId = doc.id;
             
-            const pelangganNama = pelanggan.nama || 'Tanpa Nama';
-            const pelangganTelepon = pelanggan.telepon || '-';
-            const pelangganHarga = Number(pelanggan.harga) || 0;
+            // PARSING TANGGAL PASANG
+            let tglPasangMoment = moment(pelanggan.tanggal_pasang, 'DD-MM-YYYY');
             
-            // DEFAULT: FULL HARGA
-            let jumlah = pelangganHarga;
-            let isProrata = false;
+            if (!tglPasangMoment.isValid()) {
+                // Coba format lain jika salah
+                tglPasangMoment = moment(pelanggan.tanggal_pasang);
+            }
+
+            if (!tglPasangMoment.isValid()) {
+                console.warn("Tanggal pasang tidak valid untuk:", pelanggan.nama);
+                continue; 
+            }
+
+            // 2. LOGIKA LOOPING: MUNDUR DARI BULAN INI KE BULAN PASANG
+            // Contoh: Sekarang Okt 2024. Pasang Jan 2024.
+            // Loop akan jalan: Okt -> Sep -> ... -> Jan.
             
-            // LOGIKA PRORATA
-            if (pelanggan.tanggal_pasang) {
-                const tglPasang = new Date(pelanggan.tanggal_pasang);
-                const bulanPasang = moment(tglPasang).format('MM-YYYY');
+            // Mulai loop dari bulan Target (Sekarang)
+            let currentLoopMoment = moment(bulanTargetString); 
+
+            // Syarat loop: Selama currentLoopMoment >= tglPasangMoment
+            while (currentLoopMoment.isSameOrAfter(tglPasangMoment)) {
+                const bulanSaatIni = currentLoopMoment.format('YYYY-MM'); // "2024-10"
+                const tagihanId = `INV_${pelangganId}_${bulanSaatIni.replace('-', '')}`;
                 
-                // CEK: APAKAH PASANG DI BULAN YANG SEDANG DITAGIH?
-                if (bulanPasang === bulanTagihan) {
-                    
-                    // HITUNG JUMLAH HARI DI BULAN ITU
-                    const hariDalamBulan = moment(bulanTagihan).daysInMonth();
-                    
-                    // HITUNG SISA HARI PEMAKAIAN
-                    const sisaHari = hariDalamBulan - tglPasang.getDate() + 1;
-                    
-                    // HITUNG HARGA PRORATA
-                    if (sisaHari < hariDalamBulan && sisaHari > 0) {
-                        jumlah = Math.round((pelangganHarga / hariDalamBulan) * sisaHari);
+                // Hitung Nominal
+                let jumlahBayar = pelanggan.harga || 0;
+                let isProrata = false;
+                let ketProrata = "";
+
+                // LOGIKA PRORATA HANYA UNTUK BULAN PERTAMA
+                // Bulan pertama = Bulan di mana tglPasang berada
+                if (currentLoopMoment.isSame(tglPasangMoment, 'month') && currentLoopMoment.isSame(tglPasangMoment, 'year')) {
+                    const hariDalamBulan = currentLoopMoment.daysInMonth();
+                    const tglPasang = tglPasangMoment.date();
+                    const sisaHari = hariDalamBulan - tglPasang + 1;
+
+                    // Hanya prorata jika pasang setelah tanggal 1
+                    if (sisaHari > 0 && sisaHari < hariDalamBulan) {
+                        jumlahBayar = Math.round((jumlahBayar / hariDalamBulan) * sisaHari);
                         isProrata = true;
-                        console.log(`✂️ Prorata: ${pelangganNama} (${sisaHari} hari) = ${formatRupiah(jumlah)}`);
+                        ketProrata = `(Prorata ${sisaHari} hari)`;
                     }
                 }
+
+                // JATUH TEMPO
+                // Jatuh tempo di bulan BERIKUTNYA dari bulan pemakaian
+                const jatuhTempoMoment = moment(bulanSaatIni).add(1, 'month').date(jatuhTempoHari);
+                const jatuhTempoStr = jatuhTempoMoment.format('DD-MM-YYYY');
+
+                // Masukkan ke array batch (Hanya jika belum ada)
+                // Kita gunakan objek ref db.collection('tagihan').doc()
+                const ref = db.collection('tagihan').doc(tagihanId);
+                
+                allTagihanOperations.push({
+                    ref: ref,
+                    data: {
+                        id: tagihanId,
+                        pelanggan_id: pelangganId,
+                        pelanggan_nama: pelanggan.nama,
+                        pelanggan_telepon: pelanggan.telepon,
+                        pelanggan_email: pelanggan.email || pelanggan.telepon + '@xbill.com',
+                        bulan: bulanSaatIni,
+                        jumlah: jumlahBayar,
+                        status: 'belum',
+                        tanggal_jatuh_tempo: jatuhTempoStr,
+                        tanggal_dibuat: now.toISOString(),
+                        prorata: isProrata,
+                        keterangan: isProrata ? ketProrata : 'Tagihan Reguler',
+                        created_at: now.toISOString(),
+                        updated_at: now.toISOString()
+                    }
+                });
+
+                // Mundur 1 bulan untuk loop berikutnya
+                currentLoopMoment.subtract(1, 'month');
             }
+        }
+
+        // EKSEKUSI BATCH (MAX 500 OPERASI SEKALI JALAN)
+        const MAX_PER_BATCH = 400;
+        let totalCreated = 0;
+
+        for (let i = 0; i < allTagihanOperations.length; i += MAX_PER_BATCH) {
+            const chunk = allTagihanOperations.slice(i, i + MAX_PER_BATCH);
+            const batch = db.batch();
             
-            // BUAT TAGIHAN
-            const tagihanId = `INV_${pelangganId}_${bulanTagihan.replace('-', '')}`;
+            chunk.forEach(op => {
+                // .set() akan menimpa jika ada, atau membuat baru jika kosong
+                batch.set(op.ref, op.data);
+                totalCreated++;
+            });
             
-            const tagihanData = {
-                id: tagihanId,
-                pelanggan_id: pelangganId,
-                pelanggan_nama: pelangganNama,
-                pelanggan_email: pelanggan.email || `${pelangganTelepon}@xbill.com`,
-                pelanggan_telepon: pelangganTelepon,
-                bulan: bulanTagihan,
-                jumlah: jumlah,
-                status: 'belum',
-                tanggal_jatuh_tempo: tanggalJatuhTempo,
-                tanggal_dibuat: now.toISOString(),
-                prorata: isProrata, // TRUE JIKA DIPOTONG
-                denda: 0,
-                created_at: now.toISOString(),
-                updated_at: now.toISOString()
-            };
-            
-            const tagihanRef = db.collection('tagihan').doc(tagihanId);
-            batch.set(tagihanRef, tagihanData);
-            tagihanList.push(tagihanData);
-            totalTagihan += jumlah;
-        });
-        
-        // 5. SIMPAN
-        await batch.commit();
-        
+            await batch.commit();
+        }
+
         forceCloseModal('modalGenerateTagihan');
         
+        // Restore tombol
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         }
+
+        hideLoading();
         
-        showToast('success', 'Berhasil', `${tagihanList.length} Tagihan dibuat. Total: ${formatRupiah(totalTagihan)}`);
-        
+        showToast('success', 'Sukses', `Generate Selesai. ${totalCreated} tagihan berhasil diproses.`);
+
         if (currentPage === 'tagihan') await loadTagihanData();
-        
+
     } catch (error) {
-        console.error("❌ Error:", error);
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+        console.error("❌ Error Generate Tagihan:", error);
+        hideLoading();
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
         showToast('error', 'Gagal', error.message);
     }
 }
