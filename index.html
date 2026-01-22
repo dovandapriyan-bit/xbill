@@ -2607,6 +2607,9 @@ Terima kasih.
         let pelangganData = [];
         let paketData = [];
         let tagihanData = [];
+        let globalDataPelanggan = {};
+        
+
 
 
         // Tambah di awal script setelah deklarasi variabel lain (line ~96)
@@ -3078,228 +3081,66 @@ function initializeQuickActions() {
 
 // FUNGSI UNTUK LOAD DAN TAMPILKAN DATA TUNGGAKAN DI MODAL
 async function loadTunggakanDataForModal() {
-    console.log("📊 Loading tunggakan data untuk modal...");
+    console.log("📊 Loading data untuk modal generate...");
     
     try {
-        // Tampilkan loading di tombol
-        const refreshBtn = document.querySelector('#modalGenerateTagihan .btn-info');
-        const originalText = refreshBtn.innerHTML;
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-        refreshBtn.disabled = true;
-        
-        // 1. AMBIL DATA PELANGGAN AKTIF
         const pelangganSnapshot = await db.collection('pelanggan')
             .where('status', '==', 'aktif')
             .get();
         
         const totalAktif = pelangganSnapshot.size;
-        console.log(`👥 Total pelanggan aktif: ${totalAktif}`);
         
-        // 2. AMBIL DATA TAGIHAN TUNGGAKAN
-        const tagihanSnapshot = await db.collection('tagihan')
-            .where('status', '==', 'telat')
-            .get();
-        
-        console.log(`💰 Total tagihan tunggakan: ${tagihanSnapshot.size}`);
-        
-        // 3. KELOMPOKKAN TUNGGAKAN PER PELANGGAN
-        const tunggakanByPelanggan = {};
-        let totalTunggakan = 0;
-        
-        if (!tagihanSnapshot.empty) {
-            tagihanSnapshot.docs.forEach(doc => {
-                const tagihan = doc.data();
-                const pelangganId = tagihan.pelanggan_id;
-                
-                if (!tunggakanByPelanggan[pelangganId]) {
-                    tunggakanByPelanggan[pelangganId] = {
-                        pelanggan_id: pelangganId,
-                        pelanggan_nama: tagihan.pelanggan_nama || 'Tidak ada nama',
-                        pelanggan_telepon: tagihan.pelanggan_telepon || '-',
-                        total_tunggakan: 0,
-                        jumlah_tagihan_tunggak: 0,
-                        hari_terlambat: 0,
-                        kategori: 'ringan'
-                    };
-                }
-                
-                // Hitung total tunggakan
-                const jumlahTagihan = Number(tagihan.jumlah) || 0;
-                tunggakanByPelanggan[pelangganId].total_tunggakan += jumlahTagihan;
-                tunggakanByPelanggan[pelangganId].jumlah_tagihan_tunggak += 1;
-                
-                // Hitung hari terlambat
-                if (tagihan.tanggal_jatuh_tempo) {
-                    const jatuhTempo = moment(tagihan.tanggal_jatuh_tempo);
-                    const hariTerlambat = moment().diff(jatuhTempo, 'days');
-                    tunggakanByPelanggan[pelangganId].hari_terlambat = Math.max(
-                        tunggakanByPelanggan[pelangganId].hari_terlambat,
-                        hariTerlambat
-                    );
-                }
-                
-                totalTunggakan += jumlahTagihan;
-            });
-            
-            // Tentukan kategori untuk setiap pelanggan
-            Object.keys(tunggakanByPelanggan).forEach(pelangganId => {
-                const tunggakan = tunggakanByPelanggan[pelangganId];
-                const hariTerlambat = tunggakan.hari_terlambat;
-                
-                if (hariTerlambat <= 30) {
-                    tunggakan.kategori = 'ringan';
-                } else if (hariTerlambat <= 60) {
-                    tunggakan.kategori = 'sedang';
-                } else {
-                    tunggakan.kategori = 'berat';
-                }
-            });
-        }
-        
-        const jumlahPelangganTunggak = Object.keys(tunggakanByPelanggan).length;
-        
-        // 4. UPDATE SUMMARY DI MODAL
         document.getElementById('summaryTotalAktif').textContent = totalAktif;
-        document.getElementById('summaryTunggakan').textContent = jumlahPelangganTunggak;
-        document.getElementById('summaryTotalTunggakan').textContent = formatRupiah(totalTunggakan);
         
-        // 5. TAMPILKAN LIST TUNGGAKAN DI TABLE
-        const tunggakanList = document.getElementById('tunggakanList');
-        if (tunggakanList) {
-            if (jumlahPelangganTunggak === 0) {
-                tunggakanList.innerHTML = `
-                    <tr>
-                        <td colspan="4" style="padding: 15px; text-align: center; color: var(--success);">
-                            <i class="fas fa-check-circle"></i> Tidak ada tunggakan
-                        </td>
-                    </tr>
-                `;
-            } else {
-                let html = '';
-                Object.values(tunggakanByPelanggan).forEach((tunggakan, index) => {
-                    // Warna berdasarkan kategori
-                    let kategoriColor = '';
-                    let kategoriText = '';
-                    
-                    if (tunggakan.kategori === 'ringan') {
-                        kategoriColor = '#fdcb6e';
-                        kategoriText = 'Ringan';
-                    } else if (tunggakan.kategori === 'sedang') {
-                        kategoriColor = '#e17055';
-                        kategoriText = 'Sedang';
-                    } else {
-                        kategoriColor = '#d63031';
-                        kategoriText = 'Berat';
-                    }
-                    
-                    html += `
-                        <tr style="border-bottom: 1px solid #dee2e6;">
-                            <td style="padding: 8px;">
-                                <strong>${tunggakan.pelanggan_nama}</strong>
-                                <br>
-                                <small class="text-muted">${tunggakan.pelanggan_telepon}</small>
-                            </td>
-                            <td style="padding: 8px; font-weight: bold; color: var(--danger);">
-                                ${formatRupiah(tunggakan.total_tunggakan)}
-                            </td>
-                            <td style="padding: 8px;">
-                                <span style="background: ${kategoriColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">
-                                    ${tunggakan.hari_terlambat} hari
-                                </span>
-                            </td>
-                            <td style="padding: 8px;">
-                                <span style="background: ${kategoriColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">
-                                    ${kategoriText}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                tunggakanList.innerHTML = html;
-            }
-        }
+        updateArrearsTimeline();
         
-        // 6. TAMPILKAN/HIDE SECTION TUNGGAKAN
-        const tunggakanSection = document.getElementById('tunggakanDataSection');
-        if (tunggakanSection) {
-            if (jumlahPelangganTunggak > 0) {
-                tunggakanSection.style.display = 'block';
-            } else {
-                tunggakanSection.style.display = 'none';
-            }
-        }
-        
-        // 7. UPDATE ESTIMASI GENERATE
-        updateGenerateEstimation(totalAktif, jumlahPelangganTunggak, totalTunggakan);
-        
-        // Restore tombol
-        refreshBtn.innerHTML = originalText;
-        refreshBtn.disabled = false;
-        
-        showToast('success', 'Data Updated', 'Data tunggakan berhasil di-refresh');
-        
-        // Simpan data untuk digunakan nanti
-        window.tunggakanModalData = tunggakanByPelanggan;
+        showToast('success', 'Data Dimuat', `${totalAktif} pelanggan aktif siap digenerate`);
         
     } catch (error) {
-        console.error("❌ Error load tunggakan data for modal:", error);
-        
-        // Restore tombol
-        const refreshBtn = document.querySelector('#modalGenerateTagihan .btn-info');
-        if (refreshBtn) {
-            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
-            refreshBtn.disabled = false;
-        }
-        
-        showToast('error', 'Error', 'Gagal memuat data tunggakan');
+        console.error("❌ Error load data untuk modal:", error);
+        showToast('error', 'Error', 'Gagal memuat data');
     }
 }
 
 // FUNGSI UNTUK UPDATE ESTIMASI GENERATE
 function updateGenerateEstimation(totalAktif, totalTunggak, totalTunggakan) {
-    // Ambil filter yang dipilih
-    const filter = document.getElementById('filterTunggakan').value;
-    
-    let estimasiJumlahTagihan = totalAktif;
-    let estimasiDenda = 0;
-    
-    // Hitung berdasarkan filter
-    switch(filter) {
-        case 'exclude_tunggakan':
-            estimasiJumlahTagihan = totalAktif - totalTunggak;
-            estimasiDenda = 0;
-            break;
-        case 'only_tunggakan':
-            estimasiJumlahTagihan = totalTunggak;
-            // Estimasi denda 5% dari total tunggakan
-            estimasiDenda = Math.round(totalTunggakan * 0.05);
-            break;
-        case 'exclude_berat':
-            // Asumsi 20% dari tunggakan adalah berat
-            const estimasiBerat = Math.round(totalTunggak * 0.2);
-            estimasiJumlahTagihan = totalAktif - estimasiBerat;
-            // Denda untuk tunggakan non-berat
-            estimasiDenda = Math.round(totalTunggakan * 0.8 * 0.05);
-            break;
-        default: // all
-            estimasiJumlahTagihan = totalAktif;
-            estimasiDenda = Math.round(totalTunggakan * 0.05);
-            break;
+    try {
+        const filter = document.getElementById('filterTunggakan').value;
+        const bulanGenerateInput = document.getElementById('generateBulan').value;
+        
+        if (!bulanGenerateInput) return;
+        
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM');
+        const bulanPemakaian = bulanGenerate.clone().subtract(1, 'month');
+        
+        // Hitung berdasarkan filter
+        let estimasiJumlah = totalAktif;
+        
+        switch(filter) {
+            case 'exclude_tunggakan':
+                estimasiJumlah = totalAktif - totalTunggak;
+                break;
+            case 'only_tunggakan':
+                estimasiJumlah = totalTunggak;
+                break;
+            case 'exclude_berat':
+                estimasiJumlah = Math.round(totalAktif * 0.8); // Asumsi 20% berat
+                break;
+        }
+        
+        // Asumsi rata-rata harga 150rb
+        const rataHarga = 150000;
+        const estimasiTotal = estimasiJumlah * rataHarga;
+        
+        // Update UI
+        document.getElementById('summaryJumlahTagihan').textContent = estimasiJumlah;
+        document.getElementById('summaryEstimasiTotal').textContent = formatRupiah(estimasiTotal);
+        document.getElementById('summaryWaktu').textContent = `~${Math.ceil(estimasiJumlah / 10)} detik`;
+        document.getElementById('summaryBulanPemakaian').textContent = bulanPemakaian.format('MMMM YYYY');
+        
+    } catch (error) {
+        console.error("Error update estimation:", error);
     }
-    
-    // Estimasi total tagihan (rata-rata 150rb per pelanggan + denda)
-    const estimasiRataTagihan = estimasiJumlahTagihan * 150000;
-    const estimasiTotal = estimasiRataTagihan + estimasiDenda;
-    
-    // Estimasi waktu (10 tagihan per detik)
-    const estimasiWaktu = Math.ceil(estimasiJumlahTagihan / 10);
-    
-    // Update UI
-    document.getElementById('summaryJumlahTagihan').textContent = estimasiJumlahTagihan;
-    document.getElementById('summaryEstimasiTotal').textContent = formatRupiah(estimasiTotal);
-    document.getElementById('summaryWaktu').textContent = `~${estimasiWaktu} detik`;
-    document.getElementById('summaryDenda').textContent = formatRupiah(estimasiDenda);
 }
 
 // FUNGSI TOGGLE FILTER
@@ -3529,24 +3370,34 @@ function toggleTunggakanFilter() {
             
             <div class="card">
                 <div class="card-header">
-                    <h3>Daftar Tagihan (Kelompok Pelanggan)</h3>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="printTagihan()">
-                            <i class="fas fa-print"></i> Print
-                        </button>
-                    </div>
-                </div>
+    <h3>Daftar Tagihan </h3>
+    <div class="btn-group">
+        <!-- INPUT PENCARIAN (BARU) -->
+        <input type="text" id="searchTagihan" 
+               class="form-control" 
+               placeholder="Cari nama,alamat,dll..." 
+               style="width: 200px; display: inline-block; height: 38px; padding: 5px 10px; margin-right: 10px;" 
+               autocomplete="off" 
+               oninput="filterTagihanSearch(this.value)">
+               
+        <button class="btn btn-sm btn-outline" onclick="printTagihan()">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+</div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
-                                <tr>
-                                    <th>Pelanggan</th>
-                                    <th>Daftar Bulan Tagihan</th>
-                                    <th>Total Tagihan</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
+    <tr>
+        <th style="width: 25%;">Pelanggan</th> <!-- Melebar -->
+        <th style="width: 20%;">Alamat</th> <!-- KOLOM BARU -->
+        <th style="width: 10%;">Bulan</th>
+        <th style="width: 15%;">Total Tagihan</th>
+        <th style="width: 10%;">Status</th>
+        <th style="width: 20%;">Aksi</th>
+    </tr>
+</thead>
                             <tbody id="tagihanTable">
                                 <tr>
                                     <td colspan="4" class="text-center">Memuat data...</td>
@@ -3579,7 +3430,7 @@ async function resetGenerate() {
 
         await batch.commit();
         hideLoading();
-        showToast('success', 'Reset Berhasil', `${snapshot.size} tagihan belum lunas telah dihapus.`);
+       
 
         if (currentPage === 'tagihan') {
             await loadTagihanData();
@@ -3640,7 +3491,7 @@ async function getTunggakanHTML() {
                 </div>
             </div>
             
-            <!-- KARTU STATISTIK RINGKAS -->
+            <!-- KARTU STATISTIK (TETAP ADA) -->
             <div class="stats-grid">
                 <div class="stat-card" onclick="filterTunggakanTable('ringan')" style="cursor: pointer;">
                     <div class="stat-icon warning">
@@ -3683,29 +3534,19 @@ async function getTunggakanHTML() {
                 </div>
             </div>
 
-            <!-- BAGIAN FILTER DROPDOWN -->
-            <div class="filters-card">
-                <div class="filter-row">
-                    <div class="form-group">
-                        <label>Filter Kategori</label>
-                        <select class="form-control" id="filterKategoriTunggakan" onchange="filterTunggakanTable(this.value)">
-                            <option value="semua">Semua Kategori</option>
-                            <option value="ringan">Ringan (1-30 Hari)</option>
-                            <option value="sedang">Sedang (31-60 Hari)</option>
-                            <option value="berat">Berat (>60 Hari)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Cari Pelanggan</label>
-                        <input type="text" class="form-control" id="searchTunggakan" placeholder="Nama atau No. Telepon..." oninput="loadTunggakanData()">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- TABEL DATA TUNGGAKAN -->
+            <!-- TABEL DATA TUNGGAKAN (DENGAN INPUT CARI) -->
             <div class="card">
                 <div class="card-header">
                     <h3>Daftar Pelanggan Menunggak</h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <!-- INPUT PENCARIAN -->
+                        <input type="text" id="searchTunggakan" 
+                               class="form-control" 
+                               placeholder="Cari nama/telepon..." 
+                               style="width: 250px; display: inline-block;" 
+                               autocomplete="off" 
+                               oninput="filterTunggakanSearch(this.value)">
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -3737,117 +3578,41 @@ async function getTunggakanHTML() {
     `;
 }
 
+
 // ============================================
-// FUNGSI LOAD DATA TUNGGAKAN (FIX ERROR NULL & LENGKAP)
+// FUNGSI PENCARIAN TUNGGAKAN (SEARCH)
 // ============================================
 
-async function loadTagihanData() {
-    const table = document.getElementById('tagihanTable');
-    if (!table) return;
+function filterTunggakanSearch(keyword) {
+    console.log("🔍 Mencari:", keyword);
     
-    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div></td></tr>`;
-
-    try {
-        // 1. AMBIL DATA TAGIHAN
-        const snapshot = await db.collection('tagihan').get();
+    // 1. Ambil semua baris di tabel
+    const table = document.getElementById('tunggakanTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    const filterLower = keyword.toLowerCase();
+    
+    // 2. Loop setiap baris (mulai dari index 1 karena index 0 adalah header)
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName('td');
         
-        if (snapshot.empty) {
-            table.innerHTML = `<tr><td colspan="6" class="text-center">Belum ada tagihan.</td></tr>`;
-            return;
+        // Kolom yang dicari: Nama (td 0) dan Telepon (td 0 small)
+        // Kita ambil textContent dari kolom Pelanggan (index 0)
+        const textData = cells[0].textContent || "";
+        
+        // Cek apakah keyword ada di text
+        if (textData.toLowerCase().indexOf(filterLower) > -1) {
+            row.style.display = ""; // Tampilkan
+        } else {
+            row.style.display = "none"; // Sembunyikan
         }
-
-        // 2. GROUP BY PELANGGAN
-        const groupedMap = {};
-        snapshot.forEach(doc => {
-            const t = doc.data();
-            const pid = t.pelanggan_id;
-            
-            if (!groupedMap[pid]) {
-                groupedMap[pid] = {
-                    pelanggan_id: pid,
-                    pelanggan_nama: t.pelanggan_nama || 'Tanpa Nama',
-                    pelanggan_telepon: t.pelanggan_telepon || '-',
-                    list_tagihan: [], 
-                    total_nominal: 0
-                };
-            }
-            
-            groupedMap[pid].list_tagihan.push(t);
-            groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
-        });
-
-        const groupedData = Object.values(groupedMap);
-        
-        // 3. PAGINATION
-        const itemsPerPage = 10;
-        const totalData = groupedData.length; 
-        const totalPages = Math.ceil(totalData / itemsPerPage);
-        
-        if (currentPageTagihan > totalPages) currentPageTagihan = 1;
-        const startIndex = (currentPageTagihan - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageData = groupedData.slice(startIndex, endIndex);
-
-        // 4. RENDER TABEL (LOGIC PERINTAH: HILANGKAN TEKS JIKA LUNAS)
-        table.innerHTML = pageData.map((item) => {
-            const jumlahBulan = item.list_tagihan.length;
-            const adaBelum = item.list_tagihan.some(t => t.status !== 'lunas');
-            let tombolBayar = '';
-
-            if (adaBelum) {
-                tombolBayar = `
-                    <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
-                        <i class="fas fa-money-bill-wave"></i> Bayar
-                    </button>
-                `;
-            }
-
-            // LOGIKA INTI:
-            // Cek apakah SEMUA tagihan di grup ini sudah LUNAS
-            const isAllLunas = !item.list_tagihan.some(t => t.status !== 'lunas');
-            
-            // Tentukan Tampilan Bulan & Nominal
-            let displayBulan = `<strong>${jumlahBulan} Bulan</strong>`;
-            let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
-
-            if (isAllLunas) {
-                // JIKA LUNAS: Kosongkan Bulan & Nominal, Ganti jadi Tanda Lunas
-                displayBulan = `<span style="color: var(--gray);">-</span>`;
-                displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
-            }
-
-            return `
-                <tr>
-                    <td>
-                        <strong>${item.pelanggan_nama}</strong><br>
-                        <small class="text-muted">${item.pelanggan_telepon}</small>
-                    </td>
-                    <td>
-                        <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
-                            ${displayBulan}
-                        </span>
-                    </td>
-                    <td>${displayNominal}</td>
-                    <td>
-                        <div class="btn-group">
-                            ${tombolBayar}
-                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
-                                <i class="fas fa-list"></i> Detail
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        // 5. RENDER PAGINATION
-        renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
-        
-    } catch (error) {
-        console.error("Error load tagihan:", error);
-        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
+    
+    // CATATAN: Fungsi ini hanya menyembunyikan baris secara visual (Client-side).
+    // Data yang dimuat tetap full dari server (pagination aman digunakan bersama ini).
 }
+
 
 // ============================================
 // FUNGSI PENDUKUNG (WAJIB ADA)
@@ -3859,52 +3624,313 @@ function gantiHalamanTunggakan(pageNum, kategori = 'semua') {
 }
 
 function filterTunggakanTable(kategori) {
-    halamanTunggakanSaatIni = 1; // Reset ke halaman 1
+    console.log(`🔍 Filter kartu: ${kategori}`);
+    
+    // Reset input pencarian menjadi kosong
+    const searchInput = document.getElementById('searchTunggakan');
+    if (searchInput) searchInput.value = '';
+    
+    // Panggil load data
     loadTunggakanData(kategori);
+    
+   
 }
+
+
+async function showPayAllModal(pelangganId) {
+    console.log("💳 Membuka Modal Bayar Semua...");
+    
+    try {
+        // 1. Ambil data pelanggan
+        const docPel = await db.collection('pelanggan').doc(pelangganId).get();
+        if (!docPel.exists) throw new Error("Pelanggan tidak ditemukan");
+        
+        const dataPel = docPel.data();
+        const namaPel = dataPel.nama;
+
+        // 2. Ambil data tagihan yang BELUM LUNAS pelanggan ini
+        const snapshot = await db.collection('tagihan')
+            .where('pelanggan_id', '==', pelangganId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
+        
+        if (snapshot.empty) {
+            showToast('info', 'Info', 'Tidak ada tagihan tertunggak.');
+            return;
+        }
+
+        let listTagihan = [];
+        let totalNominal = 0;
+        let idsString = "";
+
+        snapshot.forEach(doc => {
+            const t = doc.data();
+            listTagihan.push(t);
+            totalNominal += Number(t.jumlah) || 0;
+            idsString += doc.id + ",";
+        });
+
+        // Hapus koma terakhir
+        idsString = idsString.slice(0, -1);
+
+        // 3. Generate ID Bulan String (Misal: Jan, Feb)
+        const bulanList = listTagihan.map(t => {
+            const parts = (t.bulan || '').split('-');
+            if (parts.length === 2) {
+                const dateObj = moment(`${parts[1]}-${parts[0]}-01`);
+                return dateObj.format('MMM YY');
+            }
+            return t.bulan;
+        }).join(', ');
+
+        // 4. Buat Modal "Pay All" Dinamis
+        const modalId = 'modalPayAllDynamic';
+        const oldModal = document.getElementById(modalId);
+        if (oldModal) oldModal.remove();
+
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal-overlay show';
+        modal.style.zIndex = '1060';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        modal.innerHTML = `
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">Pembayaran Tunggakan</h3>
+                    <button class="modal-close" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto';">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>${namaPel}</h4>
+                        <p style="margin: 5px 0; color: #666;">Total Tagihan: <strong>${formatRupiah(totalNominal)}</strong></p>
+                        <p style="margin: 0; font-size: 13px;">Periode: ${bulanList}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Metode Pembayaran</label>
+                        <select id="payAllMetode" class="form-control">
+                            <option value="Tunai">Tunai</option>
+                            <option value="Transfer Bank">Transfer Bank</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto';">Batal</button>
+                    <button id="btnExecutePayAll" class="btn btn-success" onclick="executePayAllDirect('${pelangganId}', '${idsString}', ${totalNominal}, '${bulanList}', '${modalId}', '${namaPel}')">
+                        <i class="fas fa-money-bill-wave"></i> Bayar Sekarang
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error("Error show pay all:", error);
+        showToast('error', 'Gagal', error.message);
+    }
+}
+
+async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanString, modalId, namaPelanggan) {
+    const btn = document.getElementById('btnExecutePayAll');
+    const originalText = btn.innerHTML;
+    
+    if (!confirm(`Konfirmasi Pelunasan Tunggakan:\n${namaPelanggan}\nTotal: ${formatRupiah(totalNominal)}\n\nLanjutkan?`)) {
+        return;
+    }
+
+    try {
+        showLoading();
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Proses...';
+
+        // 1. Update Status di Database
+        const tagihanIds = idsString.split(',');
+        const batch = db.batch();
+        const now = new Date().toISOString();
+        const tglHariIni = moment().format('DD MMMM YYYY, HH:mm');
+
+        tagihanIds.forEach(id => {
+            const ref = db.collection('tagihan').doc(id);
+            batch.update(ref, {
+                status: 'lunas',
+                tanggal_bayar: tglHariIni,
+                metode_bayar: document.getElementById('payAllMetode').value,
+                catatan_bayar: 'Pelunasan Tunggakan',
+                updated_at: now
+            });
+        });
+
+        await batch.commit();
+
+        // 2. Buat Nota HTML Sementara (Untuk dijadikan Gambar)
+        const strukContainer = document.createElement('div');
+        strukContainer.style.position = 'absolute';
+        strukContainer.style.left = '-9999px';
+        strukContainer.style.top = '0';
+        strukContainer.style.width = '300px';
+        strukContainer.style.background = 'white';
+        strukContainer.style.padding = '10px';
+        strukContainer.style.fontFamily = 'monospace';
+        strukContainer.style.fontSize = '12px';
+        strukContainer.style.color = '#000000';
+        strukContainer.style.border = '1px solid #000';
+        
+        strukContainer.innerHTML = `
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: bold;">X-BILL ISP</h3>
+                <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
+            </div>
+            
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Pelanggan:</span>
+                    <strong>${namaPelanggan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Tanggal:</span>
+                    <span>${tglHariIni}</span>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 10px 0; margin: 10px 0; text-align: center;">
+                <strong>BUKTI PELUNASAN</strong>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Item:</span>
+                    <span>Pelunasan Tunggakan</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Bulan:</span>
+                    <span>${bulanString}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <span>Total:</span>
+                    <strong>${formatRupiah(totalNominal)}</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px; font-weight: bold;">
+                STATUS: LUNAS
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; border-top: 1px solid #000; padding-top: 10px; font-size: 10px;">
+                Terima Kasih<br>
+                Simpan struk ini sebagai bukti pembayaran yang sah.
+            </div>
+        `;
+        
+        document.body.appendChild(strukContainer);
+
+        // 3. Generate Gambar (Canvas)
+        await new Promise(r => setTimeout(r, 100)); // Tunggu render DOM
+        const canvas = await html2canvas(strukContainer, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff"
+        });
+
+        // 4. Hapus elemen HTML
+        document.body.removeChild(strukContainer);
+        document.getElementById(modalId).remove();
+
+        hideLoading();
+        showToast('success', 'Lunas', 'Pembayaran berhasil dicatat.');
+
+        // 5. SHARE KE WA (PAKAI WEB SHARE API)
+        canvas.toBlob(async function(blob) {
+            if (!blob) return;
+            
+            const fileShare = new File([blob], `Bukti_Lunas_${pelangganId}.png`, { type: 'image/png' });
+            
+            if (navigator.share && navigator.canShare({ files: [fileShare] })) {
+                try {
+                    await navigator.share({
+                        title: 'Bukti Pelunasan',
+                        text: `Halo Kak ${namaPelanggan}, berikut bukti pelunasan tagihan ${bulanString}.`,
+                        files: [fileShare] 
+                    });
+                } catch (err) {
+                    console.log("Share dibatalkan/diabaikan user");
+                }
+            } else {
+                alert("Browser tidak support share otomatis.");
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Bukti_Lunas_${pelangganId}.png`;
+                link.click();
+            }
+        });
+
+        // 6. Refresh Table
+        await loadTunggakanData();
+        await loadTagihanData(); // Refresh tabel tagihan utama juga
+
+    } catch (error) {
+        hideLoading();
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        console.error("Error execute pay all:", error);
+        showToast('error', 'Gagal', error.message);
+    }
+}
+
+
 
 // ============================================
 // FUNGSI LOAD DATA TUNGGAKAN (DENGAN PAGINATION)
 // ============================================
 
-// Variabel Global untuk menyimpan halaman saat ini
 let halamanTunggakanSaatIni = 1;
-const jumlahDataPerHalaman = 10; // Bisa diubah sesuai keinginan (misal 20)
+const jumlahDataPerHalamanTunggakan = 10;
 
 async function loadTunggakanData(filterKategori = 'semua') {
+    console.log("📊 Loading Tunggakan Data (Fix Stats Logic)...");
+    
     const table = document.getElementById('tunggakanTable');
     const paginationContainer = document.getElementById('tunggakanPagination');
     
-    if (!table) return;
-
-    const pageElement = document.querySelector('.tunggakan-page');
-    if (!pageElement) return;
-
-    if (!paginationContainer) {
-        const newPagination = document.createElement('div');
-        newPagination.id = 'tunggakanPagination';
-        newPagination.style.marginTop = '20px';
-        newPagination.style.textAlign = 'center';
-        table.parentNode.insertBefore(newPagination, table.nextSibling);
+    if (!table) {
+        console.warn("Tabel tunggakan tidak ditemukan");
+        return;
     }
-    
+
     try {
-        showLoading();
-        
-        // Ambil data tunggakan
+        table.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;"><div class="spinner" style="margin:0 auto;"></div> Memuat Data...</td></tr>`;
+
+        // Ambil data tagihan yang 'belum' atau 'telat'
         const snapshot = await db.collection('tagihan')
             .where('status', 'in', ['belum', 'telat'])
             .get();
         
         if (snapshot.empty) {
-            table.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Tidak ada tunggakan.</td></tr>`;
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding: 40px;">
+                        <i class="fas fa-check-circle" style="font-size: 48px; color: #e9ecef;"></i>
+                        <h4 style="margin-top:15px; color: var(--gray);">Tidak Ada Tunggakan</h4>
+                        <p>Semua tagihan sudah lunas.</p>
+                    </td>
+                </tr>`;
+            
+            // Reset Stats
+            if(document.getElementById('tunggakanRingan')) document.getElementById('tunggakanRingan').textContent = '0';
+            if(document.getElementById('tunggakanSedang')) document.getElementById('tunggakanSedang').textContent = '0';
+            if(document.getElementById('tunggakanBerat')) document.getElementById('tunggakanBerat').textContent = '0';
+            if(document.getElementById('totalTunggakanUang')) document.getElementById('totalTunggakanUang').textContent = 'Rp 0';
+            
             paginationContainer.innerHTML = '';
-            hideLoading();
             return;
         }
         
-        // Group by Pelanggan
+        // Group data berdasarkan Pelanggan
         const groupedMap = {};
+        let totalNominalSemua = 0;
         
         snapshot.forEach(doc => {
             const t = doc.data();
@@ -3922,42 +3948,153 @@ async function loadTunggakanData(filterKategori = 'semua') {
             
             groupedMap[pid].list_tagihan.push(t);
             groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
+            totalNominalSemua += Number(t.jumlah) || 0;
         });
 
-        let groupedData = Object.values(groupedMap);
+        // --- PROSES DATA (HITUNG KATEGORI & STRING) ---
+        let processedData = Object.values(groupedMap).map(item => {
+            let maxHariTerlambat = 0;
+            let statusTerparah = 'belum';
+            
+            // Helper buat string bulan
+            let listBulan = item.list_tagihan.map(t => {
+                const rawBulan = t.bulan || '';
+                let dateObj = null;
+                
+                if (rawBulan.includes('-')) {
+                    const parts = rawBulan.split('-');
+                    if (parts.length === 2 && parts[0].length === 4) dateObj = moment(rawBulan); 
+                    else if (parts.length === 2 && parts[0].length <= 2) dateObj = moment(rawBulan, 'MM-YYYY');
+                    else if (parts.length === 3) {
+                        const fixedString = `${parts[1]}-${parts[2]}-${parts[0]}`;
+                        dateObj = moment(fixedString, 'YYYY-MM-DD');
+                    }
+                } else {
+                    dateObj = moment(rawBulan);
+                }
+                if (dateObj && dateObj.isValid()) return dateObj.format('MMM YY');
+                return rawBulan;
+            }).join(', ');
+
+            // Helper buat string jatuh tempo & hitung hari terlambat
+            let jatuhTempoText = '-';
+            if (item.list_tagihan.length > 0) {
+                const sortedTagihan = [...item.list_tagihan].sort((a, b) => {
+                    const getTime = (val) => {
+                        if (!val) return 0;
+                        let m = moment(val, 'DD-MM-YYYY');
+                        if (!m.isValid()) m = moment(val);
+                        return m.isValid() ? m.valueOf() : 0;
+                    };
+                    return getTime(a.tanggal_jatuh_tempo) - getTime(b.tanggal_jatuh_tempo);
+                });
+                
+                if (sortedTagihan[0].tanggal_jatuh_tempo) {
+                    let mJatuhTempo = moment(sortedTagihan[0].tanggal_jatuh_tempo, 'DD-MM-YYYY');
+                    if (!mJatuhTempo.isValid()) mJatuhTempo = moment(sortedTagihan[0].tanggal_jatuh_tempo);
+                    if (mJatuhTempo.isValid()) jatuhTempoText = mJatuhTempo.format('DD MMM YYYY');
+                }
+            }
+
+            item.list_tagihan.forEach(t => {
+                if (t.status === 'telat') {
+                    statusTerparah = 'telat';
+                    if (t.tanggal_jatuh_tempo) {
+                        let mJatuhTempo = moment(t.tanggal_jatuh_tempo, 'DD-MM-YYYY');
+                        if (!mJatuhTempo.isValid()) mJatuhTempo = moment(t.tanggal_jatuh_tempo);
+                        if (mJatuhTempo.isValid()) {
+                            const hariTelat = moment().diff(mJatuhTempo, 'days');
+                            if (hariTelat > maxHariTerlambat) maxHariTerlambat = hariTelat;
+                        }
+                    }
+                }
+            });
+
+            let kategori = 'ringan';
+            if (statusTerparah === 'telat') {
+                if (maxHariTerlambat > 60) kategori = 'berat';
+                else if (maxHariTerlambat > 30) kategori = 'sedang';
+            }
+
+            return { 
+                ...item, 
+                kategori: kategori, 
+                hari_terlambat: maxHariTerlambat,
+                string_bulan: listBulan,
+                string_jatuh_tempo: jatuhTempoText
+            };
+        });
+
+        // --- UPDATE STATS (PAKAI DATA ASLI: processedData) ---
+        // JANGAN DIFILTER DULU DI SINI. Stats harus selalu menampilkan Total.
+        let ringanCount = 0, sedangCount = 0, beratCount = 0;
+        let totalUang = 0;
+
+        processedData.forEach(item => {
+             if (item.kategori === 'ringan') ringanCount++;
+             if (item.kategori === 'sedang') sedangCount++;
+             if (item.kategori === 'berat') beratCount++;
+             totalUang += item.total_nominal;
+        });
+
+        if (document.getElementById('tunggakanRingan')) document.getElementById('tunggakanRingan').textContent = ringanCount;
+        if (document.getElementById('tunggakanSedang')) document.getElementById('tunggakanSedang').textContent = sedangCount;
+        if (document.getElementById('tunggakanBerat')) document.getElementById('tunggakanBerat').textContent = beratCount;
+        if (document.getElementById('totalTunggakanUang')) document.getElementById('totalTunggakanUang').textContent = formatRupiah(totalUang);
+
+        // --- FILTER DATA UNTUK TABEL ---
+        let tableData = [...processedData]; // Copy data untuk tabel
         
-        // Pagination
-        const itemsPerPage = 10;
-        const totalData = groupedData.length;
-        const totalPages = Math.ceil(totalData / itemsPerPage);
+        if (filterKategori !== 'semua') {
+            tableData = tableData.filter(item => item.kategori === filterKategori);
+        }
+
+        // --- PAGINATION ---
+        const totalData = tableData.length;
+        const totalPages = Math.ceil(totalData / jumlahDataPerHalamanTunggakan);
         
         if (halamanTunggakanSaatIni > totalPages) halamanTunggakanSaatIni = 1;
-        const startIndex = (halamanTunggakanSaatIni - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageData = groupedData.slice(startIndex, endIndex);
+        
+        const startIndex = (halamanTunggakanSaatIni - 1) * jumlahDataPerHalamanTunggakan;
+        const endIndex = startIndex + jumlahDataPerHalamanTunggakan;
+        const pageData = tableData.slice(startIndex, endIndex);
 
-        // Render Table
+        // --- RENDER TABEL ---
         table.innerHTML = pageData.map((item) => {
             const jumlahBulan = item.list_tagihan.length;
             
+            let badgeColor = '#fdcb6e';
+            if (item.kategori === 'sedang') badgeColor = '#e17055';
+            if (item.kategori === 'berat') badgeColor = '#d63031';
+
             return `
                 <tr>
                     <td>
-                        <strong>${item.pelanggan_nama}</strong><br>
+                        <strong>${item.pelanggan_nama}</strong>
+                        <br>
                         <small class="text-muted">${item.pelanggan_telepon}</small>
                     </td>
                     <td>
-                        <span class="badge badge-danger" style="font-size:14px; padding:8px 12px;">
-                            ${jumlahBulan} Bulan
-                        </span>
+                        <small style="color: var(--gray);">${item.string_bulan}</small>
                     </td>
                     <td><strong>${formatRupiah(item.total_nominal)}</strong></td>
                     <td>
+                        <small>${item.string_jatuh_tempo}</small>
+                    </td>
+                    <td>
+                        <span style="background: ${badgeColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">
+                            ${item.hari_terlambat} Hari
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-danger">Menunggak</span>
+                    </td>
+                    <td>
                         <div class="btn-group">
-                            <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
+                            <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')" title="Bayar Semua">
                                 <i class="fas fa-money-bill-wave"></i> Bayar
                             </button>
-                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
+                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')" title="Rincian">
                                 <i class="fas fa-list"></i> Detail
                             </button>
                         </div>
@@ -3965,8 +4102,8 @@ async function loadTunggakanData(filterKategori = 'semua') {
                 </tr>
             `;
         }).join('');
-        
-        // Render Pagination
+
+        // --- RENDER PAGINATION ---
         let paginationHTML = '<div class="pagination">';
         if (halamanTunggakanSaatIni > 1) {
             paginationHTML += `<a class="page-link" onclick="gantiHalamanTunggakan(${halamanTunggakanSaatIni - 1}, '${filterKategori}')">&laquo; Prev</a>`;
@@ -3977,22 +4114,21 @@ async function loadTunggakanData(filterKategori = 'semua') {
         }
         paginationHTML += '</div>';
         paginationContainer.innerHTML = paginationHTML;
-        
-        hideLoading();
+
     } catch (error) {
         console.error("❌ Error load tunggakan:", error);
-        table.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error: ${error.message}</td></tr>`;
-        hideLoading();
+        table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
 }
+
 
 // ============================================
 // FUNGSI GANTI HALAMAN
 // ============================================
 
-function gantiHalamanTunggakan(halamanBaru, filterKategori) {
-    halamanTunggakanSaatIni = halamanBaru;
-    loadTunggakanData(filterKategori); // Reload data dengan halaman baru
+function gantiHalamanTunggakan(pageNum, kategori) {
+    halamanTunggakanSaatIni = pageNum;
+    loadTunggakanData(kategori);
 }
         
         async function getImportExportHTML() {
@@ -6551,9 +6687,16 @@ function renderTagihanTable(data) {
 }
 
 async function viewTagihanDetails(pelangganId) {
-    console.log("👁️ MEMBUKA DETAIL (TAMPILKAN DATA LENGKAP + SHARE WA)...");
+    console.log("👁️ MEMBUKA DETAIL TAGIHAN...");
 
     try {
+        // 1. AMBIL DATA PELANGGAN SEKALI SAJA
+        const pelDoc = await db.collection('pelanggan').doc(pelangganId).get();
+        const pelData = pelDoc.exists ? pelDoc.data() : {};
+        const teleponPelanggan = pelData.telepon || '';
+        const namaPelanggan = pelData.nama || 'Pelanggan';
+
+        // 2. AMBIL DATA TAGIHAN
         const snapshot = await db.collection('tagihan')
             .where('pelanggan_id', '==', pelangganId)
             .get();
@@ -6565,24 +6708,42 @@ async function viewTagihanDetails(pelangganId) {
 
         let tagihanList = [];
         snapshot.forEach(doc => {
-            tagihanList.push({ id: doc.id, ...doc.data() });
+            let data = doc.data();
+            let bulanRaw = data.bulan || '';
+
+            // NORMALISASI FORMAT BULAN
+            let bulanFix = bulanRaw;
+            if (bulanRaw.includes('-')) {
+                let parts = bulanRaw.split('-');
+                if (parts[0].length === 4 && parts[1].length === 2) {
+                    bulanFix = `${parts[1]}-${parts[0]}`;
+                } else if (parts[0].length === 2 && parts[1].length === 4) {
+                    bulanFix = bulanRaw;
+                }
+            }
+            
+            let partsFix = bulanFix.split('-');
+            let numericBulan = parseInt(partsFix[0]) || 1;
+            let numericTahun = parseInt(partsFix[1]) || new Date().getFullYear();
+            
+            tagihanList.push({ 
+                id: doc.id, 
+                ...data,
+                bulan_fix: bulanFix,
+                sort_bulan: numericBulan,
+                sort_tahun: numericTahun
+            });
         });
 
-        // 1. SORTING: LAMA -> BARU (FIFO)
+        // SORTING
         tagihanList.sort((a, b) => {
-            const bulanA = a.bulan || '';
-            const bulanB = b.bulan || '';
-            return bulanA.localeCompare(bulanB); 
+            if (b.sort_tahun !== a.sort_tahun) {
+                return b.sort_tahun - a.sort_tahun;
+            }
+            return b.sort_bulan - a.sort_bulan;
         });
 
-        // 2. PISAHKAN: LUNAS vs BELUM
-        const lunasItems = tagihanList.filter(t => t.status === 'lunas');
-        const belumItems = tagihanList.filter(t => t.status !== 'lunas');
-        
-        // 3. GABUNGKAN: Belum di atas, Lunas di bawah
-        const finalList = [...belumItems, ...lunasItems];
-
-        // 4. SETUP MODAL
+        // 3. BUAT MODAL
         const modalId = 'modalDetailTagihanFull';
         const oldModal = document.getElementById(modalId);
         if (oldModal) oldModal.remove();
@@ -6595,7 +6756,7 @@ async function viewTagihanDetails(pelangganId) {
             <div class="modal modal-lg">
                 <div class="modal-header">
                     <h3 class="modal-title"><i class="fas fa-list"></i> Riwayat Tagihan</h3>
-                    <button class="modal-close" onclick="document.getElementById('${modalId}').remove()">&times;</button>
+                    <button class="modal-close" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="table-responsive">
@@ -6622,32 +6783,70 @@ async function viewTagihanDetails(pelangganId) {
         document.body.appendChild(modal);
         document.body.style.overflow = 'hidden';
 
-        // 5. FUNGSI RENDER
+        // 4. FUNGSI RENDER
         window.renderDetailTable = function(page) {
             const tbody = document.getElementById('detailTableBody');
             const paginationDiv = document.getElementById('detailPagination');
             const footerDiv = document.getElementById('modalFooterContent');
             
             const itemsPerPage = 10;
-            const totalPages = Math.ceil(finalList.length / itemsPerPage);
+            const totalPages = Math.ceil(tagihanList.length / itemsPerPage);
             if (page > totalPages) page = totalPages;
             
             const start = (page - 1) * itemsPerPage;
             const end = start + itemsPerPage;
-            const pageData = finalList.slice(start, end);
+            const pageData = tagihanList.slice(start, end);
 
-            // Render Table
+            // RENDER TABLE
             tbody.innerHTML = pageData.map(t => {
                 const isLunas = t.status === 'lunas';
-                const tglJatuhTempo = t.tanggal_jatuh_tempo ? moment(t.tanggal_jatuh_tempo).format('DD MMM YYYY') : '-';
                 
-                // Tanggal Bayar (Muncul jika Lunas)
+                // JATUH TEMPO
+                let tglJatuhTempoDisplay = '-';
+                const bulanStr = t.bulan_fix || ''; 
+                
+                if (bulanStr) {
+                    const parts = bulanStr.split('-');
+                    if (parts.length === 2) {
+                        const bulanNum = parseInt(parts[0]) || 1; 
+                        const tahunNum = parseInt(parts[1]) || new Date().getFullYear();  
+
+                        let jatuhTempoBulan = bulanNum + 1;
+                        let jatuhTempoTahun = tahunNum;
+
+                        if (jatuhTempoBulan > 12) {
+                            jatuhTempoBulan = 1;
+                            jatuhTempoTahun++;
+                        }
+
+                        // PERBAIKAN: FORMAT TANGGAL YANG BENAR
+                        const jatuhTempoDate = moment(`${jatuhTempoTahun}-${String(jatuhTempoBulan).padStart(2, '0')}-10`, 'YYYY-MM-DD');
+                        if (jatuhTempoDate.isValid()) {
+                            tglJatuhTempoDisplay = jatuhTempoDate.format('DD MMM YYYY');
+                        }
+                    }
+                }
+                
+                // TANGGAL BAYAR
                 let tglBayarDisplay = '-';
                 if (isLunas && t.tanggal_bayar) {
-                    tglBayarDisplay = moment(t.tanggal_bayar).format('DD MMM YYYY');
+                    // COBA BERBAGAI FORMAT
+                    let date = null;
+                    if (moment(t.tanggal_bayar, 'DD MMM YYYY', true).isValid()) {
+                        date = moment(t.tanggal_bayar, 'DD MMM YYYY');
+                    } else if (moment(t.tanggal_bayar, 'YYYY-MM-DD', true).isValid()) {
+                        date = moment(t.tanggal_bayar, 'YYYY-MM-DD');
+                    } else {
+                        date = moment(t.tanggal_bayar);
+                    }
+                    
+                    if (date.isValid()) {
+                        tglBayarDisplay = date.format('DD MMM YYYY');
+                    } else {
+                        tglBayarDisplay = t.tanggal_bayar;
+                    }
                 }
 
-                // Tampilan Data (Bulan & Nominal SELALU MUNCUL sesuai perintah)
                 let rowStyle = '';
                 let statusBadge = '<span class="badge badge-danger">BELUM</span>';
                 
@@ -6658,20 +6857,24 @@ async function viewTagihanDetails(pelangganId) {
                     rowStyle = 'background-color: #fff0f0;';
                 }
 
-                // Tombol Aksi
+                // TOMBOL BAYAR - PERBAIKAN UTAMA!
                 let btnAksi = '';
-                
                 if (!isLunas) {
-                    // JIKA BELUM: TOMBOL BAYAR (Langsung Share WA Gambar)
                     btnAksi = `
-                        <button class="btn btn-sm btn-success" onclick="bayarTagihanDenganStruk('${t.id}', '${pelangganId}', '${t.pelanggan_nama}', ${t.jumlah}, '${t.bulan}')">
+                        <button class="btn btn-sm btn-success" 
+                                onclick="handleBayarClick(this)"
+                                data-tagihan-id="${t.id}"
+                                data-pelanggan-id="${pelangganId}"
+                                data-pelanggan-nama="${namaPelanggan}"
+                                data-pelanggan-telepon="${teleponPelanggan}"
+                                data-jumlah="${t.jumlah || 0}"
+                                data-bulan="${t.bulan_fix || t.bulan || ''}">
                             <i class="fab fa-whatsapp"></i> Bayar
                         </button>
                     `;
                 } else {
-                    // JIKA LUNAS: TOMBOL SHARE STRUK ULANG
                     btnAksi = `
-                        <button class="btn btn-sm btn-info" onclick="kirimUlangStruk('${t.id}', '${t.pelanggan_nama}', ${t.jumlah}, '${t.bulan}')">
+                        <button class="btn btn-sm btn-info" onclick="kirimUlangStruk('${t.id}')">
                             <i class="fas fa-share-alt"></i> Kirim
                         </button>
                     `;
@@ -6679,35 +6882,36 @@ async function viewTagihanDetails(pelangganId) {
 
                 return `
                     <tr style="${rowStyle}">
-                        <td><strong>${t.bulan}</strong></td>
+                        <td><strong>${t.bulan_fix}</strong></td>
                         <td>${formatRupiah(t.jumlah)}</td>
                         <td>${statusBadge}</td>
-                        <td>${tglJatuhTempo}</td>
+                        <td>${tglJatuhTempoDisplay}</td>
                         <td>${tglBayarDisplay}</td>
                         <td>${btnAksi}</td>
                     </tr>
                 `;
             }).join('');
 
-            // Footer (Bayar Semua)
-            const idsBelumUrut = belumItems.map(item => item.id).join(',');
-            const totalBelum = belumItems.reduce((sum, item) => sum + (item.jumlah || 0), 0);
-
+            // FOOTER
             if (footerDiv) {
-                let footerHTML = `<button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove()">Tutup</button>`;
+                let footerHTML = `<button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">Tutup</button>`;
                 
-                if (belumItems.length > 0) {
+                const listBelumUrut = tagihanList.filter(item => item.status !== 'lunas');
+                if (listBelumUrut.length > 0) {
+                    const idsBelumUrut = listBelumUrut.map(item => item.id).join(',');
+                    const totalBelum = listBelumUrut.reduce((sum, item) => sum + (item.jumlah || 0), 0);
+
                     footerHTML = `
                         <button class="btn btn-success" onclick="executePayAllDirect('${pelangganId}', '${idsBelumUrut}', ${totalBelum}, 'Riwayat')">
                             <i class="fas fa-money-bill-wave"></i> Bayar Semua
                         </button>
-                        <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove()">Tutup</button>
+                        <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">Tutup</button>
                     `;
                 }
                 footerDiv.innerHTML = footerHTML;
             }
 
-            // Pagination
+            // PAGINATION
             if (paginationDiv) {
                 let pagHTML = '<div class="pagination">';
                 if (page > 1) pagHTML += `<a class="page-link" onclick="window.renderDetailTable(${page - 1})">&laquo;</a>`;
@@ -6728,91 +6932,415 @@ async function viewTagihanDetails(pelangganId) {
 
 
 async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanString) {
-    console.log("💳 PROSES BAYAR (LOGIKA FIFO: BAYAR TAGIHAN TERLAMA DULU)...");
+    const tagihanIds = idsString.split(',');
+    const tagihanId = tagihanIds[0];
 
-    if (!confirm(`Konfirmasi pembayaran lunas sebesar ${formatRupiah(totalNominal)}?`)) {
-        return;
-    }
-
+    let dataPelanggan = { nama: 'Pelanggan', telepon: '-', paket: 'Paket Umum', alamat: '-' };
     try {
-        showLoading();
-
-        // 1. AMBIL SEMUA TAGIHAN PELANGGAN INI
-        const snapshot = await db.collection('tagihan')
-            .where('pelanggan_id', '==', pelangganId)
-            .get();
-
-        if (snapshot.empty) {
-            hideLoading();
-            showToast('info', 'Info', 'Tidak ada tagihan.');
-            return;
+        const docPel = await db.collection('pelanggan').doc(pelangganId).get();
+        if (docPel.exists) {
+            const data = docPel.data();
+            dataPelanggan.nama = data.nama;
+            dataPelanggan.telepon = data.telepon;
+            dataPelanggan.paket = data.paket;
+            dataPelanggan.alamat = data.alamat;
         }
+    } catch (e) { console.warn(e); }
 
-        let tagihanList = [];
-        snapshot.forEach(doc => {
-            tagihanList.push({ id: doc.id, ...doc.data() });
-        });
-
-        // 2. URUTKAN TAGIHAN: DARI YANG PALING LAMA KE PALING BARU (ASCENDING)
-        // Agar Januari berada di Index 0, Februari di Index 1, dst.
-        tagihanList.sort((a, b) => {
-            return (a.bulan || '').localeCompare(b.bulan || '');
-        });
-
-        // 3. FILTER HANYA YANG BELUM LUNAS
-        const tagihanBelumLunas = tagihanList.filter(t => t.status !== 'lunas');
-
-        // 4. AMBIL SEBANYAK JUMLAH YANG INGIN DIBAYAR (SESUAI PARAMETER idsString)
-        // idsString biasanya berisi ID tagihan yang dipilih user.
-        // Kita cek berapa banyak ID di string tersebut.
-        const idDipilih = idsString ? idsString.split(',') : [];
-        const jumlahYangDibayar = Math.min(idDipilih.length, tagihanBelumLunas.length);
-
-        if (jumlahYangDibayar === 0) {
-            hideLoading();
-            showToast('warning', 'Info', 'Tidak ada tagihan yang valid untuk dibayar.');
-            return;
-        }
-
-        // 5. SIAPKAN BATCH UPDATE
-        const batch = db.batch();
-        const now = new Date().toISOString();
-        const tglHariIni = moment().format('DD-MM-YYYY HH:mm');
+    await bukaNotaDanKonfirmasi(tagihanId, pelangganId, dataPelanggan.nama, totalNominal, bulanString);
+    
+    const btnBayar = document.getElementById('btnBayarStruk');
+    if(btnBayar) {
+        const newBtn = btnBayar.cloneNode(true);
+        btnBayar.parentNode.replaceChild(newBtn, btnBayar);
         
-        // Kita ambil item dari array yang SUDAH DIURUTKAN (Index 0, 1, dst)
-        // Ini menjamin kita membayar Januari, lalu Februari, dst.
-        for (let i = 0; i < jumlahYangDibayar; i++) {
-            const item = itemBerurut[i]; 
-            const ref = db.collection('tagihan').doc(item.id);
+        newBtn.onclick = async function() {
+            if (!confirm(`Lunas ${tagihanIds.length} tagihan (${formatRupiah(totalNominal)})?`)) return;
+
+            showLoading();
+            try {
+                const batch = db.batch();
+                const now = new Date().toISOString();
+                const tglHariIni = moment().format('DD MMMM YYYY, HH:mm');
+
+                tagihanIds.forEach(id => {
+                    const ref = db.collection('tagihan').doc(id);
+                    batch.update(ref, {
+                        status: 'lunas',
+                        tanggal_bayar: tglHariIni,
+                        metode_bayar: 'Tunai (Bulk)',
+                        catatan_bayar: 'Pelunasan melalui menu Rincian Tagihan',
+                        updated_at: now
+                    });
+                });
+
+                await batch.commit();
+                hideLoading();
+                
+                const btnBatal = document.getElementById('btnBatalStruk');
+                const btnKirim = document.getElementById('btnKirimWA');
+                const statusText = document.getElementById('notaStatusText');
+                const btnContainer = document.getElementById('notaFooterContainer');
+                const strukElement = document.getElementById('strukPrintable');
+
+                if (btnContainer) {
+                    newBtn.style.display = 'none';
+                    if (btnBatal) btnBatal.style.display = 'none';
+
+                    if (!document.getElementById('btnSelesaiStruk')) {
+                        const btnBaru = document.createElement('button');
+                        btnBaru.id = 'btnSelesaiStruk';
+                        btnBaru.className = 'btn';
+                        btnBaru.style.cssText = 'width: 100%; background: #2ecc71; color: white; padding: 15px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-top: 10px; border: none; cursor: pointer;';
+                        btnBaru.innerHTML = '<i class="fas fa-check-circle"></i> SELESAI';
+                        btnContainer.appendChild(btnBaru);
+                        
+                        btnBaru.onclick = () => {
+                            document.getElementById('strukOverlay').remove();
+                            const modalDetail = document.getElementById('modalDetailTagihan');
+                            if(modalDetail) modalDetail.remove();
+                            if (typeof loadTagihanData === 'function') loadTagihanData();
+                        };
+                    }
+
+                    if (btnKirim) {
+                        btnKirim.removeAttribute('disabled');
+                        btnKirim.style.background = '#25D366';
+                        btnKirim.style.color = 'white';
+                        btnKirim.style.cursor = 'pointer';
+                        btnKirim.innerHTML = '<i class="fas fa-camera"></i> KIRIM NOTA';
+
+                        btnKirim.onclick = async function() {
+                            const btnOriginal = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMBUAT GAMBAR...';
+                            this.disabled = true;
+
+                            try {
+                                if (!strukElement) throw new Error("Elemen tidak ada");
+
+                                const canvas = await html2canvas(strukElement, {
+                                    scale: 2,
+                                    useCORS: true,
+                                    backgroundColor: "#ffffff"
+                                });
+
+                                const imageUrl = await uploadAtauDownloadStruk(canvas, pelangganId);
+
+                                if (imageUrl) {
+                                    const noWA = "62" + (globalDataPelanggan.telepon || '').replace(/^0/, '');
+                                    const pesanWA = `*BUKTI PELUNASAN TAGIHAN*\n\nHalo Kak ${globalDataPelanggan.nama},\n\nBerikut bukti pelunasan bulan ${bulanString} (${tagihanIds.length} bulan):\n\n${imageUrl}\n\nTerima kasih.`;
+                                    
+                                    window.open(`https://wa.me/${noWA}?text=${encodeURIComponent(pesanWA)}`, '_blank');
+                                    
+                                    this.innerHTML = '<i class="fas fa-check"></i> TERKIRIM';
+                                    this.style.background = '#2ecc71';
+                                } else {
+                                    this.innerHTML = btnOriginal;
+                                    this.disabled = false;
+                                }
+
+                            } catch (err) {
+                                console.error(err);
+                                this.innerHTML = btnOriginal;
+                                this.disabled = false;
+                            }
+                        };
+                    }
+
+                    if (statusText) {
+                        statusText.textContent = 'LUNAS (SEMUA)';
+                        statusText.style.color = '#27ae60';
+                    }
+                }
+
+            } catch (error) {
+                hideLoading();
+                console.error(error);
+                showToast('error', 'Gagal', error.message);
+            }
+        };
+    }
+}
+
+
+// ==========================================
+// FUNGSI UPDATE TOMBOL DI TABEL (HELPER)
+// (BARU - TAMBAHKAN INI)
+// ==========================================
+ function getTombolBayarHTML(tagihan) {
+    const namaAman = (tagihan.pelanggan_nama || 'Pelanggan').replace(/"/g, '&quot;');
+    return `
+    <button class="btn btn-sm btn-success" 
+        onclick="bukaNotaDanKonfirmasi('${tagihan.id}', '${tagihan.pelanggan_id}', '${namaAman}', ${tagihan.jumlah}, '${tagihan.bulan}')" 
+        title="Bayar Sekarang">
+        <i class="fas fa-money-bill-wave"></i> Bayar
+    </button>
+    `;
+}
+
+// ==========================================
+// FUNGSI TAMPILKAN POP UP KONFIRMASI
+// (BARU - TAMBAHKAN INI)
+// ==========================================
+function tampilkanPopUpKonfirmasi(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
+    const modal = document.createElement('div');
+    modal.id = 'modalKonfirmasiBayar';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.background = 'rgba(0, 0, 0, 0.7)';
+    modal.style.zIndex = '1000000';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4); animation: popIn 0.3s;">
+            <div style="width: 70px; height: 70px; background: #e74c3c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 30px;">
+                <i class="fas fa-question"></i>
+            </div>
+            <h3 style="color: #2c3e50; margin: 0 0 10px 0;">Konfirmasi Pembayaran</h3>
+            <p style="color: #7f8c8d; font-size: 16px; margin: 0 0 20px 0;">Yakin ingin memproses pembayaran <strong>${formatRupiah(nominal)}</strong>?</p>
             
-            batch.update(ref, {
-                status: 'lunas',
-                tanggal_bayar: tglHariIni,
-                metode_bayar: 'Tunai (Bulk)',
-                catatan_bayar: 'Pelunasan otomatis terurut (FIFO)',
-                updated_at: now
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button id="btnConfirmCancel" style="flex: 1; padding: 12px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #555;">Batal</button>
+                <button id="btnConfirmOK" style="flex: 1; padding: 12px; border: none; background: #27ae60; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Ya, Bayar</button>
+            </div>
+        </div>
+        <style>@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }</style>
+    `;
+    
+    document.body.appendChild(modal);
+
+    document.getElementById('btnConfirmCancel').onclick = () => modal.remove();
+    document.getElementById('btnConfirmOK').onclick = async () => {
+        modal.remove();
+        await prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, nominal, bulan);
+    };
+}
+
+
+async function uploadAtauDownloadStruk(canvas, fileNamePrefix) {
+    try {
+        const dataUrl = canvas.toDataURL("image/png");
+        let finalUrl = null;
+
+        try {
+            const blob = await (await fetch(dataUrl)).blob();
+            const formData = new FormData();
+            formData.append('image', blob);
+            
+            // API KEY LU ADA DI SINI
+            const response = await fetch('https://api.imgbb.com/1/upload?key=a49ed3d489c6e1745b4948e06e5eee15', {
+                method: 'POST',
+                body: formData
             });
+            
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.url) {
+                finalUrl = result.data.url;
+            } else {
+                throw new Error("Upload Gagal");
+            }
+
+        } catch (uploadError) {
+            console.warn("Upload Gagal, Download Manual:", uploadError);
+            
+            // Download Otomatis Jika Gagal
+            const downloadLink = document.createElement('a');
+            downloadLink.href = dataUrl;
+            downloadLink.download = `${fileNamePrefix}.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            alert("Upload gagal. Gambar didownload otomatis. Silakan kirim manual.");
+            return null;
         }
 
-        await batch.commit();
-
-        hideLoading();
-        
-        // Tutup Modal Detail
-        forceCloseModal('modalDetailTagihanFull');
-
-        showToast('success', 'Berhasil', `${jumlahYangDibayar} Tagihan (Terlama ke Terbaru) berhasil dilunasi.`);
-
-        // Refresh Data
-        if (currentPage === 'tagihan') await loadTagihanData();
-        if (currentPage === 'dashboard') await renderDashboard();
+        return finalUrl;
 
     } catch (error) {
+        console.error("Error fungsi upload:", error);
+        return null;
+    }
+}
+
+// ==========================================
+// FUNGSI HELPER: AMBIL PENGATURAN STRUK (FOOTER & WARNA)
+// ==========================================
+function getStrukSettings() {
+    // Ambil dari localStorage, kalau kosong pakai default
+    const savedSettings = localStorage.getItem('xbill_struk_settings');
+    
+    if (savedSettings) {
+        return JSON.parse(savedSettings);
+    }
+
+    // Default Settings
+    return {
+        themeColor: '#000000', // Default Hitam (Thermal)
+        footerText1: 'Terima Kasih atas kepercayaan Anda',
+        footerText2: 'Simpan struk ini sebagai bukti pembayaran yang sah.',
+        showLogo: true
+    };
+}
+
+// ==========================================
+//  FUNGSI PROSES BAYAR & UPDATE TAMPILAN NOTA
+// (BARU - TAMBAHKAN INI)
+// ==========================================
+async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
+    try {
+        // 1. UPDATE DATABASE
+        const ref = db.collection('tagihan').doc(tagihanId);
+        const tglSekarang = moment().format('DD MMMM YYYY, HH:mm');
+
+        await ref.update({
+            status: 'lunas',
+            tanggal_bayar: tglSekarang,
+            metode_bayar: 'Tunai / Transfer',
+            catatan_bayar: 'Lunas via Web App',
+            updated_at: new Date().toISOString()
+        });
+
         hideLoading();
-        console.error("Error execute pay all direct:", error);
+        showToast('success', 'Berhasil', 'Pembayaran Lunas!');
+
+        // 2. UPDATE TAMPILAN TOMBOL
+        const btnBayar = document.getElementById('btnBayarStruk');
+        const btnBatal = document.getElementById('btnBatalStruk');
+        const btnKirim = document.getElementById('btnKirimWA');
+        const statusText = document.getElementById('notaStatusText');
+        const btnContainer = document.getElementById('notaFooterContainer');
+        const strukElement = document.getElementById('strukPrintable');
+
+        if (btnContainer) {
+            if (btnBayar) btnBayar.style.display = 'none';
+            if (btnBatal) btnBatal.style.display = 'none';
+
+            // Buat Tombol Selesai
+            if (!document.getElementById('btnSelesaiStruk')) {
+                const btnBaru = document.createElement('button');
+                btnBaru.id = 'btnSelesaiStruk';
+                btnBaru.className = 'btn';
+                btnBaru.style.cssText = 'width: 100%; background: #2ecc71; color: white; padding: 12px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-top: 10px; border: none; cursor: pointer;';
+                btnBaru.innerHTML = '<i class="fas fa-check-circle"></i> SELESAI';
+                btnContainer.appendChild(btnBaru);
+                
+                btnBaru.onclick = () => {
+                    document.getElementById('strukOverlay').remove();
+                    if (typeof loadTagihanData === 'function') loadTagihanData();
+                };
+            }
+
+            // --- LOGIKA TOMBOL KIRIM WA (SHARE API) ---
+            if (btnKirim) {
+                btnKirim.removeAttribute('disabled');
+                btnKirim.style.background = '#25D366';
+                btnKirim.style.color = 'white';
+                btnKirim.style.cursor = 'pointer';
+                btnKirim.style.opacity = '1';
+                btnKirim.innerHTML = '<i class="fas fa-share"></i> KIRIM KE WA';
+
+                btnKirim.onclick = async function() {
+                    const btnOriginal = this.innerHTML;
+                    
+                    try {
+                        // 1. Ubah jadi Loading
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+                        this.disabled = true;
+
+                        // 2. Ambil elemen nota untuk difoto
+                        const strukEl = document.getElementById('strukPrintable');
+                        if (!strukEl) throw new Error("Elemen nota tidak ditemukan");
+
+                        // 3. CLONE elemen (Agar tombol bawah tidak ikut terfoto)
+                        const cloneStruk = strukEl.cloneNode(true);
+                        const footerClone = cloneStruk.querySelector('#notaFooterContainer');
+                        if (footerClone) footerClone.style.display = 'none';
+
+                        // 4. Render clone ke body (hidden) sebentar
+                        cloneStruk.style.position = 'absolute';
+                        cloneStruk.style.top = '-9999px';
+                        cloneStruk.style.left = '-9999px';
+                        cloneStruk.style.background = 'white';
+                        document.body.appendChild(cloneStruk);
+
+                        // 5. Generate Canvas (Gambar)
+                        const canvas = await html2canvas(cloneStruk, {
+                            scale: 2, 
+                            useCORS: true,
+                            backgroundColor: "#ffffff"
+                        });
+
+                        // 6. Hapus clone
+                        document.body.removeChild(cloneStruk);
+
+                        // 7. Ubah Canvas jadi File Blob (Gambar Asli)
+                        canvas.toBlob(async function(blob) {
+                            if (!blob) throw new Error("Gagal membuat gambar");
+
+                            const fileShare = new File([blob], `Bukti_Bayar_${tagihanId}.png`, { type: 'image/png' });
+                            
+                            // Cek apakah browser support Web Share API
+                            if (navigator.share && navigator.canShare({ files: [fileShare] })) {
+                                try {
+                                    await navigator.share({
+                                        title: 'Bukti Pembayaran',
+                                        text: `Halo Kak ${namaPelanggan}, berikut bukti pembayaran tagihan bulan ${bulan}.`,
+                                        files: [fileShare] 
+                                    });
+                                    
+                                    this.innerHTML = '<i class="fas fa-check"></i> TERKIRIM';
+                                    this.style.background = '#2ecc71';
+                                } catch (shareError) {
+                                    console.log("Share dibatalkan user");
+                                    this.innerHTML = btnOriginal;
+                                    this.disabled = false;
+                                }
+                            } else {
+                                alert("Browser Anda tidak mendukung Share Langsung.");
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `Bukti_Bayar_${tagihanId}.png`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                
+                                this.innerHTML = btnOriginal;
+                                this.disabled = false;
+                            }
+
+                        }, 'image/png');
+
+                    } catch (error) {
+                        console.error("Error:", error);
+                        this.innerHTML = btnOriginal; 
+                        this.disabled = false;
+                        showToast('error', 'Gagal', 'Gagal memproses gambar: ' + error.message);
+                    }
+                };
+            }
+
+            if (statusText) {
+                statusText.textContent = 'LUNAS';
+                statusText.style.color = '#27ae60';
+            }
+        }
+    } catch (error) {
+        hideLoading();
+        console.error("Error bayar:", error);
         showToast('error', 'Gagal', error.message);
     }
 }
+
+
+
 
 
 async function prepareModalPayAll(pelangganId, idsString, totalNominal, bulanString) {
@@ -6874,171 +7402,274 @@ async function prepareModalPayAll(pelangganId, idsString, totalNominal, bulanStr
 
 
 // ============================================
-// FUNGSI BARU: BAYAR SINGLE + STRUK GAMBAR
+// FULL FUNGSI TOMBOL BAYAR (SINGLE & BULK)
 // ============================================
 
-async function bayarTagihanDenganStruk(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
-    console.log("💳 Proses Bayar & DOWNLOAD/LINK WA...");
-
-    // 1. KONFIRMASI
-    if (!confirm(`Bayar tagihan ${bulan} sebesar ${formatRupiah(nominal)} untuk ${namaPelanggan}?\n\nStruk akan di-download dan Link WhatsApp disiapkan.`)) {
-        return;
-    }
-
+// 1. FUNGSI UTAMA: BAYAR TAGIHAN + GENERATE STRUK NOTA LENGKAP
+async function bukaNotaDanKonfirmasi(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
     try {
-        showLoading();
+        // Ambil Data Pelanggan
+        let dataPelanggan = { 
+            nama: namaPelanggan, 
+            alamat: 'Alamat belum diset', 
+            telepon: '-', 
+            paket: 'Paket Umum',
+            id_pelanggan: pelangganId
+        };
 
-        // 2. UPDATE DATABASE
-        const ref = db.collection('tagihan').doc(tagihanId);
-        const now = new Date();
-        const tglHariIni = moment(now).format('DD-MM-YYYY HH:mm');
-
-        await ref.update({
-            status: 'lunas',
-            tanggal_bayar: tglHariIni,
-            metode_bayar: 'Tunai/Transfer',
-            catatan_bayar: 'Lunas via Web App',
-            updated_at: now.toISOString()
-        });
-
-        // 3. GENERATE HTML STRUK
-        const strukContainer = document.createElement('div');
-        // Styling Pasti Muncul di Canvas
-        strukContainer.style.width = '320px'; 
-        strukContainer.style.padding = '20px';
-        strukContainer.style.background = '#ffffff';
-        strukContainer.style.fontFamily = 'monospace, Courier New';
-        strukContainer.style.fontSize = '14px';
-        strukContainer.style.color = '#000000';
-        strukContainer.style.border = '2px solid #000';
-        strukContainer.style.position = 'absolute';
-        strukContainer.style.left = '-9999px';
-        strukContainer.style.top = '0';
-        
-        // Ambil No HP
-        let noHp = '08xxxxxxxxxx';
         try {
             const docPel = await db.collection('pelanggan').doc(pelangganId).get();
-            if(docPel.exists && docPel.data().telepon) {
-                noHp = docPel.data().telepon;
+            if (docPel.exists) {
+                const data = docPel.data();
+                dataPelanggan.nama = data.nama || namaPelanggan;
+                dataPelanggan.alamat = data.alamat || '-';
+                dataPelanggan.telepon = data.telepon || '-';
+                dataPelanggan.paket = data.paket || 'Paket Umum';
+                dataPelanggan.id_pelanggan = docPel.id;
             }
-        } catch(e) {}
+        } catch (e) {
+            console.warn("Gagal ambil detail pelanggan:", e);
+        }
 
-        strukContainer.innerHTML = `
-            <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
-                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">X-BILL ISP</h2>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">Jl. Internet Cepat No. 1</p>
-            </div>
-            
-            <div style="margin-bottom: 15px; font-size: 13px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>Pelanggan:</span>
-                    <strong>${namaPelanggan}</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>Tgl Bayar:</span>
-                    <span>${tglHariIni}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Periode:</span>
-                    <strong>${bulan}</strong>
-                </div>
-            </div>
+        globalDataPelanggan = dataPelanggan;
 
-            <div style="border: 2px solid #000; padding: 10px; text-align: center; background: #f0f0f0; margin-bottom: 15px;">
-                <h3 style="margin: 0; font-size: 16px; text-transform: uppercase;">LUNAS</h3>
-            </div>
+        // Ambil Pengaturan Struk (Warna & Footer)
+        const strukSettings = getStrukSettings();
+        const primaryColor = strukSettings.themeColor; // Warna Header
+        const accentColor = strukSettings.themeColor; // Warna Garis Total
+        const textColor = '#333333'; // Warna Teks Isi
+        const smallTextColor = '#666666'; // Warna Teks Kecil
 
-            <div style="text-align: right; margin-bottom: 20px;">
-                <p style="margin: 0; font-size: 12px;">Total Tagihan</p>
-                <h2 style="margin: 5px 0 0 0; font-size: 24px;">${formatRupiah(nominal)}</h2>
-            </div>
-            
-            <div style="text-align: center; font-size: 11px; border-top: 1px solid #ccc; padding-top: 10px;">
-                <p style="margin: 0;">Terima Kasih atas kepercayaan Anda.</p>
-                <p style="margin: 5px 0 0 0; font-weight: bold;">Simpan struk ini sebagai bukti pembayaran sah.</p>
-            </div>
-        `;
-        
-        document.body.appendChild(strukContainer);
-        await new Promise(r => setTimeout(r, 500));
+        // Buat Tampilan Nota (Overlay)
+        const strukOverlay = document.createElement('div');
+        strukOverlay.id = 'strukOverlay';
+        strukOverlay.style.position = 'fixed';
+        strukOverlay.style.top = '0';
+        strukOverlay.style.left = '0';
+        strukOverlay.style.width = '100%';
+        strukOverlay.style.height = '100%';
+        strukOverlay.style.background = 'rgba(0, 0, 0, 0.85)';
+        strukOverlay.style.zIndex = '999999';
+        strukOverlay.style.display = 'flex';
+        strukOverlay.style.alignItems = 'center';
+        strukOverlay.style.justifyContent = 'center';
+        strukOverlay.style.overflowY = 'auto';
+        strukOverlay.style.padding = '20px';
 
-        // 4. RENDER GAMBAR
-        const canvas = await html2canvas(strukContainer, {
-            scale: 2,
-            backgroundColor: "#ffffff",
-            useCORS: true
-        });
+        const tanggalInvoice = moment().format('DD MMMM YYYY');
+        const noInvoice = `INV/${tagihanId.substring(tagihanId.length - 6).toUpperCase()}`;
 
-        // Hapus Element HTML
-        document.body.removeChild(strukContainer);
-        hideLoading();
-
-        // 5. BUKA MODAL PILIHAN (DOWNLOAD vs WHATSAPP)
-        const modalId = 'modalPilihanStruk';
-        const oldModal = document.getElementById(modalId);
-        if (oldModal) oldModal.remove();
-
-        // Buat Link WA
-        const noWAClean = noHp.replace(/^0/, '62'); // Format 62...
-        const pesanWA = encodeURIComponent(`Halo ${namaPelanggan}, berikut bukti pelunasan tagihan bulan ${bulan} sebesar ${formatRupiah(nominal)}. Terima kasih.`);
-        const linkWA = `https://wa.me/${noWAClean}?text=${pesanWA}`;
-
-        const modal = document.createElement('div');
-        modal.id = modalId;
-        modal.className = 'modal-overlay show';
-        modal.style.zIndex = '1070'; // Di atas modal detail
-        modal.innerHTML = `
-            <div class="modal" style="max-width: 400px;">
-                <div class="modal-header" style="background: var(--primary); color: white;">
-                    <h3 class="modal-title" style="color: white; margin: 0;">Pembayaran Sukses</h3>
-                    <button class="modal-close" style="color: white;" onclick="document.getElementById('${modalId}').remove()">&times;</button>
-                </div>
-                <div class="modal-body" style="text-align: center; padding: 30px;">
-                    <i class="fas fa-check-circle" style="font-size: 60px; color: var(--success); margin-bottom: 20px;"></i>
-                    <h4>Pembayaran Terverifikasi</h4>
-                    <p class="text-muted">Silakan pilih tindakan selanjutnya:</p>
+        // HTML STRUK THERMAL
+        // Style: Font kecil, Padding minimis, Border tipis, Thermal look
+        strukOverlay.innerHTML = `
+             <div style="
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                justify-content: center; 
+                width: 100%;
+            ">
+                <!-- AREA STRUK YANG DIFOTO -->
+                <div id="strukPrintable" style="
+                    background: white; 
+                    width: 320px; 
+                    padding: 15px; 
+                    font-family: 'Courier New', Courier, monospace; 
+                    font-size: 12px; 
+                    color: #333; 
+                    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+                    position: relative; 
+                    border-radius: 5px;
+                    margin-bottom: 15px; /* Jarak ke tombol bawah */
+                ">
                     
-                    <div style="display: grid; gap: 15px; margin-top: 30px;">
-                        <button id="btnDownloadStruk" class="btn btn-success btn-block" style="padding: 15px;">
-                            <i class="fas fa-download"></i> Download Struk (Gambar)
-                        </button>
-                        
-                        <a href="${linkWA}" target="_blank" class="btn btn-info btn-block" style="padding: 15px; text-decoration: none; display: inline-block; color: white;">
-                            <i class="fab fa-whatsapp"></i> Buka WhatsApp & Kirim
-                        </a>
+                    <!-- HEADER STRUK -->
+                    <div style="
+                        text-align: center; 
+                        border-bottom: 2px dashed #000; 
+                        padding-bottom: 10px; 
+                        margin-bottom: 15px;
+                    ">
+                        <h2 style="
+                            margin: 0; 
+                            font-size: 16px; 
+                            font-weight: bold; 
+                            text-transform: uppercase;
+                            color: #000;
+                        ">X-BILL ISP</h2>
+                        <p style="margin: 2px 0 0 0; font-size: 11px;">Billing Management System</p>
+                        <p style="margin: 2px 0 0 0; font-size: 10px; color: #666;">Jl. Merdeka No. 45, Jakarta</p>
                     </div>
+
+                    <!-- INFO TRANSAKSI -->
+                    <div style="margin-bottom: 10px;">
+                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 2px 0; width: 30%; color: #666;">TGL</td>
+                                <td style="padding: 2px 0; font-weight: bold; text-align: right;">${moment().format('DD MMMM YYYY')}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 0; color: #666;">NO</td>
+                                <td style="padding: 2px 0; font-weight: bold; text-align: right;">INV/${tagihanId.substring(tagihanId.length - 6).toUpperCase()}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 0; color: #666;">KASIR</td>
+                                <td style="padding: 2px 0; font-weight: bold; text-align: right;">ADMIN</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- PEMBELI (PELANGGAN) -->
+                    <div style="
+                        border-top: 1px dashed #ccc; 
+                        border-bottom: 1px dashed #ccc; 
+                        padding: 8px 0; 
+                        margin-bottom: 10px;
+                    ">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 2px;">PELANGGAN</div>
+                        <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">${globalDataPelanggan.nama}</div>
+                        <div style="font-size: 10px; color: #666;">${globalDataPelanggan.id_pelanggan}</div>
+                    </div>
+
+                    <!-- ITEM TAGIHAN -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="
+                            display: flex; 
+                            justify-content: space-between; 
+                            font-size: 11px; 
+                            border-bottom: 1px dotted #eee; 
+                            padding-bottom: 5px;
+                        ">
+                            <span>PAKET INTERNET</span>
+                            <span>${formatRupiah(nominal)}</span>
+                        </div>
+                        <div style="
+                            font-size: 10px; 
+                            color: #666; 
+                            margin-top: 2px; 
+                            padding-left: 5px;
+                        ">
+                            ${globalDataPelanggan.paket} (${bulan})
+                        </div>
+                    </div>
+
+                    <!-- TOTAL -->
+                    <div style="
+                        display: flex; 
+                        justify-content: space-between; 
+                        margin-top: 10px; 
+                        padding-top: 5px; 
+                        border-top: 2px solid #000; 
+                        font-weight: bold; 
+                        font-size: 14px;
+                    ">
+                        <span>TOTAL</span>
+                        <span>${formatRupiah(nominal)}</span>
+                    </div>
+
+                    <!-- STATUS -->
+                    <div style="text-align: center; margin-top: 5px; font-size: 11px;">
+                        <div id="notaStatusText" style="font-weight: bold; color: #e74c3c;">BELUM LUNAS</div>
+                    </div>
+
+                    <!-- FOOTER CUSTOM (DARI SETTING) -->
+                    <div style="
+                        margin-top: 20px; 
+                        text-align: center; 
+                        border-top: 1px dashed #ccc; 
+                        padding-top: 10px; 
+                        font-size: 10px; 
+                        color: #666;
+                    ">
+                        <p style="margin: 0 0 5px 0;">Terima Kasih atas kepercayaan Anda</p>
+                        <p style="margin: 0;">Simpan struk ini sebagai bukti pembayaran yang sah.</p>
+                    </div>
+
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); forceCloseModal('modalDetailTagihanFull'); loadTagihanData();">Selesai</button>
+
+                <!-- TOMBOL AKSI (DI BAWAH NOTA) -->
+                <div id="notaFooterContainer" style="
+                    width: 320px; 
+                    display: flex; 
+                    flex-direction: column; 
+                    gap: 10px;
+                ">
+                    <button id="btnBayarStruk" class="btn btn-success" style="
+                        width: 100%; 
+                        padding: 12px; 
+                        border-radius: 5px; 
+                        font-weight: bold; 
+                        font-size: 14px; 
+                        cursor: pointer; 
+                        border:none; 
+                        background-color: #27ae60;
+                    ">
+                        <i class="fas fa-money-bill-wave"></i> BAYAR
+                    </button>
+                    
+                    <button id="btnKirimWA" class="btn" style="
+                        width: 100%; 
+                        background: #bdc3c7; 
+                        color: #7f8c8d; 
+                        padding: 12px; 
+                        border-radius: 5px; 
+                        font-weight: bold; 
+                        font-size: 14px; 
+                        cursor: not-allowed; 
+                        border: none; 
+                        opacity: 0.6;
+                    " disabled>
+                        <i class="fab fa-whatsapp"></i> KIRIM NOTA
+                    </button>
+                    
+                    <button id="btnBatalStruk" class="btn" style="
+                        width: 100%; 
+                        background: #fff; 
+                        color: #e74c3c; 
+                        border: 1px solid #e74c3c; 
+                        padding: 10px; 
+                        border-radius: 5px; 
+                        font-weight: bold; 
+                        font-size: 13px; 
+                        cursor: pointer;
+                    ">
+                        BATAL
+                    </button>
                 </div>
             </div>
         `;
         
-        document.body.appendChild(modal);
-        document.body.style.overflow = 'hidden';
+        document.body.appendChild(strukOverlay);
 
-        // Logic Download Gambar (Convert Canvas ke Data URL agar bisa di-download)
-        const imgData = canvas.toDataURL("image/jpeg", 0.9);
-        const downloadBtn = document.getElementById('btnDownloadStruk');
-        
-        if (downloadBtn) {
-            downloadBtn.onclick = function() {
-                const link = document.createElement('a');
-                link.download = `STRUK_${bulan}_${namaPelanggan.replace(/\s+/g, '_')}.jpg`;
-                link.href = imgData;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+        // Event Tombol Batal
+        const btnBatal = document.getElementById('btnBatalStruk');
+        if(btnBatal) {
+            btnBatal.onclick = function() {
+                document.getElementById('strukOverlay').remove();
+            };
+        }
+
+        // Event Tombol Bayar
+        const btnBayar = document.getElementById('btnBayarStruk');
+        if(btnBayar) {
+            btnBayar.onclick = function() {
+                tampilkanPopUpKonfirmasi(tagihanId, pelangganId, namaPelanggan, nominal, bulan);
             };
         }
 
     } catch (error) {
-        hideLoading();
-        console.error("Error bayar:", error);
-        showToast('error', 'Gagal', 'Gagal proses pembayaran: ' + error.message);
+        console.error("Error buka nota:", error);
+        showToast('error', 'Error', 'Gagal membuka nota');
     }
 }
+
+
+
+
+
+// ============================================
+// FUNGSI KIRIM ULANG STRUK (JIKA SUDAH LUNAS)
+// ============================================
 
 async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
     console.log("📤 Kirim Ulang Struk...");
@@ -7062,9 +7693,11 @@ async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
         strukContainer.style.left = '-9999px'; 
         
         strukContainer.innerHTML = `
-            <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
                 <h2 style="margin: 0; font-size: 18px; font-weight: bold;">X-BILL ISP</h2>
+                <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
             </div>
+            
             <div style="margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between;">
                     <span>Pelanggan:</span>
@@ -7075,9 +7708,11 @@ async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
                     <span>${tglBayarStr}</span>
                 </div>
             </div>
-            <div style="border: 1px solid #000; padding: 8px; text-align: center; background: #f0f0f0; margin-bottom: 10px; font-weight: bold;">
-                STATUS: LUNAS
+
+            <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 10px 0; margin: 10px 0; text-align: center;">
+                <strong>BUKTI PEMBAYARAN</strong>
             </div>
+
             <div style="margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between;">
                     <span>Periode:</span>
@@ -7088,34 +7723,30 @@ async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
                     <span>${formatRupiah(nominal)}</span>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 15px; font-size: 11px;">
-                <p style="margin: 0;">Terima Kasih</p>
+
+            <div style="text-align: center; margin-top: 15px; font-weight: bold;">
+                STATUS: LUNAS
+            </div>
+
+            <div style="text-align: center; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; font-size: 11px;">
+                Terima Kasih<br>
+                Simpan struk ini sebagai bukti pembayaran yang sah.
             </div>
         `;
         
         document.body.appendChild(strukContainer);
         await new Promise(r => setTimeout(r, 300));
 
-        const canvas = await html2canvas(strukContainer, { scale: 2, backgroundColor: "#ffffff" });
-        document.body.removeChild(strukContainer);
-
-        canvas.toBlob(async function(blob) {
-            const file = new File([blob], "struk_ulang.jpg", { type: "image/jpeg" });
-
-            if (navigator.share) {
-                const pesanWA = `Bukti pelunasan tagihan bulan ${bulan} - ${namaPelanggan}`;
-                await navigator.share({
-                    title: 'Bukti Lunas',
-                    text: pesanWA,
-                    files: [file]
-                });
-                hideLoading();
-            } else {
-                hideLoading();
-                alert("Browser tidak support share.");
-            }
-        }, 'image/jpeg', 0.8);
-
+        // NOTE: Untuk sharing gambar ke WA via browser, biasanya butuh API backend tambahan
+        // Di sini kita simulasi dengan membuka WA text biasa saja karena keterbatasan client-side only
+        const noWA = "62" + (await getNomorTeleponPelanggan(tagihanId)).replace(/^0/, '');
+        const pesanWA = `*BUKTI PELUNASAN TAGIHAN*\n\nHalo Kak ${namaPelanggan},\n\nBerikut adalah bukti pelunasan tagihan bulan ${bulan} sebesar ${formatRupiah(nominal)}.\n\nStatus: LUNAS\nTanggal: ${tglBayarStr}\n\nTerima kasih.`;
+        const urlWA = `https://wa.me/${noWA}?text=${encodeURIComponent(pesanWA)}`;
+        
+        window.open(urlWA, '_blank');
+        
+        hideLoading();
+        
     } catch (error) {
         hideLoading();
         console.error("Error:", error);
@@ -7123,164 +7754,16 @@ async function kirimUlangStruk(tagihanId, namaPelanggan, nominal, bulan) {
     }
 }
 
-async function bayarTagihanDenganStruk(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
-    console.log("💳 PROSES BAYAR & WA (ONE CLICK)...");
-
+// Helper untuk ambil nomor telepon jika perlu
+async function getNomorTeleponPelanggan(tagihanId) {
     try {
-        // 1. GENERATE HTML STRUK DULU (SEBELUM CONFIRM)
-        const strukContainer = document.createElement('div');
-        strukContainer.id = 'strukOverlay';
-        strukContainer.style.position = 'fixed';
-        strukContainer.style.top = '0';
-        strukContainer.style.left = '0';
-        strukContainer.style.width = '100%';
-        strukContainer.style.height = '100%';
-        strukContainer.style.background = 'rgba(0,0,0,0.85)';
-        strukContainer.style.zIndex = '99999';
-        strukContainer.style.display = 'flex';
-        strukContainer.style.alignItems = 'center';
-        strukContainer.style.justifyContent = 'center';
-        strukContainer.style.fontFamily = 'Courier New, monospace';
-        
-        // Ambil No HP Dulu (Agar bisa langsung WA)
-        let teleponPelanggan = "";
-        try {
-            const docPel = await db.collection('pelanggan').doc(pelangganId).get();
-            if(docPel.exists) teleponPelanggan = docPel.data().telepon || "";
-        } catch(e) {}
-        
-        const noWA = teleponPelanggan ? "62" + teleponPelanggan.replace(/^0/, '') : '';
-        const pesan = `Halo ${namaPelanggan}, berikut bukti lunas tagihan ${bulan} sebesar ${formatRupiah(nominal)}.`;
-        const urlWA = `https://wa.me/${noWA}?text=${encodeURIComponent(pesan)}`;
-
-        // ISI HTML STRUK
-        strukContainer.innerHTML = `
-            <div style="background: white; width: 320px; padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: center; position: relative;">
-                <button onclick="document.getElementById('strukOverlay').remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
-                
-                <div style="border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 15px;">
-                    <h2 style="margin: 0; font-size: 22px;">X-BILL ISP</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 12px;">Billing System</p>
-                </div>
-                
-                <div style="margin-bottom: 15px; text-align: left; font-size: 14px;">
-                    <div><strong>${namaPelanggan}</strong></div>
-                    <div style="margin-top: 5px;">Periode: ${bulan}</div>
-                </div>
-
-                <div style="border: 2px solid #000; padding: 10px; margin-bottom: 15px; background: #f0fff4;">
-                    <strong>LUNAS</strong>
-                </div>
-
-                <div style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">
-                    ${formatRupiah(nominal)}
-                </div>
-                
-                <!-- TOMBOL WA (LANGSUNG TRIGGER) -->
-                <a href="${urlWA}" target="_blank" id="linkWADirect" style="display: block; background: #25D366; color: white; text-decoration: none; padding: 12px; border-radius: 5px; font-weight: bold; margin-bottom: 10px;">
-                    <i class="fab fa-whatsapp"></i> BUKA WHATSAPP
-                </a>
-                
-                <!-- TOMBOL KONFIRMASI DATABASE (HANYA SETELAH LIHAT STRUK) -->
-                <button id="btnSimpanDB" style="background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; cursor: pointer; margin-bottom: 5px;">
-                    <i class="fas fa-save"></i> SIMPAN STATUS LUNAS
-                </button>
-                
-                <p style="font-size: 11px; color: #666; margin: 0;">
-                    1. Buka WA dulu<br>2. Screenshot gambar ini<br>3. Kirim ke pelanggan<br>4. Klik "Simpan Status Lunas"
-                </p>
-            </div>
-        `;
-        
-        document.body.appendChild(strukContainer);
-
-        // LOGIC TOMBOL SIMPAN DB
-        document.getElementById('btnSimpanDB').onclick = async function() {
-            try {
-                showLoading();
-                // Update DB
-                const ref = db.collection('tagihan').doc(tagihanId);
-                const now = new Date().toISOString();
-                const tglHariIni = moment().format('DD-MM-YYYY HH:mm');
-
-                await ref.update({
-                    status: 'lunas',
-                    tanggal_bayar: tglHariIni,
-                    metode_bayar: 'Tunai',
-                    catatan_bayar: 'Lunas via Web App',
-                    updated_at: now
-                });
-
-                document.getElementById('strukOverlay').remove();
-                hideLoading();
-                showToast('success', 'Berhasil', 'Status tagihan diperbarui menjadi LUNAS.');
-                
-                // Refresh Data
-                if (currentPage === 'tagihan') await loadTagihanData();
-                forceCloseModal('modalDetailTagihanFull');
-
-            } catch (error) {
-                hideLoading();
-                alert("Gagal menyimpan: " + error.message);
-            }
-        };
-
-    } catch (error) {
-        console.error("Error:", error);
-        showToast('error', 'Error', error.message);
-    }
-}
-
-
-// ============================================
-// FUNGSI BARU: EKSEKUSI LANGSUNG (LANGSUNG PROSES, GAK PAKE FORM)
-// ============================================
-
-async function executePayAllDirect(pelangganId, idsString, totalNominal) {
-    console.log("💳 PROSES LUNAS LANGSUNG...");
-    console.log("IDs:", idsString);
-    console.log("Total:", totalNominal);
-
-    if (!confirm(`Konfirmasi pembayaran lunas sebesar ${formatRupiah(totalNominal)}?`)) {
-        return;
-    }
-
-    try {
-        showLoading();
-
-        const tagihanIds = idsString.split(',');
-        const batch = db.batch();
-        const now = new Date().toISOString();
-        const tglHariIni = moment().format('DD-MM-YYYY');
-
-        tagihanIds.forEach(id => {
-            const ref = db.collection('tagihan').doc(id);
-            batch.update(ref, {
-                status: 'lunas',
-                tanggal_bayar: tglHariIni,
-                metode_bayar: 'Tunai (Bulk)',
-                catatan_bayar: 'Pelunasan melalui menu Rincian Tagihan',
-                updated_at: now
-            });
-        });
-
-        await batch.commit();
-
-        hideLoading();
-        
-        // Tutup Modal Detail
-        forceCloseModal('modalDetailTagihan');
-
-        showToast('success', 'Berhasil', `${tagihanIds.length} Tagihan berhasil dilunasi.`);
-
-        // Refresh Data
-        if (currentPage === 'tagihan') await loadTagihanData();
-        if (currentPage === 'dashboard') await renderDashboard();
-
-    } catch (error) {
-        hideLoading();
-        console.error("Error execute pay all direct:", error);
-        showToast('error', 'Gagal', error.message);
+        const doc = await db.collection('tagihan').doc(tagihanId).get();
+        if(doc.exists && doc.data().pelanggan_telepon) {
+            return doc.data().pelanggan_telepon;
+        }
+        return "-";
+    } catch(e) {
+        return "-";
     }
 }
 
@@ -7390,32 +7873,320 @@ function applyTagihanFilters() {
 
 
 // ============================================
+// FUNGSI SHOW PAYMENT CONFIRMATION (POP UP)
+// ============================================
+
+function showPaymentConfirmation(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
+    console.log("⚠️ MENAMPILKAN POP UP KONFIRMASI...");
+
+    // MODAL KONFIRMASI
+    const modalConfirm = document.createElement('div');
+    modalConfirm.style.position = 'fixed';
+    modalConfirm.style.top = '0';
+    modalConfirm.style.left = '0';
+    modalConfirm.style.width = '100%';
+    modalConfirm.style.height = '100%';
+    modalConfirm.style.background = 'rgba(0, 0, 0, 0.7)';
+    modalConfirm.style.zIndex = '1000000'; 
+    modalConfirm.style.display = 'flex';
+    modalConfirm.style.alignItems = 'center';
+    modalConfirm.style.justifyContent = 'center';
+    
+    modalConfirm.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4); animation: modalPop 0.3s ease;">
+            <div style="width: 70px; height: 70px; background: #e74c3c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 30px;">
+                <i class="fas fa-question"></i>
+            </div>
+            <h3 style="color: #2c3e50; margin: 0 0 10px 0;">Konfirmasi Pembayaran</h3>
+            <p style="color: #7f8c8d; margin: 0 0 20px 0;">Anda akan memproses pembayaran untuk:</p>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <small>Pelanggan:</small> <strong>${namaPelanggan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <small>Periode:</small> <strong>${bulan}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 10px;">
+                    <small style="font-weight: bold;">Total:</small> <strong style="color: #e74c3c; font-size: 18px;">${formatRupiah(nominal)}</strong>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="btnConfirmCancel" style="flex: 1; padding: 12px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #555;">Batal</button>
+                <button id="btnConfirmOK" style="flex: 1; padding: 12px; border: none; background: #27ae60; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Lanjut Bayar</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalConfirm);
+
+    // HANDLE BUTTONS DI MODAL KONFIRMASI
+    document.getElementById('btnConfirmCancel').onclick = () => modalConfirm.remove();
+    
+    document.getElementById('btnConfirmOK').onclick = () => {
+        modalConfirm.remove();
+        // JIKA OK -> BARU MUNCULKAN NOTA (PREVIEW)
+        bayarTagihanDenganStruk(tagihanId, pelangganId, namaPelanggan, nominal, bulan);
+    };
+}
+
+
+
+// ============================================
 // FUNGSI PEMBANTU CLICK TOMBOL BAYAR
 // ============================================
 
 function handleBayarClick(btnElement) {
-    // Ambil data dari atribut tombol
     const id = btnElement.getAttribute('data-id');
     const pid = btnElement.getAttribute('data-pid');
-    const nama = btnElement.getAttribute('data-nama'); // Sudah aman dari spasi
+    const nama = btnElement.getAttribute('data-nama'); 
     const nominal = parseInt(btnElement.getAttribute('data-nominal')) || 0;
     const bulan = btnElement.getAttribute('data-bulan');
 
-    console.log("🖱️ Tombol Bayar diklik:", { id, pid, nama, nominal, bulan });
+    if (!id || !pid || !nominal) return showToast('error', 'Error', 'Data tidak lengkap');
 
-    // Validasi sederhana
-    if (!id || !pid || !nominal) {
-        showToast('error', 'Error Data', 'Data tagihan tidak lengkap. Silakan refresh halaman.');
-        return;
+    bukaNotaDanKonfirmasi(id, pid, nama, nominal, bulan);
+}
+
+
+
+// ============================================
+// 2. FUNGSI RENDER TABEL TAGIHAN (FIXED - TOMBOL AKTIF)
+// ============================================
+
+
+async function loadTagihanData() {
+    const table = document.getElementById('tagihanTable');
+    if (!table) return;
+    
+    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div></td></tr>`;
+
+    try {
+        // 1. AMBIL DAFTAR PELANGGAN YANG MASIH ADA
+        const pelangganSnapshot = await db.collection('pelanggan').get();
+        const pelangganIds = [];
+        const pelangganMap = {};
+        
+        pelangganSnapshot.forEach(doc => {
+            const p = doc.data();
+            pelangganIds.push(doc.id);
+            pelangganMap[doc.id] = {
+                alamat: p.alamat || '-',
+                nama: p.nama || '-',
+                telepon: p.telepon || '-'
+            };
+        });
+
+        if (pelangganIds.length === 0) {
+            table.innerHTML = `<tr><td colspan="6" class="text-center">Tidak ada data pelanggan.</td></tr>`;
+            return;
+        }
+
+        // 2. AMBIL HANYA TAGIHAN YANG PELANGGANNYA MASIH ADA
+        let tagihanData = [];
+        
+        if (pelangganIds.length <= 10) {
+            // JIKA PELANGGAN <= 10, AMBIL SEKALIGUS
+            const tagihanSnapshot = await db.collection('tagihan')
+                .where('pelanggan_id', 'in', pelangganIds)
+                .get();
+            
+            tagihanSnapshot.forEach(doc => {
+                tagihanData.push({ id: doc.id, data: doc.data() });
+            });
+        } else {
+            // JIKA PELANGGAN > 10, AMBIL PER BATCH (FIREBASE LIMIT 10)
+            for (let i = 0; i < pelangganIds.length; i += 10) {
+                const batchIds = pelangganIds.slice(i, i + 10);
+                const batchSnapshot = await db.collection('tagihan')
+                    .where('pelanggan_id', 'in', batchIds)
+                    .get();
+                
+                batchSnapshot.forEach(doc => {
+                    tagihanData.push({ id: doc.id, data: doc.data() });
+                });
+            }
+        }
+
+        if (tagihanData.length === 0) {
+            table.innerHTML = `<tr><td colspan="6" class="text-center">Belum ada tagihan.</td></tr>`;
+            return;
+        }
+
+        console.log(`✅ ${tagihanData.length} tagihan valid (pelanggan masih ada)`);
+
+        // 3. GROUP BY PELANGGAN
+        const groupedMap = {};
+        
+        tagihanData.forEach(item => {
+            const t = item.data;
+            const pid = t.pelanggan_id;
+            
+            if (!groupedMap[pid]) {
+                groupedMap[pid] = {
+                    pelanggan_id: pid,
+                    pelanggan_nama: pelangganMap[pid].nama, 
+                    pelanggan_telepon: pelangganMap[pid].telepon,
+                    pelanggan_alamat: pelangganMap[pid].alamat,
+                    list_tagihan: [], 
+                    total_nominal: 0
+                };
+            }
+            
+            groupedMap[pid].list_tagihan.push(t);
+            if (t.status !== 'lunas') {
+                groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
+            }
+        });
+
+        const groupedData = Object.values(groupedMap);
+        
+        // 4. PAGINATION
+        const itemsPerPage = 10;
+        const totalData = groupedData.length; 
+        const totalPages = Math.ceil(totalData / itemsPerPage);
+        
+        if (currentPageTagihan > totalPages) currentPageTagihan = 1;
+        const startIndex = (currentPageTagihan - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = groupedData.slice(startIndex, endIndex);
+
+        // 5. RENDER TABEL
+        table.innerHTML = pageData.map((item) => {
+            const listBelumLunas = item.list_tagihan.filter(t => t.status !== 'lunas');
+            const jumlahBulanBelumLunas = listBelumLunas.length;
+            
+            const isAllLunas = jumlahBulanBelumLunas === 0;
+            
+            let displayBulan = `<strong>${jumlahBulanBelumLunas} Bulan</strong>`;
+            let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
+
+            if (isAllLunas) {
+                displayBulan = `<span style="color: var(--gray);">-</span>`;
+                displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
+            }
+
+            let tombolBayar = '';
+            if (!isAllLunas) {
+                const tagihanPertama = listBelumLunas[0]; 
+                const idTagihan = tagihanPertama.id;
+                
+                tombolBayar = `
+                    <button class="btn btn-sm btn-success" 
+                        data-id="${idTagihan}"
+                        data-pid="${item.pelanggan_id}"
+                        data-nama="${item.pelanggan_nama}"
+                        data-nominal="${tagihanPertama.jumlah}"
+                        data-bulan="${tagihanPertama.bulan}"
+                        onclick="handleBayarClick(this)"
+                        title="Bayar Tagihan">
+                        <i class="fas fa-money-bill-wave"></i> Bayar
+                    </button>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td>
+                        <strong>${item.pelanggan_nama}</strong><br>
+                        <small class="text-muted">${item.pelanggan_telepon}</small>
+                    </td>
+                    <td>
+                        <small style="color: #666;">${item.pelanggan_alamat}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
+                            ${displayBulan}
+                        </span>
+                    </td>
+                    <td>${displayNominal}</td>
+                    <td>
+                        ${isAllLunas 
+                            ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Lunas</span>' 
+                            : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum</span>'}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            ${tombolBayar}
+                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')" title="Detail">
+                                <i class="fas fa-list"></i> Detail
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // 6. RENDER PAGINATION
+        renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
+        
+    } catch (error) {
+        console.error("Error load tagihan:", error);
+        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
+}
 
-    // Panggil fungsi utama pembayaran dengan struk
-    // Pastikan fungsi 'bayarTagihanDenganStruk' ada di kode Anda
-    if (typeof bayarTagihanDenganStruk === 'function') {
-        bayarTagihanDenganStruk(id, pid, nama, nominal, bulan);
-    } else {
-        console.error("❌ Fungsi 'bayarTagihanDenganStruk' tidak ditemukan!");
-        showToast('error', 'System Error', 'Modul pembayaran belum terload. Refresh halaman (F5).');
+
+
+
+// FUNGSI applyTagihanFilters YANG HARUS ADA
+function applyTagihanFilters(data) {
+    if (!data || !Array.isArray(data)) {
+        console.error("❌ applyTagihanFilters: data bukan array");
+        return [];
+    }
+    
+    const bulanFilter = document.getElementById('filterBulan')?.value || '';
+    const statusFilter = document.getElementById('filterStatusTagihan')?.value || '';
+    const searchFilter = document.getElementById('searchTagihan')?.value || '';
+    
+    return data.filter(tagihan => {
+        // Filter bulan
+        if (bulanFilter && tagihan.bulan !== bulanFilter) return false;
+        
+        // Filter status
+        if (statusFilter && tagihan.status !== statusFilter) return false;
+        
+        // Filter search
+        if (searchFilter) {
+            const searchLower = searchFilter.toLowerCase();
+            return (
+                (tagihan.pelanggan_nama && tagihan.pelanggan_nama.toLowerCase().includes(searchLower)) ||
+                (tagihan.id && tagihan.id.toLowerCase().includes(searchLower)) ||
+                (tagihan.bulan && tagihan.bulan.includes(searchFilter))
+            );
+        }
+        
+        return true;
+    });
+}
+
+
+// ============================================
+// FUNGSI PENCARIAN TAGIHAN (SEARCH)
+// ============================================
+
+function filterTagihanSearch(keyword) {
+    const table = document.getElementById('tagihanTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    const filterLower = keyword.toLowerCase();
+    
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName('td');
+        
+        // Cari di Nama (td 0) atau Alamat (td 1)
+        const textNama = cells[0].textContent || "";
+        const textAlamat = cells[1].textContent || "";
+        
+        if (textNama.toLowerCase().indexOf(filterLower) > -1 || 
+            textAlamat.toLowerCase().indexOf(filterLower) > -1) {
+            row.style.display = ""; 
+        } else {
+            row.style.display = "none"; 
+        }
     }
 }
         
@@ -8302,86 +9073,57 @@ if (paketSelect && paketData) {
 // ============================================
 
 async function savePelanggan() {
-    console.log("💾 Menyimpan data pelanggan...");
-    
-    // 1. CARI TOMBOL SIMPAN (Supaya bisa loading state)
-    const btn = document.querySelector('#modalPelanggan .btn-primary');
-    const originalText = btn ? btn.innerHTML : '';
-    
     try {
-        // 2. AMBIL VALUE DARI FORM
-        const id = document.getElementById('pelangganId').value;
-        const nama = document.getElementById('pelangganNama').value;
-        const telepon = document.getElementById('pelangganTelepon').value;
-        const alamat = document.getElementById('pelangganAlamat').value;
-        const paket = document.getElementById('pelangganPaket').value;
-        const harga = parseInt(document.getElementById('pelangganHarga').value) || 0;
-        const tglPasang = document.getElementById('pelangganTanggalPasang').value;
-        const status = document.getElementById('pelangganStatus').value;
-        const catatan = document.getElementById('pelangganCatatan').value;
+        const pelangganId = document.getElementById('pelangganId').value;
+        const tanggalPasang = document.getElementById('pelangganTanggalPasang').value;
         
-        // 3. VALIDASI SEDERHANA
-        if (!nama || !telepon || !alamat || !paket) {
-            showToast('error', 'Error', 'Harap lengkapi data Nama, Telepon, Alamat, dan Paket');
+        // VALIDASI TANGGAL PASANG
+        if (!tanggalPasang) {
+            showToast('error', 'Error', 'Tanggal pasang harus diisi');
             return;
         }
         
-        // 4. LOADING STATE
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+        // Pastikan format tanggal benar
+        const tanggalPasangMoment = moment(tanggalPasang, 'YYYY-MM-DD');
+        if (!tanggalPasangMoment.isValid()) {
+            showToast('error', 'Error', 'Format tanggal pasang tidak valid');
+            return;
         }
         
-        // 5. SIMPAN KE DATABASE
-        const data = {
-            nama: nama,
-            telepon: telepon,
-            alamat: alamat,
-            paket: paket,
-            harga: harga,
-            tanggal_pasang: tglPasang,
-            status: status,
-            catatan: catatan,
+        // Buat data pelanggan
+        const pelangganData = {
+            nama: document.getElementById('pelangganNama').value,
+            telepon: document.getElementById('pelangganTelepon').value,
+            alamat: document.getElementById('pelangganAlamat').value,
+            paket: document.getElementById('pelangganPaket').value,
+            harga: parseFloat(document.getElementById('pelangganHarga').value) || 0,
+            tanggal_pasang: tanggalPasangMoment.format('YYYY-MM-DD'), // Simpan dalam format ISO
+            status: document.getElementById('pelangganStatus').value,
+            koordinat: document.getElementById('pelangganKoordinat').value,
+            catatan: document.getElementById('pelangganCatatan').value,
             updated_at: new Date().toISOString()
         };
         
-        if (id) {
-            // UPDATE DATA LAMA
-            await db.collection('pelanggan').doc(id).update(data);
-            showToast('success', 'Berhasil', 'Data pelanggan diperbarui');
-        } else {
-            // TAMBAH DATA BARU (Jika ID kosong)
-            data.created_at = new Date().toISOString();
-            data.email = telepon + '@xbill.com'; // Auto email
-            await db.collection('pelanggan').add(data);
+        // Jika pelanggan baru, tambah created_at
+        if (!pelangganId) {
+            pelangganData.created_at = new Date().toISOString();
+            const newId = `CUST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            await db.collection('pelanggan').doc(newId).set(pelangganData);
             showToast('success', 'Berhasil', 'Pelanggan baru ditambahkan');
+        } else {
+            // Update pelanggan existing
+            await db.collection('pelanggan').doc(pelangganId).update(pelangganData);
+            showToast('success', 'Berhasil', 'Data pelanggan diperbarui');
         }
         
-        // 6. LOG AKTIVITAS
-        await db.collection('aktivitas').add({
-            aktivitas: id ? `Edit pelanggan: ${nama}` : `Tambah pelanggan: ${nama}`,
-            user: localStorage.getItem('userName') || 'Admin',
-            timestamp: new Date().toISOString()
-        });
-        
-        // 7. TUTUP MODAL & REFRESH
+        // Tutup modal dan refresh data
         forceCloseModal('modalPelanggan');
-        
-        if (currentPage === 'pelanggan') {
-            await loadPelangganData();
-        } else if (currentPage === 'dashboard') {
-            await renderDashboard();
-        }
+        await loadPelangganData();
         
     } catch (error) {
-        console.error("❌ Error save pelanggan:", error);
-        showToast('error', 'Gagal', 'Terjadi kesalahan: ' + error.message);
-    } finally {
-        // Kembalikan tombol ke kondisi normal
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+        console.error("Error save pelanggan:", error);
+        showToast('error', 'Error', 'Gagal menyimpan data pelanggan');
     }
 }
 
@@ -8458,8 +9200,9 @@ async function generateTagihanPertama(pelangganId, pelangganData, tglPasang) {
         
         async function editPelanggan(id) {
     try {
-        console.log("✏️ Membuka edit pelanggan:", id);
+        console.log("✏️ Membuka edit pelanggan (Safe Version):", id);
         
+        // 1. AMBIL DATA PELANGGAN DULU
         const doc = await db.collection('pelanggan').doc(id).get();
         if (!doc.exists) {
             showToast('error', 'Error', 'Data pelanggan tidak ditemukan');
@@ -8468,31 +9211,166 @@ async function generateTagihanPertama(pelangganId, pelangganData, tglPasang) {
         
         const data = doc.data();
         
-        // ISI FORM
-        document.getElementById('pelangganId').value = id;
-        document.getElementById('pelangganNama').value = data.nama || '';
-        document.getElementById('pelangganTelepon').value = data.telepon || '';
-        document.getElementById('pelangganAlamat').value = data.alamat || '';
-        document.getElementById('pelangganPaket').value = data.paket || '';
-        document.getElementById('pelangganHarga').value = data.harga || '';
-        document.getElementById('pelangganTanggalPasang').value = data.tanggal_pasang || '';
-        document.getElementById('pelangganStatus').value = data.status || 'aktif';
-        document.getElementById('pelangganCatatan').value = data.catatan || '';
+        // 2. CEK APAKAH MODAL PELANGGAN SUDAH ADA DI HTML
+        const modalEl = document.getElementById('modalPelanggan');
         
-        // BUKA MODAL
-        const modal = document.getElementById('modalPelanggan');
-        modal.classList.remove('hidden');
-        modal.classList.add('show');
-        modal.style.display = 'flex';
+        if (!modalEl) {
+            console.error("❌ FATAL: Modal Pelanggan TIDAK ADA di HTML!");
+            alert("Error Sistem: Modal pelanggan tidak ditemukan. Silakan refresh halaman.");
+            return;
+        }
+        
+        // 3. PASTIKAN DROPDOWN PAKET ADA DI DALAM MODAL
+        const paketSelect = document.getElementById('pelangganPaket');
+        if (!paketSelect) {
+            console.error("❌ FATAL: Dropdown Paket TIDAK ADA di dalam Modal!");
+            alert("Error Sistem: Input paket tidak ditemukan di form.");
+            return;
+        }
+        
+        // 4. PASTIKAN DATA PAKET SUDAH DIMUAT
+        // Kita coba ambil data paket JIKA belum ada (untuk jaga-jaga)
+        if (!window.paketData || window.paketData.length === 0) {
+            console.log("⚠️ Data paket kosong, mengambil ulang...");
+            try {
+                const snap = await db.collection('paket').get();
+                window.paketData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) {
+                console.error("Gagal ambil paket:", e);
+                window.paketData = [];
+            }
+        }
+
+        // 5. ISI FORM INPUT (BARIS PER BARIS AMAN)
+        // Gunakan optional chaining `?.` untuk mencegah error null
+        const elId = document.getElementById('pelangganId');
+        if(elId) elId.value = id;
+        
+        const elNama = document.getElementById('pelangganNama');
+        if(elNama) elNama.value = data.nama || '';
+        
+        const elTelepon = document.getElementById('pelangganTelepon');
+        if(elTelepon) elTelepon.value = data.telepon || '';
+        
+        const elAlamat = document.getElementById('pelangganAlamat');
+        if(elAlamat) elAlamat.value = data.alamat || '';
+        
+        const elPaket = document.getElementById('pelangganPaket');
+        if(elPaket) elPaket.value = data.paket || '';
+        
+        const elHarga = document.getElementById('pelangganHarga');
+        if(elHarga) elHarga.value = data.harga || '';
+        
+        const elTgl = document.getElementById('pelangganTanggalPasang');
+        if(elTgl) elTgl.value = data.tanggal_pasang || '';
+        
+        const elStatus = document.getElementById('pelangganStatus');
+        if(elStatus) elStatus.value = data.status || 'aktif';
+        
+        const elCatatan = document.getElementById('pelangganCatatan');
+        if(elCatatan) elCatatan.value = data.catatan || '';
+
+        // 6. ISI DROPDOWN PAKET (OPSI MANUAL)
+        if (paketSelect) {
+            // Bersihkan dulu
+            paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
+            
+            // Isi paket
+            if (window.paketData && window.paketData.length > 0) {
+                window.paketData.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.nama;
+                    opt.textContent = p.nama;
+                    // Simpan harga di atribut data agar mudah diambil saat onchange
+                    opt.dataset.harga = p.harga;
+                    paketSelect.appendChild(opt);
+                });
+                
+                console.log(`✅ Dropdown paket terisi: ${window.paketData.length} item.`);
+            } else {
+                console.warn("⚠️ window.paketData kosong saat edit.");
+            }
+            
+            // Set ulang value sesuai data pelanggan
+            if(elPaket) elPaket.value = data.paket || '';
+            
+            // Event listener harga
+            paketSelect.onchange = function() {
+                const harga = this.options[this.selectedIndex].dataset.harga;
+                const elHargaRef = document.getElementById('pelangganHarga');
+                if(elHargaRef) elHargaRef.value = harga || '';
+            };
+        }
+
+        // 7. BUKA MODAL
+        modalEl.classList.remove('hidden');
+        modalEl.classList.add('show');
+        modalEl.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         
-        // Ganti judul modal biar tahu ini edit
-        const judul = modal.querySelector('.modal-title');
+        // Ganti judul
+        const judul = modalEl.querySelector('.modal-title');
         if(judul) judul.innerText = 'Edit Pelanggan';
         
     } catch (error) {
-        console.error("Error:", error);
-        showToast('error', 'Gagal', 'Gagal memuat data pelanggan');
+        console.error("❌ Error fatal edit pelanggan:", error);
+        showToast('error', 'Gagal', 'Terjadi kesalahan sistem: ' + error.message);
+    }
+}
+
+// ============================================
+// FUNGSI KHUSUS UNTUK MENGISI DROPDOWN PAKET
+// ============================================
+
+async function populateDropdownPaket() {
+    console.log("📦 Mengisi Dropdown Paket...");
+    
+    const paketSelect = document.getElementById('pelangganPaket');
+    if (!paketSelect) {
+        console.error("❌ Elemen #pelangganPaket tidak ditemukan!");
+        return;
+    }
+    
+    try {
+        // Ambil data paket (gunakan window.paketData jika ada preload, atau ambil baru)
+        let snapshot;
+        if (window.paketData && window.paketData.length > 0) {
+            console.log("Menggunakan data preload paket");
+            // Tidak perlu await get lagi
+        } else {
+            console.log("Mengambil data paket baru...");
+            snapshot = await db.collection('paket').get();
+            window.paketData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        
+        // Kosongkan dulu
+        paketSelect.innerHTML = '<option value="">-- Pilih Paket --</option>';
+        
+        // Isi Option
+        if (window.paketData && window.paketData.length > 0) {
+            window.paketData.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.nama; // Gunakan NAMA Paket sebagai Value
+                option.textContent = `${p.nama} (${formatRupiah(p.harga)})`;
+                paketSelect.appendChild(option);
+            });
+            
+            console.log(`✅ ${window.paketData.length} paket berhasil diisi ke dropdown.`);
+        } else {
+            console.warn("⚠️ Data paket kosong");
+        }
+        
+        // Setup Event Listener (Hanya sekali)
+        if (!paketSelect.hasListener) {
+            paketSelect.addEventListener('change', function() {
+                const harga = this.options[this.selectedIndex].getAttribute('data-harga');
+                document.getElementById('pelangganHarga').value = harga || '';
+            });
+            paketSelect.hasListener = true;
+        }
+        
+    } catch (error) {
+        console.error("❌ Error populate dropdown:", error);
     }
 }
 
@@ -8589,23 +9467,27 @@ function attachDeleteEvents() {
 
 // FUNGSI UNTUK UPDATE TIMELINE PREVIEW DI MODAL
 function updateArrearsTimeline() {
-    const bulanGenerate = document.getElementById('generateBulan').value;
-    const jatuhTempoHari = document.getElementById('generateJatuhTempo').value || 10;
-    
-    if (!bulanGenerate) return;
-    
-    // Hitung timeline arrears
-    const bulanPemakaian = moment(bulanGenerate).subtract(1, 'month');
-    const bulanJatuhTempo = moment(bulanGenerate).add(1, 'month');
-    
-    // Update preview
-    document.getElementById('previewBulanPemakaian').textContent = bulanPemakaian.format('MMM YYYY');
-    document.getElementById('previewBulanGenerate').textContent = moment(bulanGenerate).format('MMM YYYY');
-    document.getElementById('previewJatuhTempo').textContent = `${jatuhTempoHari} ${bulanJatuhTempo.format('MMM YYYY')}`;
-    
-    // Update summary
-    document.getElementById('summaryBulanPemakaian').textContent = bulanPemakaian.format('MMM YYYY');
-    document.getElementById('summaryBulanJatuhTempo').textContent = `${jatuhTempoHari} ${bulanJatuhTempo.format('MMM YYYY')}`;
+    try {
+        const bulanGenerateInput = document.getElementById('generateBulan').value;
+        const tanggalJatuhTempo = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
+        
+        if (!bulanGenerateInput) return;
+        
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM');
+        const bulanJatuhTempo = bulanGenerate.clone();
+        const bulanPemakaian = bulanGenerate.clone().subtract(1, 'month');
+        
+        document.getElementById('previewBulanPemakaian').textContent = bulanPemakaian.format('MMM YYYY');
+        document.getElementById('previewBulanGenerate').textContent = bulanGenerate.format('MMM YYYY');
+        document.getElementById('previewJatuhTempo').textContent = 
+            `${tanggalJatuhTempo} ${bulanJatuhTempo.format('MMM YYYY')}`;
+        
+        document.getElementById('summaryBulanPemakaian').textContent = bulanPemakaian.format('MMMM YYYY');
+        document.getElementById('summaryBulanJatuhTempo').textContent = bulanJatuhTempo.format('MMMM YYYY');
+        
+    } catch (error) {
+        console.error("Error update timeline:", error);
+    }
 }
 
 // FUNGSI UNTUK LOAD DATA DAN UPDATE PREVIEW
@@ -8647,20 +9529,113 @@ async function loadTunggakanDataForModal() {
 
 // INIT MODAL SAAT DIBUKA
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('modalGenerateTagihan');
-    if (modal) {
-        modal.addEventListener('show', function() {
-            // Set default bulan (bulan ini)
-            document.getElementById('generateBulan').value = moment().format('MM-YYYY');
-            document.getElementById('generateJatuhTempo').value = 10;
-            
-            // Load data dan update timeline
-            setTimeout(() => {
-                loadTunggakanDataForModal();
-            }, 500);
+    // Event listener untuk input bulan generate
+    const bulanGenerateInput = document.getElementById('generateBulan');
+    if (bulanGenerateInput) {
+        // Set default ke bulan sekarang
+        const now = moment();
+        bulanGenerateInput.value = now.format('YYYY-MM');
+        
+        bulanGenerateInput.addEventListener('change', function() {
+            updateArrearsTimeline();
         });
     }
+ // Event listener untuk input tanggal jatuh tempo
+    const jatuhTempoInput = document.getElementById('generateJatuhTempo');
+    if (jatuhTempoInput) {
+        jatuhTempoInput.addEventListener('change', updateArrearsTimeline);
+    }
+    
+    // Event listener untuk filter tunggakan
+    const filterTunggakan = document.getElementById('filterTunggakan');
+    if (filterTunggakan) {
+        filterTunggakan.addEventListener('change', function() {
+            toggleTunggakanFilter();
+            updateArrearsTimeline();
+        });
+    }
+    
+    // Inisialisasi timeline saat pertama kali
+    setTimeout(updateArrearsTimeline, 500);
 });
+
+// ============================================
+// FUNGSI HELPER: FORMAT BULAN UNTUK DISPLAY
+// ============================================
+
+function formatBulanForDisplay(bulanString) {
+    try {
+        // Coba berbagai format
+        let m = moment(bulanString, 'MM-YYYY');
+        if (!m.isValid()) {
+            m = moment(bulanString, 'YYYY-MM');
+        }
+        if (!m.isValid()) {
+            m = moment(bulanString);
+        }
+        
+        if (m.isValid()) {
+            return m.format('MMMM YYYY');
+        }
+        
+        return bulanString; // Fallback ke string asli
+        
+    } catch (error) {
+        return bulanString;
+    }
+}
+
+// ============================================
+// FUNGSI BARU: VALIDASI DAN KONVERSI TANGGAL
+// ============================================
+
+function parseAndValidateDate(dateString, format = null) {
+    try {
+        let m;
+        
+        if (format) {
+            m = moment(dateString, format);
+        } else {
+            // Coba berbagai format umum
+            const formats = [
+                'YYYY-MM-DD',
+                'DD-MM-YYYY', 
+                'MM-DD-YYYY',
+                'YYYY/MM/DD',
+                'DD/MM/YYYY'
+            ];
+            
+            for (const fmt of formats) {
+                m = moment(dateString, fmt, true); // strict mode
+                if (m.isValid()) break;
+            }
+        }
+        
+        if (!m || !m.isValid()) {
+            throw new Error(`Format tanggal tidak valid: ${dateString}`);
+        }
+        
+        // Validasi: tanggal tidak boleh di masa depan jauh atau masa lalu jauh
+        const now = moment();
+        const diffYears = Math.abs(m.diff(now, 'years'));
+        
+        if (diffYears > 10) {
+            throw new Error(`Tanggal tidak realistis: ${m.format('DD/MM/YYYY')}`);
+        }
+        
+        return {
+            moment: m,
+            iso: m.format('YYYY-MM-DD'),
+            display: m.format('DD/MM/YYYY'),
+            database: m.format('YYYY-MM-DD')
+        };
+        
+    } catch (error) {
+        console.error("Error parse date:", error);
+        return null;
+    }
+}
+
 
 // FUNGSI UNTUK EKSEKUSI DELETE (DIPANGGIL DARI MODAL)
 async function executeDelete(id) {
@@ -8848,165 +9823,221 @@ async function executeDelete(id) {
             });
         }
         
-     // ============================================
-// FUNGSI GENERATE TAGIHAN BULK (FIX: URUT TERBALIK & PRORATA)
+// ============================================
+// SCRIPT GENERATE TAGIHAN - SESUAI PERINTAH
 // ============================================
 
 async function generateTagihanBulk() {
-    const submitBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
-    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    console.log("🔘 GENERATE TAGIHAN - SESUAI PERINTAH");
     
     try {
-        showLoading();
+        // 1. AMBIL INPUT
+        const bulanGenerateInput = document.getElementById('generateBulan').value; // "YYYY-MM"
+        const tanggalJatuhTempo = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
         
-        // 1. TARGET BULAN: GENERATE SAMPAI BULAN INI (Saat ini)
-        const todayMoment = moment();
-        const bulanTargetString = todayMoment.format('YYYY-MM'); // "2024-10"
-        
-        const jatuhTempoHari = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
-        const now = new Date();
-        
-        // Ambil semua pelanggan aktif
-        const snapshot = await db.collection('pelanggan').where('status', '==', 'aktif').get();
-        
-        if (snapshot.empty) {
-            hideLoading();
-            showToast('warning', 'Kosong', 'Tidak ada pelanggan aktif.');
+        if (!bulanGenerateInput) {
+            showToast('error', 'Error', 'Pilih bulan generate');
             return;
         }
-
-        // Lock tombol biar gak double click
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Proses...';
+        
+        // 2. LOADING TOMBOL
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        const originalText = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        generateBtn.disabled = true;
+        
+        // 3. PARSE BULAN GENERATE
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM'); // April 2026
+        
+        console.log(`📅 Generate untuk: ${bulanGenerate.format('MMMM YYYY')}`);
+        console.log(`📅 Tanggal jatuh tempo: tgl ${tanggalJatuhTempo} setiap bulan`);
+        
+        // 4. AMBIL SEMUA PELANGGAN AKTIF
+        const pelangganSnapshot = await db.collection('pelanggan')
+            .where('status', '==', 'aktif')
+            .get();
+        
+        if (pelangganSnapshot.empty) {
+            showToast('warning', 'Data Kosong', 'Tidak ada pelanggan aktif');
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+            return;
         }
-
-        let allTagihanOperations = [];
-
-        for (const doc of snapshot.docs) {
-            const pelanggan = doc.data();
-            const pelangganId = doc.id;
-            
-            // PARSING TANGGAL PASANG
-            let tglPasangMoment = moment(pelanggan.tanggal_pasang, 'DD-MM-YYYY');
-            
-            if (!tglPasangMoment.isValid()) {
-                // Coba format lain jika salah
-                tglPasangMoment = moment(pelanggan.tanggal_pasang);
-            }
-
-            if (!tglPasangMoment.isValid()) {
-                console.warn("Tanggal pasang tidak valid untuk:", pelanggan.nama);
-                continue; 
-            }
-
-            // 2. LOGIKA LOOPING: MUNDUR DARI BULAN INI KE BULAN PASANG
-            // Contoh: Sekarang Okt 2024. Pasang Jan 2024.
-            // Loop akan jalan: Okt -> Sep -> ... -> Jan.
-            
-            // Mulai loop dari bulan Target (Sekarang)
-            let currentLoopMoment = moment(bulanTargetString); 
-
-            // Syarat loop: Selama currentLoopMoment >= tglPasangMoment
-            while (currentLoopMoment.isSameOrAfter(tglPasangMoment)) {
-                const bulanSaatIni = currentLoopMoment.format('YYYY-MM'); // "2024-10"
-                const tagihanId = `INV_${pelangganId}_${bulanSaatIni.replace('-', '')}`;
+        
+        console.log(`👥 ${pelangganSnapshot.size} pelanggan aktif ditemukan`);
+        
+        // 5. PROSES GENERATE
+        let totalTagihanDibuat = 0;
+        const batch = db.batch();
+        const now = new Date().toISOString();
+        
+        for (const doc of pelangganSnapshot.docs) {
+            try {
+                const pelanggan = doc.data();
+                const pelangganId = doc.id;
                 
-                // Hitung Nominal
-                let jumlahBayar = pelanggan.harga || 0;
-                let isProrata = false;
-                let ketProrata = "";
-
-                // LOGIKA PRORATA HANYA UNTUK BULAN PERTAMA
-                // Bulan pertama = Bulan di mana tglPasang berada
-                if (currentLoopMoment.isSame(tglPasangMoment, 'month') && currentLoopMoment.isSame(tglPasangMoment, 'year')) {
-                    const hariDalamBulan = currentLoopMoment.daysInMonth();
-                    const tglPasang = tglPasangMoment.date();
-                    const sisaHari = hariDalamBulan - tglPasang + 1;
-
-                    // Hanya prorata jika pasang setelah tanggal 1
-                    if (sisaHari > 0 && sisaHari < hariDalamBulan) {
-                        jumlahBayar = Math.round((jumlahBayar / hariDalamBulan) * sisaHari);
-                        isProrata = true;
-                        ketProrata = `(Prorata ${sisaHari} hari)`;
+                // 6. TENTUKAN TANGGAL PASANG PELANGGAN
+                let tanggalPasang = null;
+                if (pelanggan.tanggal_pasang) {
+                    // COBA BERBAGAI FORMAT
+                    tanggalPasang = moment(pelanggan.tanggal_pasang, 'YYYY-MM-DD');
+                    if (!tanggalPasang.isValid()) {
+                        tanggalPasang = moment(pelanggan.tanggal_pasang, 'DD-MM-YYYY');
+                    }
+                    if (!tanggalPasang.isValid()) {
+                        tanggalPasang = moment(pelanggan.tanggal_pasang);
+                    }
+                    
+                    // KOREKSI TAHUN 2019
+                    if (tanggalPasang.isValid() && tanggalPasang.year() === 2019) {
+                        tanggalPasang.year(2026);
                     }
                 }
-
-                // JATUH TEMPO
-                // Jatuh tempo di bulan BERIKUTNYA dari bulan pemakaian
-                const jatuhTempoMoment = moment(bulanSaatIni).add(1, 'month').date(jatuhTempoHari);
-                const jatuhTempoStr = jatuhTempoMoment.format('DD-MM-YYYY');
-
-                // Masukkan ke array batch (Hanya jika belum ada)
-                // Kita gunakan objek ref db.collection('tagihan').doc()
-                const ref = db.collection('tagihan').doc(tagihanId);
                 
-                allTagihanOperations.push({
-                    ref: ref,
-                    data: {
-                        id: tagihanId,
-                        pelanggan_id: pelangganId,
-                        pelanggan_nama: pelanggan.nama,
-                        pelanggan_telepon: pelanggan.telepon,
-                        pelanggan_email: pelanggan.email || pelanggan.telepon + '@xbill.com',
-                        bulan: bulanSaatIni,
-                        jumlah: jumlahBayar,
-                        status: 'belum',
-                        tanggal_jatuh_tempo: jatuhTempoStr,
-                        tanggal_dibuat: now.toISOString(),
-                        prorata: isProrata,
-                        keterangan: isProrata ? ketProrata : 'Tagihan Reguler',
-                        created_at: now.toISOString(),
-                        updated_at: now.toISOString()
+                if (!tanggalPasang || !tanggalPasang.isValid()) {
+                    tanggalPasang = moment().startOf('month');
+                }
+                
+                console.log(`📅 ${pelanggan.nama}: pasang ${tanggalPasang.format('DD/MM/YYYY')}`);
+                
+                // 7. TENTUKAN BULAN PERTAMA TAGIHAN (BULAN SETELAH PASANG)
+                const bulanPertamaTagihan = tanggalPasang.clone()
+                    .add(1, 'month')
+                    .startOf('month');
+                
+                // 8. GENERATE UNTUK SETIAP BULAN DARI PERTAMA SAMPAI BULAN GENERATE
+                let bulanCurrent = bulanPertamaTagihan.clone();
+                
+                while (bulanCurrent.isSameOrBefore(bulanGenerate, 'month')) {
+                    const bulanKey = bulanCurrent.format('MM-YYYY');
+                    
+                    // 9. CEK APAKAH TAGIHAN SUDAH ADA
+                    const tagihanSudahAda = await cekTagihanSudahAda(pelangganId, bulanKey);
+                    
+                    if (!tagihanSudahAda) {
+                        // 10. HITUNG JUMLAH TAGIHAN
+                        let jumlahTagihan = Number(pelanggan.harga) || 0;
+                        let catatan = 'Tagihan normal';
+                        let isProrata = false;
+                        
+                        // 11. PRORATA HANYA DI BULAN PERTAMA
+                        if (bulanCurrent.isSame(bulanPertamaTagihan, 'month')) {
+                            isProrata = true;
+                            const hariDalamBulanPasang = tanggalPasang.daysInMonth();
+                            const sisaHari = hariDalamBulanPasang - tanggalPasang.date() + 1;
+                            const hargaPerHari = jumlahTagihan / hariDalamBulanPasang;
+                            jumlahTagihan = Math.round(hargaPerHari * sisaHari);
+                            catatan = `Prorata ${sisaHari} hari (pasang: ${tanggalPasang.format('DD/MM/YYYY')})`;
+                        }
+                        
+                        // 12. JATUH TEMPO MASING-MASING BULAN
+                        const jatuhTempoBulanIni = bulanCurrent.clone()
+                            .date(tanggalJatuhTempo)
+                            .format('YYYY-MM-DD');
+                        
+                        // 13. BUAT TAGIHAN
+                        const tagihanId = `INV_${bulanKey.replace('-', '')}_${pelangganId}_${Date.now()}`;
+                        const tagihanRef = db.collection('tagihan').doc(tagihanId);
+                        
+                        const tagihanData = {
+                            id: tagihanId,
+                            pelanggan_id: pelangganId,
+                            pelanggan_nama: pelanggan.nama || '',
+                            pelanggan_telepon: pelanggan.telepon || '',
+                            bulan: bulanKey,
+                            jumlah: jumlahTagihan,
+                            tanggal_jatuh_tempo: jatuhTempoBulanIni, // Jatuh tempo di bulan tagihan
+                            status: 'belum',
+                            created_at: now,
+                            updated_at: now,
+                            metadata: {
+                                is_prorata: isProrata,
+                                catatan: catatan,
+                                tanggal_pasang: tanggalPasang.format('YYYY-MM-DD'),
+                                bulan_generate: bulanGenerateInput
+                            }
+                        };
+                        
+                        batch.set(tagihanRef, tagihanData);
+                        totalTagihanDibuat++;
+                        
+                        console.log(`   ✅ ${bulanKey}: ${formatRupiah(jumlahTagihan)} (jatuh tempo: ${jatuhTempoBulanIni})`);
+                    } else {
+                        console.log(`   ⏭️ ${bulanKey}: sudah ada, skip`);
                     }
-                });
-
-                // Mundur 1 bulan untuk loop berikutnya
-                currentLoopMoment.subtract(1, 'month');
+                    
+                    // LANJUT KE BULAN BERIKUTNYA
+                    bulanCurrent.add(1, 'month');
+                }
+                
+            } catch (error) {
+                console.error(`❌ Error ${doc.id}:`, error);
             }
         }
-
-        // EKSEKUSI BATCH (MAX 500 OPERASI SEKALI JALAN)
-        const MAX_PER_BATCH = 400;
-        let totalCreated = 0;
-
-        for (let i = 0; i < allTagihanOperations.length; i += MAX_PER_BATCH) {
-            const chunk = allTagihanOperations.slice(i, i + MAX_PER_BATCH);
-            const batch = db.batch();
+        
+        // 14. SIMPAN KE DATABASE
+        if (totalTagihanDibuat > 0) {
+            console.log(`💾 Menyimpan ${totalTagihanDibuat} tagihan...`);
+            await batch.commit();
             
-            chunk.forEach(op => {
-                // .set() akan menimpa jika ada, atau membuat baru jika kosong
-                batch.set(op.ref, op.data);
-                totalCreated++;
+            // 15. LOG AKTIVITAS
+            await db.collection('aktivitas').add({
+                aktivitas: `Generate: ${totalTagihanDibuat} tagihan untuk ${bulanGenerate.format('MMMM YYYY')}`,
+                user: currentUser?.displayName || 'System',
+                timestamp: now
             });
             
-            await batch.commit();
+            console.log(`✅ ${totalTagihanDibuat} tagihan berhasil dibuat`);
         }
-
+        
+        // 16. TUTUP MODAL & TAMPILKAN HASIL
         forceCloseModal('modalGenerateTagihan');
         
-        // Restore tombol
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+        if (totalTagihanDibuat > 0) {
+            showToast('success', 'Generate Berhasil', 
+                `${totalTagihanDibuat} tagihan dibuat`);
+            
+            // REFRESH DATA TAGIHAN
+            if (currentPage === 'tagihan') {
+                setTimeout(() => loadTagihanData(), 500);
+            }
+        } else {
+            showToast('info', 'Tidak Ada Tagihan Baru', 
+                'Semua tagihan sudah digenerate');
         }
-
-        hideLoading();
         
-        showToast('success', 'Sukses', `Generate Selesai. ${totalCreated} tagihan berhasil diproses.`);
-
-        if (currentPage === 'tagihan') await loadTagihanData();
-
     } catch (error) {
-        console.error("❌ Error Generate Tagihan:", error);
-        hideLoading();
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+        console.error('❌ Error generate:', error);
+        showToast('error', 'Generate Gagal', error.message);
+    } finally {
+        // RESET TOMBOL
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        if (generateBtn) {
+            generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
+            generateBtn.disabled = false;
         }
-        showToast('error', 'Gagal', error.message);
     }
 }
+
+// ============================================
+// FUNGSI CEK TAGIHAN SUDAH ADA
+// ============================================
+
+async function cekTagihanSudahAda(pelangganId, bulanKey) {
+    try {
+        const snapshot = await db.collection('tagihan')
+            .where('pelanggan_id', '==', pelangganId)
+            .where('bulan', '==', bulanKey)
+            .limit(1)
+            .get();
+        return !snapshot.empty;
+    } catch (error) {
+        console.error(`Error cek tagihan:`, error);
+        return true; // Jika error, anggap sudah ada
+    }
+}
+
+        
 
 // FUNGSI UNTUK AMBIL DATA TUNGGAKAN
 async function getTunggakanData() {
@@ -9407,52 +10438,54 @@ function printInvoiceDetail(tagihanId) {
         // ============================================
         
         function hitungProrata() {
-    const biaya = parseInt(document.getElementById('prorataBiaya').value) || 0;
-    const mulai = document.getElementById('prorataMulai').value;
-    const akhir = document.getElementById('prorataAkhir').value;
-    
-    if (!mulai || !akhir) {
-        showToast('error', 'Error', 'Isi tanggal mulai dan akhir');
-        return;
+    try {
+        const biayaBulanan = parseFloat(document.getElementById('prorataBiaya').value) || 0;
+        const mulaiStr = document.getElementById('prorataMulai').value;
+        const akhirStr = document.getElementById('prorataAkhir').value;
+        
+        if (!mulaiStr || !akhirStr) {
+            showToast('error', 'Error', 'Isi tanggal mulai dan akhir');
+            return;
+        }
+        
+        const tanggalMulai = moment(mulaiStr);
+        const tanggalAkhir = moment(akhirStr);
+        
+        if (!tanggalMulai.isValid() || !tanggalAkhir.isValid()) {
+            showToast('error', 'Error', 'Format tanggal tidak valid');
+            return;
+        }
+        
+        if (tanggalAkhir.isBefore(tanggalMulai)) {
+            showToast('error', 'Error', 'Tanggal akhir harus setelah tanggal mulai');
+            return;
+        }
+        
+        // Hitung jumlah hari
+        const jumlahHari = tanggalAkhir.diff(tanggalMulai, 'days') + 1;
+        document.getElementById('prorataHari').value = jumlahHari;
+        
+        // Hitung prorata: (biaya bulanan / 30) × jumlah hari
+        const hargaPerHari = biayaBulanan / 30;
+        const totalProrata = Math.round(hargaPerHari * jumlahHari);
+        
+        document.getElementById('prorataHasil').textContent = formatRupiah(totalProrata);
+        
+        // Tampilkan detail perhitungan
+        const detail = `
+            Perhitungan:
+            - Biaya bulanan: ${formatRupiah(biayaBulanan)}
+            - Per hari: ${formatRupiah(Math.round(hargaPerHari))}
+            - Jumlah hari: ${jumlahHari} hari
+            - Total prorata: ${formatRupiah(totalProrata)}
+        `;
+        
+        console.log(detail);
+        
+    } catch (error) {
+        console.error("Error hitung prorata:", error);
+        showToast('error', 'Error', 'Gagal menghitung prorata');
     }
-    
-    const startDate = moment(mulai);
-    const endDate = moment(akhir);
-    
-    if (endDate.isBefore(startDate)) {
-        showToast('error', 'Error', 'Tanggal akhir harus setelah tanggal mulai');
-        return;
-    }
-    
-    const jumlahHari = endDate.diff(startDate, 'days') + 1;
-    const hariDalamBulan = 30; // Asumsi 30 hari
-    
-    // === PERBAIKAN: Hitung prorata arrears ===
-    const prorata = Math.round((biaya / hariDalamBulan) * jumlahHari);
-    
-    document.getElementById('prorataHari').value = jumlahHari;
-    document.getElementById('prorataHasil').innerHTML = `
-        <strong>${formatRupiah(prorata)}</strong>
-        <br>
-        <small style="color: var(--gray);">
-            Untuk ${jumlahHari} hari pemakaian (${startDate.format('DD MMM')} - ${endDate.format('DD MMM YYYY')})
-        </small>
-    `;
-    
-    // Tampilkan penjelasan arrears
-    const bulanTagihan = startDate.format('MMM YYYY');
-    const jatuhTempo = endDate.add(1, 'month').date(10).format('DD MMM YYYY');
-    
-    const explanation = `
-        <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
-            <strong>Sistem ARREARS:</strong><br>
-            • Pemakaian: ${bulanTagihan}<br>
-            • Tagihan dibuat: ${moment().format('DD MMM YYYY')}<br>
-            • Jatuh tempo: ${jatuhTempo}
-        </div>
-    `;
-    
-    document.getElementById('prorataHasil').insertAdjacentHTML('beforeend', explanation);
 }
         
         // ============================================
@@ -10251,10 +11284,15 @@ function adminAtauKaryawan() {
   return role === 'admin' || role === 'karyawan';
 }
 
+
+
+
         
 // ============================================
 // INITIALIZATION & EVENT HANDLERS (FIXED VERSION)
 // ============================================
+
+
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 X-BILL System Initializing...");
@@ -10431,6 +11469,103 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("✅ Initialization Complete.");
 });
 
+
+// ============================================
+// 2. TOMBOL GENERATE TAGIHAN (FIXING)
+// ============================================
+
+document.getElementById('btnGenerateTagihan').addEventListener('click', function(e) {
+    e.preventDefault();
+    const modal = document.getElementById('modalGenerateTagihan');
+    if (modal) {
+        // Set nilai default bulan ke bulan INI
+        const todayMoment = moment();
+        const bulanKini = todayMoment.format('MM-YYYY');
+        const jatuhTempoHari = 10;
+        
+        // Reset checkbox
+        document.getElementById('generateProrata').checked = true; 
+        
+        // Ambil dropdown (agar bisa diisi ulang)
+        const jatuhTempoHariInput = document.getElementById('generateJatuhTempoHari');
+        if (jatuhTempoHariInput) jatuhTempoHariInput.value = 10; // Default
+
+        // Isi form
+        const bulanInput = document.getElementById('generateBulan');
+        if(bulanInput) {
+            bulanInput.value = bulanKini; // Set manual
+            console.log("Bulan Input:", bulanKini);
+        }
+        
+        // Logic prorata
+        const chkProrata = document.getElementById('generateProrata');
+        console.log("Check Prorata:", chkProrata.checked);
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
+        modal.style.display = 'flex';
+        modal.style.zIndex = '99999'; // Di atas semua modal lain
+        document.body.style.overflow = 'hidden';
+
+    // Panggil fungsi generate saat klik
+    setTimeout(() => {
+        // Logika manual
+        console.log("Tombol Generate diklik (Manual trigger)...");
+        generateTagihanBulk();
+    }, 300); // Delay 300ms supaya modal muncul sempurna
+
+}}
+);
+
+
+
+// ============================================
+// FIX TOMBOL BAYAR DI HALAMAN DAFTAR TAGIHAN
+// ============================================
+
+document.body.addEventListener('click', function(e) {
+    // Cari elemen <button> atau <i> di dalam tombol yang diklik
+    const target = e.target;
+    const btn = target.closest('button');
+
+    // Cek apakah yang diklik adalah tombol Bayar (Warna Hijau, Ikon Uang/Dollar)
+    // atau tombol yang memiliki onclick mengandung kata "executePayAllDirect" (Untuk tombol Bayar di grup)
+    
+    if (btn) {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        
+        // LOGIKA 1: Jika tombol BAYAR SEMUA (Grup Pelanggan)
+        if (onclickAttr.includes('executePayAllDirect')) {
+            e.preventDefault(); // Mencegah aksi default/error
+            
+            // Ambil data dari tombol
+            const pelangganId = btn.getAttribute('data-pid') || btn.getAttribute('onclick').match(/'([^']+)'/)[1]; // Ambil ID string
+            // Perlu mengambil ID dan Total dari context tabel
+            // Cara paling aman adalah mencari baris tabel (tr) terdekat
+            const row = btn.closest('tr');
+            if (row) {
+                // Disini kita perlu menarik data 'belumUrut' yang tersimpan secara global di window atau ambil manual dari array
+                // Karena tombol di tabel utama biasanya membuka modal 'viewTagihanDetails' dulu
+                // JADI untuk tabel DAFTAR TAGIHAN, tombol 'Bayar' biasanya memanggil 'showPayAllModal'
+                if (onclickAttr.includes('showPayAllModal')) {
+                    showPayAllModal(pelangganId);
+                }
+            }
+        }
+
+        // LOGIKA 2: Jika tombol BAYAR LANGSUNG (Tombol tunggal per tagihan - JIKA ADA)
+        // Biasanya di tabel utama tombolnya 'showPayAllModal', tapi kalau tombol bayar langsung:
+        if (onclickAttr.includes('bayarTagihanDenganStruk')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Ekstrak parameter dari string onclick jika perlu, atau panggil fungsi langsung
+            // Karena tombol di tabel utama sering pakai showPayAllModal, kita fokus ke situ dulu:
+            // showPayAllModal(pid);
+        }
+    }
+});
 
         
         // Encrypt data checkbox handler
