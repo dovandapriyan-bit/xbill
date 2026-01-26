@@ -2581,20 +2581,24 @@ Terima kasih.
 
     <!-- ========== ALL JAVASCRIPT ========== -->
     <script>
-        // ============================================
-        // CONFIGURATION & INITIALIZATION
-        // ============================================
-        
-        try {
-    if (window.firebaseConfig && window.firebaseConfig.apiKey) {
-        firebase.initializeApp(window.firebaseConfig);
-        console.log("Firebase initialized with config from file");
-    } else {
-        console.error("Firebase config not found or empty!");
-    }
-} catch (error) {
-    console.log("Firebase already initialized or error:", error.message);
-}
+        // firebase-config.js - VERSION BROWSER
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: ""
+};
+
+// Untuk development/testing, bisa set manual di sini
+// TAPI HAPUS SEBELUM DEPLOY KE GITHUB!
+// firebaseConfig.apiKey = "AIzaSy...";
+// firebaseConfig.projectId = "project-123";
+
+// Simpan di window untuk digunakan
+window.firebaseConfig = firebaseConfig;
         
         const db = firebase.firestore();
         let currentUser = null;
