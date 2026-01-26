@@ -14,6 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="firebase-config.js"></script>
+
     
     <style>
         /* ========== RESET & VARIABLES ========== */
@@ -2583,23 +2585,16 @@ Terima kasih.
         // CONFIGURATION & INITIALIZATION
         // ============================================
         
-        const firebaseConfig = {
-            apiKey: "",
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: "",
-            measurementId: ""
-        };
-        
-        // Initialize Firebase
         try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase initialized");
-        } catch (error) {
-            console.log("Firebase already initialized");
-        }
+    if (window.firebaseConfig && window.firebaseConfig.apiKey) {
+        firebase.initializeApp(window.firebaseConfig);
+        console.log("Firebase initialized with config from file");
+    } else {
+        console.error("Firebase config not found or empty!");
+    }
+} catch (error) {
+    console.log("Firebase already initialized or error:", error.message);
+}
         
         const db = firebase.firestore();
         let currentUser = null;
