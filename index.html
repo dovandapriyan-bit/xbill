@@ -2589,16 +2589,10 @@ const firebaseConfig = {
     storageBucket: "",
     messagingSenderId: "",
     appId: "",
-    measurementId: "",
+    measurementId: ""
 };
 
-// Untuk development/testing, bisa set manual di sini
-// TAPI HAPUS SEBELUM DEPLOY KE GITHUB!
-// firebaseConfig.apiKey = "AIzaSy...";
-// firebaseConfig.projectId = "project-123";
 
-// Simpan di window untuk digunakan
-window.firebaseConfig = firebaseConfig;
         
         const db = firebase.firestore();
         let currentUser = null;
