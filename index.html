@@ -328,18 +328,21 @@
         .user-menu {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;            /* ⭐ KECILKAN JARAK ANTAR ELEMEN */
+            margin-left: auto;     /* ⭐ TAMBAHKAN INI: DORONG KE KANAN */
+            flex-wrap: wrap;       /* ⭐ TAMBAHKAN INI: AGAR BISA TURUN BARIS DI HP */
         }
+
         
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
         }
         
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 25px;
+            height: 25px;
             background: var(--gradient);
             border-radius: 50%;
             display: flex;
@@ -552,10 +555,14 @@
             border-bottom: 2px solid var(--gray-light);
         }
         
-        .table td {
+                .table td {
             padding: 15px;
+            text-align: left;
             border-bottom: 1px solid var(--gray-light);
             vertical-align: middle;
+            /* ⭐ TAMBAHKAN STYLE BERIKUT AGAR HURUF LEBIH KECIL ⭐ */
+            font-size: 12px;           /* ⭐ KURANGI DARI DEFAULT (biasanya 14-16px) */
+            line-height: 1.4;         /* ⭐ RAPATKAN JARAK ANTAR BARIS */
         }
         
         .table tr:hover {
@@ -730,6 +737,16 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .user-menu {
+                margin-left: auto; /* Pastikan ini ada */
+                gap: 8px;           /* Perkecil gap lagi biar muat */
+            }
+
+            #logoutBtnSmall {
+                margin-left: 0;    /* Reset margin tombol logout */
+                margin-right: 0;
+            }
         
         .form-check {
             display: flex;
@@ -795,29 +812,60 @@
         }
         
         /* ========== PAGINATION ========== */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-            margin-top: 20px;
-        }
-        
-        .page-link {
-            padding: 8px 15px;
-            border: 1px solid var(--gray-light);
-            border-radius: var(--radius-sm);
-            color: var(--dark);
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        
-        .page-link:hover,
-        .page-link.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
+.pagination {
+    display: flex;                 /* ⭐ Gunakan Flexbox */
+    justify-content: center;       /* Tengahkan secara horizontal */
+    align-items: center;           /* ⭐ SAMAKAN POSISI VERTIKAL */
+    gap: 10px;                      /* ⭐ JARAK ANTAR TOMBOL */
+    margin-top: 20px;
+    flex-wrap: wrap;                /* ⭐ BIAR TIDAK PECAH DI HP */
+}
+
+.page-link {
+    padding: 8px 15px;
+    border: 1px solid var(--gray-light);
+    border-radius: var(--radius-sm);
+    color: var(--dark);
+    text-decoration: none;
+    transition: all 0.3s;
+    cursor: pointer;
+    min-width: 40px;               /* ⭐ PASTIKAN LEBAR TOMBOL AGAR SAMA */
+    text-align: center;              /* ⭐ TENGAKKAN TEKS */
+}
+
+/* ⭐ STYLE KHUSUS UNTUK TOMBOL PREV (KIRI) ⭐ */
+.pagination a:first-child {
+    background: var(--gray-light);   /* Warna beda biar jelas tombol navigasi */
+    color: var(--dark);
+    font-weight: bold;              /* Tebal */
+    border-radius: 5px;             /* Sudut membulat sedikit */
+}
+.pagination a:first-child:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* ⭐ STYLE KHUSUS UNTUK TOMBOL NEXT (KANAN) ⭐ */
+.pagination a:last-child {
+    background: var(--gray-light);   /* Warna beda biar jelas tombol navigasi */
+    color: var(--dark);
+    font-weight: bold;              /* Tebal */
+    border-radius: 5px;             /* Sudut membulat sedikit */
+}
+.pagination a:last-child:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* STYLE UNTUK ANGKA TENGAH */
+.page-link:hover,
+.page-link.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
         
         /* ========== RESPONSIVE ========== */
         @media (max-width: 768px) {
@@ -840,8 +888,16 @@
                 padding: 12px 15px;
             }
             
-            .navbar-brand span {
-                display: none;
+                        .navbar-brand span {
+                /* display: none;  <-- HAPUS BARIS INI */
+                
+                /* TAMBAHKAN STYLE BERIKUT AGAR TETAP TERLIHAT TAPI RAPI */
+                display: inline-block; 
+                font-size: 16px;       /* Font sedikit lebih kecil */
+                max-width: 150px;    /* Batasi lebar agar tidak merusak layout */
+                white-space: nowrap;  /* Tidak turun baris */
+                overflow: hidden;     /* Sembunyikan sisa teks jika kepanjangan */
+                text-overflow: ellipsis; /* Tampilkan titik tiga (...) jika kepanjangan */
             }
             
             .bottom-nav span {
@@ -1694,15 +1750,18 @@ Terima kasih.
             </div>
             
             <div class="user-info" style="cursor: pointer;" id="userProfileBtn">
-                <div class="user-avatar" id="userAvatar">d</div>
-                <div>
-                    <div id="userName">admin@xbill.com</div>
-                    <small class="text-muted" id="userRole">Admin</small>
-                </div>
-            </div>
+    <div class="user-avatar" id="userAvatar">A</div>
+    <div>
+        <div id="userName">admin@xbill.com</div>
+        <!-- ⭐⭐ TAMBAH INI UNTUK WAKTU ⭐⭐ -->
+        <div id="userTime" style="font-size: 11px; color: var(--gray);">
+            <i class="fas fa-clock"></i> <span id="currentTime">Loading...</span>
+        </div>
+    </div>
+</div>
             
             <!-- TOMBOL LOGOUT (HAPUS onclick="handleLogout()") -->
-            <button id="logoutBtnSmall" style="margin-left: 15px; border: none; background: transparent; color: var(--danger); cursor: pointer; padding: 8px 10px; border-radius: 8px; transition: all 0.3s; display: flex; align-items: center;" title="Keluar">
+            <button id="logoutBtnSmall" style="margin-left: 5px; border: none; background: transparent; color: var(--danger); cursor: pointer; padding: 8px 10px; border-radius: 8px; transition: all 0.3s; display: flex; align-items: center;" title="Keluar">
                 <i class="fas fa-sign-out-alt" style="font-size: 18px;"></i>
             </button>
 
@@ -2585,6 +2644,72 @@ Terima kasih.
     </div>
 
 
+    <!-- MODAL: DETAIL LUNAS BULAN INI -->
+<div class="modal-overlay hidden" id="modalLunasBulanIni">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-check-circle" style="color: var(--success);"></i> Detail Pelunasan Bulan Ini</h3>
+            <button class="modal-close" onclick="hideModal('modalLunasBulanIni')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">No</th>
+                            <th style="width: 20%;">Nama</th>
+                            <th style="width: 15%;">Tagihan</th>
+                            <th style="width: 15%;">Periode</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 15%;">Tgl Bayar</th>
+                            <th style="width: 20%;">Petugas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lunasBulanIniTable">
+                        <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="lunasPagination" class="mt-3"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="hideModal('modalLunasBulanIni')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL: DETAIL TUNGGAKAN -->
+<div class="modal-overlay hidden" id="modalDetailTunggakan">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-clock" style="color: var(--danger);"></i> Detail Tunggakan</h3>
+            <button class="modal-close" onclick="hideModal('modalDetailTunggakan')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>Total Tunggakan</th>
+                            <th>Periode (Belum Bayar)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tunggakanTable">
+                        <!-- Data akan diisi oleh JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="tunggakanPagination" class="mt-3"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="hideModal('modalDetailTunggakan')">Tutup</button>
+        </div>
+    </div>
+</div>
 
 
     
@@ -2630,7 +2755,10 @@ let currentPagePelanggan = 1;
 let currentPageTagihan = 1;
 let currentPageTunggakan = 1;
 let currentPagePaket = 1;
+let currentPageAktivitas = 1; // Variable untuk halaman aktivitas
 const itemsPerPage = 10;
+
+
 
 // ============================================
 // SISTEM KEAMANAN LOGIN
@@ -2853,47 +2981,41 @@ async function handleLoginSuccess() {
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('appContainer').classList.remove('hidden');
         
-        // 2. AMBIL NAMA YANG SUDAH DIFORMAT DARI LOCALSTORAGE
+        // 2. AMBIL NAMA USER
         let displayName = localStorage.getItem('userName') || 'Administrator';
         
-        console.log("👤 Nama untuk ditampilkan di navbar:", displayName);
+        console.log("👤 Nama user:", displayName);
         
-        // 3. ⭐⭐ PERBAIKAN UTAMA: UPDATE NAVBAR ELEMENT ⭐⭐
+        // 3. UPDATE NAVBAR USER
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
         const userRoleEl = document.getElementById('userRole');
         
-        // ⭐⭐ PASTIKAN ELEMENT ADA DAN UPDATE ⭐⭐
         if (userNameEl) {
-            userNameEl.textContent = displayName;
-            console.log("✅ Nama ditampilkan di navbar:", displayName);
-        } else {
-            console.error("❌ Element #userName tidak ditemukan di navbar!");
+            userNameEl.innerText = displayName; // ⭐ Ganti textContent dengan innerText
+            // Paksa re-render untuk mobile
+            userNameEl.style.display = 'none';
+            userNameEl.offsetHeight; 
+            userNameEl.style.display = '';
         }
         
-        if (userAvatarEl) {
-            // Ambil inisial dari NAMA yang sudah diformat
-            const initials = displayName.charAt(0).toUpperCase();
-            userAvatarEl.textContent = initials;
-        }
-        
+        if (userAvatarEl) userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
         if (userRoleEl) {
-            const roleMapping = {
-                'admin': 'Admin',
-                'staff_billing': 'Staff Billing', 
-                'staff_teknis': 'Staff Teknis',
-                'supervisor': 'Supervisor'
-            };
+            const roleMapping = {'admin': 'Admin'};
             const userRole = currentUser?.role || localStorage.getItem('userRole') || 'admin';
             userRoleEl.textContent = roleMapping[userRole] || userRole;
         }
         
-        // 4. TOAST SELAMAT DATANG
+        // 4. ⭐⭐ INI YANG PERLU DITAMBAH - LOAD PROFIL PERUSAHAAN ⭐⭐
+        console.log("🔄 Memuat profil perusahaan...");
+        await loadCompanyProfile();
         
-        // 5. Load aplikasi...
-        await ensureCompanyId();
+        // 5. Load data lainnya
         await loadAllDataOnce();
         await loadPage('dashboard');
+        
+        // 6. TOAST
+        showToast('success', 'Login Berhasil', `Selamat datang ${displayName}!`);
         
         setTimeout(() => {
             initializeQuickActions();
@@ -2910,43 +3032,34 @@ function renderPagination(totalItems, currentPage, pageType, containerId) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (totalPages <= 1) return '';
     
-    let paginationHtml = '<div class="pagination">';
+    let html = '<div class="pagination">';
     
-    // Previous button
+    // 1. TOMBOL KIRI (<)
     if (currentPage > 1) {
-        paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage - 1})">&laquo;</a>`;
+        html += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage - 1})">&lt;</a>`;
     }
     
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === currentPage) {
-            paginationHtml += `<a class="page-link active">${i}</a>`;
-        } else {
-            paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${i})">${i}</a>`;
-        }
-    }
+    // 2. TOMBOL RENTANG HALAMAN 1-10
+    // Hitung blok (1-10, 11-20, dst)
+    const startBlock = Math.floor((currentPage - 1) / 10) * 10 + 1;
+    const endBlock = Math.min(startBlock + 9, totalPages);
     
-    // Next button
+    // Spasi agar tidak berdempetan
+    if (startBlock > 1) html += ` `;
+    html += `<a class="page-link" onclick="changePage('${pageType}', ${startBlock})">${startBlock}-${endBlock}</a>`;
+    if (endBlock < totalPages) html += ` `;
+    
+    // 3. TOMBOL KANAN (>)
     if (currentPage < totalPages) {
-        paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage + 1})">&raquo;</a>`;
+        html += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage + 1})">&gt;</a>`;
     }
     
-    paginationHtml += '</div>';
+    html += '</div>';
     
     const container = document.getElementById(containerId);
     if (container) {
-        container.innerHTML = paginationHtml;
+        container.innerHTML = html;
     }
-    
-    return paginationHtml;
-
-    const timelineArrears = `
-    <small class="text-muted" style="display: block; margin-top: 5px;">
-        <i class="fas fa-calendar"></i> 
-        Pemakaian: ${tagihan.bulan} | 
-        Jatuh tempo: ${moment(tagihan.tanggal_jatuh_tempo).format('DD/MM/YY')}
-    </small>
-`;
 }
 
 async function autoGenerateTagihanArrears() {
@@ -3087,32 +3200,44 @@ function getPaginatedData(data, currentPage) {
                 </div>
                 
                 <!-- CARD 3: LUNAS -->
-                <div class="stat-card" onclick="filterTagihanLunas()" style="cursor: pointer;">
-                    <div class="stat-icon info">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="statLunas">0</div>
-                        <div class="stat-label">Lunas</div>
-                        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #54a0ff;">
-                            <i class="fas fa-external-link-alt"></i> Klik untuk filter lunas
-                        </div>
-                    </div>
-                </div>
+                <div class="stat-card" onclick="showLunasBulanIni()" style="cursor: pointer;">
+    <div class="stat-icon success">
+        <i class="fas fa-check-circle"></i>
+    </div>
+    <div class="stat-content">
+        <!-- Angka Persentase -->
+        <div class="stat-value" id="statLunasPersen">0%</div>
+        
+        <!-- Label & Detail Jumlah -->
+        <div class="stat-label">Kelunasan</div>
+        <div class="stat-detail" style="font-size: 12px; color: #666; margin-top: 4px;">
+            <span id="statLunasCount">0</span> dari <span id="statTotalPelanggan">0</span> Pelanggan
+        </div>
+        
+        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #00b894;">
+            <i class="fas fa-list-ul"></i> Klik untuk lihat detail
+        </div>
+    </div>
+</div>
                 
                 <!-- CARD 4: TUNGGAKAN -->
-                <div class="stat-card" onclick="filterTagihanTunggakan()" style="cursor: pointer;">
-                    <div class="stat-icon danger">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="statTunggakan">Rp 0</div>
-                        <div class="stat-label">Tunggakan</div>
-                        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #ff6b6b;">
-                            <i class="fas fa-external-link-alt"></i> Klik untuk lihat tunggakan
-                        </div>
-                    </div>
-                </div>
+<div class="stat-card" onclick="showDetailTunggakan()" style="cursor: pointer;">
+    <div class="stat-icon danger">
+        <i class="fas fa-clock"></i>
+    </div>
+    <div class="stat-content">
+    <!-- Nilai Nominal (Rupiah) -->
+    <div class="stat-value" id="statTunggakan">Rp 0</div>
+    
+    <!-- Label -->
+    <div class="stat-label">Total Tunggakan</div>
+    
+    <!-- Aksi -->
+    <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #ff6b6b;">
+        <i class="fas fa-external-link-alt"></i> Klik untuk lihat detail
+    </div>
+</div>
+</div>
             </div>
             
             <div class="charts-container">
@@ -3130,24 +3255,24 @@ function getPaginatedData(data, currentPage) {
                 <div class="card-header">
                     <h3>Aktivitas Terbaru</h3>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Waktu</th>
-                                    <th>Aktivitas</th>
-                                    <th>User</th>
-                                </tr>
-                            </thead>
-                            <tbody id="aktivitasTable">
-                                <tr>
-                                    <td colspan="3" class="text-center">Memuat aktivitas...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Waktu</th>
+                                        <th>Aktivitas</th>
+                                        <th>User</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="aktivitasTable">
+                                    <tr><td colspan="3" class="text-center">Memuat aktivitas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- ⭐ TAMBAHKAN CONTAINER PAGINATION INI ⭐ -->
+                        <div id="aktivitasPagination"></div>
                     </div>
-                </div>
             </div>
         </div>
     `;
@@ -4082,6 +4207,35 @@ async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanSt
         // 6. Refresh Table
         await loadTunggakanData();
         await loadTagihanData(); // Refresh tabel tagihan utama juga
+
+                    await batch.commit();
+
+            // ⭐⭐ TAMBAHKAN KODE INI: REFRESH DATA & TAMPILAN ULANG ⭐⭐
+            console.log("🔄 Refreshing Data Tagihan...");
+            
+            // 1. Bersihkan array global data tagihan (paksa reload biar fresh)
+            window.tagihanData = [];
+            
+            // 2. Load ulang data tagihan (ini akan mengambil data status 'Lunas' yang baru)
+            if (typeof loadTagihanData === 'function') {
+                await loadTagihanData();
+            }
+            
+            // 3. Jika halaman yang sedang aktif adalah 'tunggakan', refresh juga data tunggakan
+            if (currentPage === 'tunggakan') {
+                if (typeof loadTunggakanData === 'function') {
+                    await loadTunggakanData();
+                }
+            }
+
+            showToast('success', 'Berhasil', 'Pembayaran berhasil dikonfirmasi & Tabel diperbarui');
+            
+            // 4. Jika modal bayar terbuka, tutup otomatis
+            const modalBayar = document.getElementById('modalBayarTagihan');
+            if (modalBayar) {
+                modalBayar.classList.remove('show');
+                modalBayar.classList.add('hidden');
+            }
 
     } catch (error) {
         hideLoading();
@@ -5192,202 +5346,193 @@ function initializeQuickActions() {
 
 // Panggil fungsi ini dalam renderDashboard() setelah rendering selesai
 
+// ============================================
+// RENDER DASHBOARD (FULL FIXED FUNCTION)
+// ============================================
+
 async function renderDashboard() {
     console.log("🔄 MEMULAI RENDER DASHBOARD dengan data TERISOLASI");
     
-    // ⭐⭐ FALLBACK: JIKA globalCompanyId KOSONG, AMBIL LAGI ⭐⭐
-    if (!globalCompanyId) {
-        console.warn("⚠️ globalCompanyId kosong di renderDashboard, mencoba ambil...");
-        try {
-            const companyId = await ensureCompanyId();
-            if (!companyId) {
-                console.error("❌ Gagal mendapatkan Company ID");
-                showToast('error', 'Error', 'Tidak dapat memuat data perusahaan');
-                return;
-            }
-            globalCompanyId = companyId;
-            console.log("✅ Company ID diperoleh:", globalCompanyId);
-        } catch (error) {
-            console.error("❌ Gagal mendapatkan Company ID:", error);
-            showToast('error', 'Error', 'Gagal memuat data dashboard');
-            return;
-        }
-    }
+    // 1. TAMPILKAN LOADING
+    const loadingEl = document.getElementById('loadingOverlay');
+    if (loadingEl) loadingEl.classList.remove('hidden');
     
     try {
-        // 1. TAMPILKAN LOADING
-        const loadingEl = document.getElementById('loadingOverlay');
-        if (loadingEl) loadingEl.classList.remove('hidden');
+        // 2. PASTIKAN GLOBAL COMPANY ID
+        if (!globalCompanyId) {
+            console.warn("⚠️ globalCompanyId kosong, mencoba fallback...");
+            if (!globalCompanyId) globalCompanyId = localStorage.getItem('xbill_company_id') || 'COMP_DEFAULT';
+        }
         
-        // 2. AMBIL DATA DARI FIREBASE (DENGAN FILTER COMPANY)
+        // 3. AMBIL DATA DARI FIREBASE
         console.log("📥 Mengambil data TERISOLASI untuk Company:", globalCompanyId);
         
         const [pelangganSnapshot, tagihanSnapshot] = await Promise.all([
-            // FILTER PELANGGAN HANYA MILIK COMPANY INI
             db.collection('pelanggan').where('company_id', '==', globalCompanyId).get(),
-            
-            // FILTER TAGIHAN HANYA MILIK COMPANY INI
             db.collection('tagihan').where('company_id', '==', globalCompanyId).get()
         ]);
         
         console.log(`✅ Data loaded: ${pelangganSnapshot.size} pelanggan, ${tagihanSnapshot.size} tagihan`);
         
-        // 3. SIAPKAN SET ID PELANGGAN YANG VALID (BAGIAN PENTING: FILTER LAGI)
-        const validPelangganIds = new Set();
-        pelangganSnapshot.forEach(doc => {
-            validPelangganIds.add(doc.id);
-        });
-        console.log(`✅ Valid Pelanggan IDs Count: ${validPelangganIds.size}`);
+        // 4. SIMPAN ID PELANGGAN YANG VALID KE ARRAY
+        let pelangganIds = [];
+        const pelangganMap = {};
         
-        // 4. HITUNG STATISTIK PELANGGAN
-        const totalPelanggan = pelangganSnapshot.size;
+        pelangganSnapshot.forEach(doc => {
+            const p = doc.data();
+            if (p.company_id === globalCompanyId) {
+                pelangganIds.push(doc.id);
+                pelangganMap[doc.id] = {
+                    nama: p.nama || 'Tanpa Nama',
+                    telepon: p.telepon || '-',
+                    alamat: p.alamat || '-'
+                };
+            }
+        });
+
+        console.log(`👥 ${pelangganIds.length} pelanggan valid untuk company ini`);
+
+        // 5. UPDATE UI - TOTAL PELANGGAN
         const statPelangganEl = document.getElementById('statPelanggan');
         if (statPelangganEl) {
-            statPelangganEl.textContent = totalPelanggan;
-        }
-        
-        // 5. HITUNG TAGIHAN BULAN INI
-        const bulanSekarangText = moment().format('MM-YYYY'); 
-        const tahunSekarang = moment().format('YYYY');
-        const bulanAngkaSekarang = moment().format('MM');
-        
-        console.log(`📅 Mencari tagihan untuk: ${bulanSekarangText}`);
-        
-        let totalTagihanBulanIni = 0;
-        let lunasCount = 0;
-        let tunggakanCount = 0;
-        let belumBayarCount = 0;
-        
-        // Loop SEMUA tagihan dari snapshot, tapi CEK VALIDITASNYA
-        tagihanSnapshot.forEach(doc => {
-            const tagihan = doc.data();
-            const jumlah = Number(tagihan.jumlah) || 0;
-            const bulanTagihan = tagihan.bulan || "";
-            const pelangganIdTagihan = tagihan.pelanggan_id || "";
-            
-            // FILTER UTAMA: HANYA HITUNG JIKA PELANGGAN ID MASIH ADA DI DB PELANGGAN (VALIDASI DATA)
-            if (!validPelangganIds.has(pelangganIdTagihan)) {
-                // console.log(`⚠️ SKIP: Tagihan ${doc.id} milik pelanggan ${pelangganIdTagihan} (Orphan/Deleted/Salah Company)`);
-                return; // LEWATI (SKIP) TAGIHAN INI
-            }
-            
-            // LOGIKA FILTER BULAN (SAMA SEPERTI ASLINYA)
-            const isBulanIni = bulanTagihan.includes(bulanAngkaSekarang) && bulanTagihan.includes(tahunSekarang);
-            
-            if (isBulanIni) {
-                // Jika cocok, hitung totalnya
-                totalTagihanBulanIni += jumlah;
-                
-                // Hitung Status
-                if (tagihan.status === 'lunas') {
-                    lunasCount++;
-                } else if (tagihan.status === 'telat') {
-                    tunggakanCount++;
-                } else {
-                    // Asumsikan 'belum' atau status lain yang belum lunas
-                    belumBayarCount++;
-                }
-            }
-        });
-        
-        console.log(`💰 Total Tagihan Bulan Ini: ${formatRupiah(totalTagihanBulanIni)}`);
-        console.log(`📊 Status: ${lunasCount} Lunas, ${tunggakanCount} Telat, ${belumBayarCount} Belum`);
-        
-        // UPDATE UI - TOTAL PELANGGAN
-        if (statPelangganEl) {
-            statPelangganEl.textContent = totalPelanggan;
+            statPelangganEl.textContent = pelangganSnapshot.size;
         } else {
             console.warn("⚠️ Elemen #statPelanggan tidak ditemukan!");
         }
         
-        // UPDATE UI - TAGIHAN BULAN INI
-        const statTagihanEl = document.getElementById('statTagihanBulanan');
-        if (statTagihanEl) {
-            statTagihanEl.textContent = formatRupiah(totalTagihanBulanIni);
-            console.log("✅ Berhasil update elemen Tagihan Bulan Ini");
-        } else {
-            console.error("❌ Elemen #statTagihanBulanan TIDAK DITEMUKAN di HTML!");
-        }
+        // 6. HITUNG TAGIHAN BULAN INI
+        const bulanSekarangText = moment().format('MM-YYYY');
+        const tahunSekarang = moment().format('YYYY');
+        const bulanAngkaSekarang = moment().format('MM');
         
-        // UPDATE UI - LUNAS
-        const statLunasEl = document.getElementById('statLunas');
-        if (statLunasEl) {
-            statLunasEl.textContent = lunasCount;
-        }
-        
-        // UPDATE UI - TUNGGAKAN
-        const statTunggakanEl = document.getElementById('statTunggakan');
-        if (statTunggakanEl) {
-            statTunggakanEl.textContent = tunggakanCount;
-        }
-        
-        // HITUNG STATUS PELANGGAN (REAL)
-        let aktifCount = 0;
-        let nonaktifCount = 0;
-        let tunggakPelangganCount = 0;
-        
-        pelangganSnapshot.forEach(doc => {
-            const pelanggan = doc.data();
-            const status = pelanggan.status || 'nonaktif';
+        let totalTagihanBulanIni = 0; 
+        let lunasCount = 0;
+        let tunggakanCount = 0;
+        let belumBayarCount = 0;
+        let totalNominalTunggakan = 0;
+        const todayMoment = moment();
+
+        // Looping Semua Tagihan
+        tagihanSnapshot.forEach(doc => {
+            const t = doc.data();
+            const pelangganIdTagihan = t.pelanggan_id;
+            const bulanTagihan = t.bulan || "";
+            const statusTagihan = t.status || "";
+            const jumlah = Number(t.jumlah) || 0;
             
-            if (status === 'aktif') {
-                aktifCount++;
-            } else if (status === 'nonaktif') {
-                nonaktifCount++;
-            } else if (status === 'tunggak') {
-                tunggakPelangganCount++;
+            // Cek ID Pelanggan
+            if (!pelangganIds.includes(pelangganIdTagihan)) return;
+            
+            // LOGIKA PERBAIKAN: CEK BULAN LEBIH KETAT
+            let isBulanIni = false;
+            
+            // Cek Sama Persis
+            if (bulanTagihan === bulanSekarangText) {
+                isBulanIni = true;
+            } else {
+                // Cek Format Terbalik (MM-YYYY vs YYYY-MM)
+                const parts = bulanTagihan.split('-');
+                if (parts.length === 2) {
+                    const dbMonth = parts[0];
+                    const dbYear = parts[1];
+                    if (dbMonth === bulanAngkaSekarang && dbYear === tahunSekarang) {
+                        isBulanIni = true;
+                    }
+                }
+            }
+
+            // HANYA PROSES JIKA BULAN INI
+            if (isBulanIni) {
+                totalTagihanBulanIni += jumlah;
+                
+                // HITUNG STATUS
+                if (statusTagihan === 'lunas') {
+                    lunasCount++;
+                } else if (statusTagihan === 'telat') {
+                    tunggakanCount++;
+                } else {
+                    belumBayarCount++;
+                }
             }
         });
-        
-        console.log(`👥 Status Pelanggan: Aktif=${aktifCount}, Nonaktif=${nonaktifCount}, Tunggak=${tunggakPelangganCount}`);
-        
-        // RENDER CHART DENGAN DATA REAL
-        console.log("📈 Rendering chart dengan data REAL...");
-        renderDashboardCharts(aktifCount, nonaktifCount, tunggakPelangganCount);
-        
-        // LOAD AKTIVITAS
-        console.log("📋 Loading aktivitas...");
-        await loadAktivitas();
-        
-        // INISIALISASI QUICK ACTIONS
-        console.log("⚡ Inisialisasi quick actions...");
-        setTimeout(() => {
-            initializeQuickActions();
-        }, 500);
-        
-        // SEMBUNYIKAN LOADING
-        setTimeout(() => {
-            if (loadingEl) loadingEl.classList.add('hidden');
-        }, 500);
-        
-        console.log("🎉 RENDER DASHBOARD SELESAI dengan data REAL");
-        
-        // TAMPILKAN NOTIFIKASI JIKA ADA TUNGGAKAN
-        if (tunggakanCount > 0) {
-            setTimeout(() => {
-                showToast('warning', 'Ada Tunggakan!', 
-                    `Terdapat ${tunggakanCount} tagihan yang menunggak sebesar ${formatRupiah(totalTagihanBulanIni)}`);
-            }, 1000);
-        }
-        
-    } catch (error) {
-        console.error("❌ ERROR FATAL dalam renderDashboard:", error);
-        console.error("Error message:", error.message);
-        
-        // Set nilai default jika error
-        if (document.getElementById('statPelanggan')) document.getElementById('statPelanggan').textContent = '0';
-        if (document.getElementById('statTagihanBulanan')) document.getElementById('statTagihanBulanan').textContent = 'Rp 0';
-        if (document.getElementById('statLunas')) document.getElementById('statLunas').textContent = '0';
-        if (document.getElementById('statTunggakan')) document.getElementById('statTunggakan').textContent = '0';
-        
-        // Sembunyikan loading
-        const loadingEl = document.getElementById('loadingOverlay');
-        if (loadingEl) loadingEl.classList.add('hidden');
-        
-        showToast('error', 'Error Dashboard', 'Gagal memuat data dashboard. Cek Console (F12).');
-    }
-}
 
+        console.log(`💰 Total Bulan Ini: ${totalTagihanBulanIni}, Lunas: ${lunasCount}, Tunggak: ${tunggakanCount}`);
+
+        // 7. UPDATE UI - TAGIHAN BULAN INI
+        const statTagihanEl = document.getElementById('statTagihanBulanan');
+        if (statTagihanEl) {
+            // Tentukan bulan sekarang dalam format database (MM-YYYY)
+            const currentMonthText = moment().format('MM-YYYY');
+            
+            // Hitung total tagihan bulan ini yang BELUM LUNAS
+            const totalTagihanBulanIni = tagihanSnapshot.docs.reduce((total, doc) => {
+                const t = doc.data();
+                const bulanTagihan = t.bulan || "";
+                const statusTagihan = t.status || "";
+                const jumlah = Number(t.jumlah) || 0;
+                
+                // Cek: Apakah bulan tagihan sama dengan bulan sekarang DAN status belum bayar?
+                if (bulanTagihan === currentMonthText && statusTagihan === 'belum') {
+                    return total + jumlah;
+                } else {
+                    return total;
+                }
+            }, 0);
+
+            // Tampilkan di UI
+            statTagihanEl.textContent = totalTagihanBulanIni > 0 ? formatRupiah(totalTagihanBulanIni) : 'Rp 0';
+        }
+
+            // 8. UPDATE UI - LUNAS (FIX: STATUS & COUNT)
+            const statLunasEl = document.getElementById('statLunas');
+            const statLunasCountEl = document.getElementById('statLunasCount'); // Pastikan ID ini ada di HTML
+            if (statLunasEl) {
+                statLunasEl.textContent = lunasCount; 
+                if (statLunasCountEl) statLunasCountEl.textContent = lunasCount;
+            }
+
+            // 9. UPDATE UI - TUNGGAKAN
+            const statTunggakanEl = document.getElementById('statTunggakan');
+            if (statTunggakanEl) {
+                statTunggakanEl.textContent = tunggakanCount;
+            }
+
+            // 10. HITUNG STATUS PELANGGAN
+            let aktifCount = 0;
+            let nonaktifCount = 0;
+            let tunggakPelangganCount = 0;
+
+            pelangganSnapshot.forEach(doc => {
+                const status = doc.data().status || 'nonaktif';
+                if (status === 'aktif') aktifCount++;
+                else if (status === 'nonaktif') nonaktifCount++;
+                else if (status === 'tunggak') tunggakPelangganCount++;
+            });
+            
+            // RENDER CHART DENGAN DATA REAL
+            console.log("📈 Rendering chart...");
+            renderDashboardCharts(aktifCount, nonaktifCount, tunggakPelangganCount);
+
+            // 11. LOAD AKTIVITAS
+            console.log("📋 Loading aktivitas...");
+            await loadAktivitas();
+
+        } catch (error) {
+            console.error("❌ ERROR FATAL dalam renderDashboard:", error);
+            
+            // Set nilai default jika error
+            if (document.getElementById('statPelanggan')) document.getElementById('statPelanggan').textContent = '0';
+            if (document.getElementById('statTagihanBulanan')) document.getElementById('statTagihanBulanan').textContent = 'Rp 0';
+            if (document.getElementById('statLunas')) document.getElementById('statLunas').textContent = '0';
+            if (document.getElementById('statTunggakan')) document.getElementById('statTunggakan').textContent = 'Rp 0';
+
+            showToast('error', 'Error Dashboard', 'Gagal memuat data dashboard.');
+        } finally {
+            // PASTIKAN LOADING DIHILANGKAN
+            const loadingEl = document.getElementById('loadingOverlay');
+            if (loadingEl) loadingEl.classList.add('hidden');
+        }
+    }
 
 // FUNGSI REFRESH STATS ONLY
 async function refreshDashboardStats() {
@@ -5414,23 +5559,45 @@ async function refreshDashboardStats() {
         updateElementText('#statPelanggan', totalPelanggan);
         
         // Update Tagihan Bulan Ini
-        const currentMonth = moment().format('MM-YYYY');
-        let totalTagihanBulanIni = 0;
-        let lunasCount = 0;
-        let tunggakanCount = 0;
-        
-        tagihanSnapshot.forEach(doc => {
-            const tagihan = doc.data();
-            if (tagihan.bulan === currentMonth) {
-                totalTagihanBulanIni += Number(tagihan.jumlah) || 0;
-                
-                if (tagihan.status === 'lunas') {
-                    lunasCount++;
-                } else if (tagihan.status === 'telat') {
-                    tunggakanCount++;
-                }
+        const currentMonthText = moment().format('MM-YYYY'); // Contoh: "01-2025"
+
+let lunasCount = 0;
+let tunggakanCount = 0;
+let belumBayarCount = 0;
+
+tagihanSnapshot.forEach(doc => {
+    const t = doc.data();
+    const bulanTagihan = t.bulan || "";
+    const jumlah = Number(t.jumlah) || 0;
+    
+    // PERBAIKAN LOGIKA PENGECEKAN BULAN
+    let isBulanIni = false;
+    if (bulanTagihan === currentMonthText) {
+        isBulanIni = true;
+    } else {
+        // Cek format terbalik (misal: 2025-01 vs 01-2025)
+        const parts = bulanTagihan.split('-');
+        if (parts.length === 2) {
+            const dbMonth = parts[0];
+            const dbYear = parts[1];
+            const currentMonthParts = currentMonthText.split('-');
+            if (dbMonth === currentMonthParts[0] && dbYear === currentMonthParts[1]) {
+                isBulanIni = true;
             }
-        });
+        }
+    }
+
+    // HANYA PROSES JIKA BULAN INI
+    if (isBulanIni) {
+        if (t.status === 'lunas') {
+            lunasCount++;
+        } else if (t.status === 'telat') {
+            tunggakanCount++;
+        } else {
+            belumBayarCount++;
+        }
+    }
+});
         
         updateElementText('#statTagihanBulanan', formatRupiah(totalTagihanBulanIni));
         updateElementText('#statLunas', lunasCount);
@@ -5474,86 +5641,79 @@ function updateElementText(selector, value) {
 }
 
 // ============================================
-// RENDER DASHBOARD CHARTS (REAL DATA VERSION)
+// RENDER DASHBOARD CHARTS (REAL DATA VERSION - FIXED)
 // ============================================
 
 async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
-    console.log("📊 Rendering charts dengan data TERISOLASI...");
+    console.log("📊 Rendering charts...");
 
-    // 1. CHART TAGIHAN - PASTIKAN PAKAI FUNGSI YANG SUDAH DIPERBAIKI
+    // 1. CHART TAGIHAN
     const ctx1 = document.getElementById('chartTagihan');
     if (ctx1) {
         try {
             // Hancurkan chart lama jika ada
             if (window.tagihanChartInstance) {
                 window.tagihanChartInstance.destroy();
+                window.tagihanChartInstance = null;
             }
 
-            // AMBIL DATA DARI FUNGSI YANG SUDAH DIPERBAIKI
-            const tagihanData = await loadRealTagihanData(); // ✅ SEKARANG SUDAH BENAR
-
-            // Siapkan array 6 bulan terakhir (FORMAT TARGET: YYYY-MM)
+            // AMBIL DATA REAL DARI DATABASE
+            const snapshot = await db.collection('tagihan')
+                .where('company_id', '==', globalCompanyId)
+                .get();
+            
+            // Siapkan data 6 bulan terakhir
             const last6Months = [];
-            const displayLabels = []; // Untuk tampilan di chart (MMM YYYY)
+            const labels = [];
             
             for (let i = 5; i >= 0; i--) {
-                const m = moment().subtract(i, 'months');
-                last6Months.push(m.format('YYYY-MM')); // "2024-12"
-                displayLabels.push(m.format('MMM YYYY'));  // "Des 2024"
+                const month = moment().subtract(i, 'months');
+                last6Months.push(month.format('YYYY-MM')); // Format: 2025-01
+                labels.push(month.format('MMM YY')); // Label: Jan 25
             }
             
-            console.log("Target Bulan:", last6Months);
-
-            // Ambil semua data tagihan
-            const snapshot = await db.collection('tagihan')
-    .where('company_id', '==', globalCompanyId)  // ⭐ FILTER COMPANY
-    .get();
+            console.log("Bulan yang ditampilkan:", labels);
             
-            // Reset data chart
-            const dataChart = last6Months.map(() => 0);
-
-            if (!snapshot.empty) {
-                snapshot.forEach(doc => {
-                    const t = doc.data();
-                    const dbMonth = t.bulan; // Format DB: misal "12-2024" atau "12-2025"
-
-                    if (!dbMonth) return;
-
-                    // LOGIKA PENCOCOKAN CERDAS (SMART MATCH)
-                    let idx = -1;
-
-                    // Coba 1: Format Standar (YYYY-MM)
-                    if (last6Months.includes(dbMonth)) {
-                        idx = last6Months.indexOf(dbMonth);
-                    } 
-                    // Coba 2: Format Terbalik (MM-YYYY) -> Ganti jadi (YYYY-MM)
-                    else if (dbMonth.includes('-')) {
-                        const parts = dbMonth.split('-');
-                        if (parts.length === 2) {
-                            const flipped = `${parts[1]}-${parts[0]}`; // "2024-12"
-                            if (last6Months.includes(flipped)) {
-                                idx = last6Months.indexOf(flipped);
-                            }
-                        }
-                    }
-
-                    // Jika ketemu, tambahkan datanya
-                    if (idx !== -1) {
-                        dataChart[idx] += Number(t.jumlah) || 0;
-                    }
-                });
-            }
-
-            console.log("Data Chart Final:", dataChart);
-
-            // Render Chart
+            // Hitung total per bulan
+            const monthlyData = Array(6).fill(0);
+            
+            snapshot.forEach(doc => {
+                const t = doc.data();
+                const bulanTagihan = t.bulan; // Format: "01-2025" atau "2025-01"
+                
+                if (!bulanTagihan) return;
+                
+                // Cari index bulan ini di array
+                let index = -1;
+                
+                // Coba format "MM-YYYY"
+                const parts1 = bulanTagihan.split('-');
+                if (parts1.length === 2 && parts1[0].length === 2) {
+                    const formatted = `${parts1[1]}-${parts1[0]}`; // jadi "2025-01"
+                    index = last6Months.indexOf(formatted);
+                }
+                
+                // Coba format "YYYY-MM"
+                if (index === -1) {
+                    index = last6Months.indexOf(bulanTagihan);
+                }
+                
+                // Jika ditemukan, tambahkan ke data
+                if (index !== -1) {
+                    monthlyData[index] += Number(t.jumlah) || 0;
+                }
+            });
+            
+            console.log("Data bulanan:", monthlyData);
+            
+            // Buat chart
             window.tagihanChartInstance = new Chart(ctx1, {
                 type: 'line',
                 data: {
-                    labels: displayLabels,
+                    labels: labels,
                     datasets: [{
                         label: 'Tagihan (Rp)',
-                        data: dataChart,
+                        data: monthlyData,
                         borderColor: '#4361ee',
                         backgroundColor: 'rgba(67, 97, 238, 0.1)',
                         borderWidth: 3,
@@ -5581,7 +5741,7 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
                                     return formatRupiah(value);
                                 }
                             },
-                             title: { display: true, text: 'Jumlah Tagihan' }
+                            title: { display: true, text: 'Jumlah Tagihan' }
                         },
                         x: { title: { display: true, text: 'Bulan' } }
                     }
@@ -5590,6 +5750,20 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
 
         } catch (error) {
             console.error("❌ Error Chart Tagihan:", error);
+            // Fallback data dummy jika error
+            if (ctx1) {
+                window.tagihanChartInstance = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                        datasets: [{
+                            label: 'Tagihan (Rp)',
+                            data: [500000, 750000, 600000, 900000, 800000, 950000],
+                            borderColor: '#4361ee'
+                        }]
+                    }
+                });
+            }
         }
     }
     
@@ -5599,6 +5773,7 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
         try {
             if (window.statusChartInstance) {
                 window.statusChartInstance.destroy();
+                window.statusChartInstance = null;
             }
             
             window.statusChartInstance = new Chart(ctx2, {
@@ -5615,18 +5790,7 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { position: 'bottom' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
+                        legend: { position: 'bottom' }
                     }
                 }
             });
@@ -5641,14 +5805,21 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
 async function loadRealTagihanData() {
     console.log("📈 Mengambil data tagihan 6 bulan terakhir REAL...");
     
+    // ⭐ DEFINISI VARIABEL last6Months DI SINI ⭐
+    const last6Months = [];
+    const displayLabels = [];
+    
     try {
-        // 1. VALIDASI COMPANY ID
-        if (!globalCompanyId) {
-            console.error("❌ globalCompanyId kosong di loadRealTagihanData");
-            return [];
+        // 1. Siapkan array 6 bulan terakhir
+        for (let i = 5; i >= 0; i--) {
+            const m = moment().subtract(i, 'months');
+            last6Months.push(m.format('YYYY-MM')); // "2024-12", "2025-01"
+            displayLabels.push(m.format('MMM YYYY'));  // "Des 2024", "Jan 2025"
         }
         
-        // 2. AMBIL DATA DENGAN FILTER COMPANY
+        console.log("Target Bulan:", last6Months);
+
+        // 2. Ambil data tagihan (Pastikan pakai filter company)
         const snapshot = await db.collection('tagihan')
             .where('company_id', '==', globalCompanyId)
             .get();
@@ -5658,29 +5829,41 @@ async function loadRealTagihanData() {
             return [];
         }
         
-        // 3. PROSES DATA (SISA KODE TETAP SAMA DARI LINE 1220-1270)
-        
-        // Hitung total per bulan
-        snapshot.docs.forEach(doc => {
-            const tagihan = doc.data();
-            const bulanTagihan = tagihan.bulan;
+        // 3. Hitung total per bulan
+        const dataChart = last6Months.map(() => 0); // Reset data chart jadi 0 dulu
+
+        snapshot.forEach(doc => {
+            const t = doc.data();
+            const dbMonth = t.bulan; // Format DB: misal "12-2024" atau "2024-12"
             
-            // Cari bulan yang sesuai
-            const bulanData = last6Months.find(m => m.bulan === bulanTagihan);
-            if (bulanData) {
-                bulanData.total += Number(tagihan.jumlah) || 0;
+            if (!dbMonth) return;
+
+            // Logika Pencocokan Format Bulan
+            let idx = -1;
+
+            // Coba 1: Format Standar (YYYY-MM)
+            if (last6Months.includes(dbMonth)) {
+                idx = last6Months.indexOf(dbMonth);
+            } 
+            // Coba 2: Format Terbalik (MM-YYYY) -> Ganti jadi (YYYY-MM)
+            else if (dbMonth.includes('-')) {
+                const parts = dbMonth.split('-');
+                if (parts.length === 2) {
+                    const flipped = `${parts[1]}-${parts[0]}`; // "2024-12"
+                    if (last6Months.includes(flipped)) {
+                        idx = last6Months.indexOf(flipped);
+                    }
+                }
+            }
+
+            // Jika ketemu, tambahkan datanya
+            if (idx !== -1) {
+                dataChart[idx] += Number(t.jumlah) || 0;
             }
         });
-        
-        console.log("Hasil perhitungan REAL:", last6Months);
-        
-        // Format untuk chart (gunakan label bukan bulan)
-        const chartData = last6Months.map(month => ({
-            bulan: month.label, // Pakai label untuk chart
-            total: month.total
-        }));
-        
-        return chartData;
+
+        console.log("Data Chart Final:", dataChart);
+        return dataChart;
         
     } catch (error) {
         console.error("❌ Error load real tagihan data:", error);
@@ -5706,40 +5889,7 @@ function getPaginatedData(data, currentPage) {
     return data.slice(startIndex, endIndex);
 }
 
-function renderPagination(totalItems, currentPage, pageType, containerId) {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (totalPages <= 1) return '';
-    
-    let paginationHtml = '<div class="pagination">';
-    
-    // Previous button
-    if (currentPage > 1) {
-        paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage - 1})">&laquo;</a>`;
-    }
-    
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === currentPage) {
-            paginationHtml += `<a class="page-link active">${i}</a>`;
-        } else {
-            paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${i})">${i}</a>`;
-        }
-    }
-    
-    // Next button
-    if (currentPage < totalPages) {
-        paginationHtml += `<a class="page-link" onclick="changePage('${pageType}', ${currentPage + 1})">&raquo;</a>`;
-    }
-    
-    paginationHtml += '</div>';
-    
-    const container = document.getElementById(containerId);
-    if (container) {
-        container.innerHTML = paginationHtml;
-    }
-    
-    return paginationHtml;
-}
+
 
 function changePage(pageType, pageNumber) {
     switch(pageType) {
@@ -6020,95 +6170,112 @@ function closeModalButton(modalId) {
 
 // Fungsi untuk show modal yang bener
 function showModal(modalId) {
-    const modalEl = document.getElementById(modalId);
-    if (!modalEl) return;
+    // ⭐ PERBAIKAN 1: Ambil elemen modal
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        console.error("❌ Modal tidak ditemukan:", modalId);
+        return;
+    }
     
-    // TUTUP SEMUA MODAL LAIN DULU
-    const semuaModal = document.querySelectorAll('.modal-overlay.show');
-    semuaModal.forEach(modal => {
-        if (modal.id !== modalId) {
-            modal.classList.remove('show');
-            modal.classList.add('hidden');
-        }
-    });
-    
-    // BARU BUKA MODAL YANG DIMINTA
-    modalEl.classList.remove('hidden');
-    modalEl.classList.add('show');
+    // ⭐ PERBAIKAN 2: Kunci scroll body (PENTING!)
     document.body.style.overflow = 'hidden';
+    
+    // ⭐ PERBAIKAN 3: Tampilkan modal
+    // Kita HAPUS class 'hidden' dan TAMBAHKAN class 'show'
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    
+    // ⭐ PERBAIKAN 4 (KRUCIAL): Paksa display jadi 'flex'
+    // Karena CSS asli Anda pakai .hidden { display: none }
+    // Maka kita wajib set display: flex secara inline saat .show aktif
+    modal.style.display = 'flex';
 }
+
+
         
         async function loadAktivitas() {
     try {
-        console.log("📋 Loading aktivitas...");
-        console.log("🔍 globalCompanyId:", globalCompanyId); // ⭐⭐ TAMBAH INI
-        
-        const table = document.getElementById('aktivitasTable');
+        console.log("📋 Loading aktivitas (Limit 10 Halaman)...");
+
+        const table = await waitForElement('#aktivitasTable');
         if (!table) return;
-        
-        // ⭐⭐ CARA SIMPLE: AMBIL SEMUA, FILTER DI CLIENT ⭐⭐
+
+        // 1. AMBIL DATA DARI FIREBASE
+        // Kita ambil dulu SEMUA data yang ada, lalu kita urutkan dan potong di script ini.
         const snapshot = await db.collection('aktivitas')
-            .limit(30)  // Ambil 30 data terbaru
+            .orderBy('timestamp', 'desc') // Urutkan terbaru dulu
             .get();
 
-        console.log(`📥 Total data dari DB: ${snapshot.size}`); // ⭐⭐ TAMBAH INI
-        
         if (snapshot.empty) {
-            table.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center">Tidak ada aktivitas</td>
-                </tr>
-            `;
+            table.innerHTML = `<tr><td colspan="3" class="text-center">Tidak ada aktivitas</td></tr>`;
+            const paginationContainer = document.getElementById('aktivitasPagination');
+            if (paginationContainer) paginationContainer.innerHTML = '';
             return;
         }
-        
-        // FILTER: Hanya ambil data untuk company ini
-        let activities = [];
+
+        // 2. SIMPAN KE ARRAY SEMENTARA & URUTKAN
+        let allData = [];
         snapshot.forEach(doc => {
-            const data = doc.data();
-            console.log(`📄 Data: company_id="${data.company_id}", global="${globalCompanyId}"`); // ⭐⭐ TAMBAH INI
-            if (data.company_id === globalCompanyId) {
-                activities.push({
-                    id: doc.id,
-                    ...data
-                });
-                console.log(`✅ Filtered activities: ${activities.length}`); // ⭐⭐ TAMBAH INI
+            const act = doc.data();
+            allData.push(act);
+        });
+
+        // 3. POTONG DATA MAKSIMAL 100 BARIS (LOGIKA SLIDING WINDOW)
+        // Kita hanya simpan 100 data terakhir. Sisanya dibuang.
+        const maxDataLimit = 100; 
+        if (allData.length > maxDataLimit) {
+            console.warn(`⚠️ Data melebihi limit (${allData.length}), memotong menjadi ${maxDataLimit} data terbaru.`);
+            allData = allData.slice(0, maxDataLimit); // Ambil 100 pertama (yang terbaru)
+        }
+
+        // 4. SIMPAN KE VARIABLE GLOBAL AGAR TIDAK PERLU QUERY ULANG SAAT GANTI HALAMAN
+        window.allAktivitasData = allData;
+        window.totalAktivitasDataCount = allData.length; // Simpan jumlah asli untuk perhitungan pagination
+        window.currentHalamanAktivitas = window.currentHalamanAktivitas || 1;
+
+        // 5. LAKUKAN PAGINATION
+        // Jika halaman saat ini melebihi halaman maksimal baru (misal user sedang di hal 12, tapi data dipotong jadi max hal 10), kembalikan ke hal 1.
+        const totalPages = Math.ceil(window.totalAktivitasDataCount / itemsPerPage);
+        if (window.currentHalamanAktivitas > totalPages) {
+            window.currentHalamanAktivitas = 1;
+        }
+
+        // 6. POTONG DATA UNTUK HALAMAN YANG DITAMPILKAN
+        const startIndex = (window.currentHalamanAktivitas - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = window.allAktivitasData.slice(startIndex, endIndex);
+
+        // 7. RENDER TABEL
+        let html = '';
+        pageData.forEach(act => {
+            // Format waktu
+            let timeDisplay = '';
+            if (act.timestamp) {
+                const m = moment(act.timestamp);
+                timeDisplay = m.isValid() ? m.format('DD/MM HH:mm') : act.timestamp;
             }
-        });
-        
-        // SORT: Urutkan dari terbaru
-        activities.sort((a, b) => {
-            return new Date(b.timestamp) - new Date(a.timestamp);
-        });
-        
-        // Ambil 10 terbaru
-        activities = activities.slice(0, 10);
-        
-        // RENDER
-        table.innerHTML = activities.map(act => {
-            return `
+
+            html += `
                 <tr>
-                    <td>${moment(act.timestamp).format('DD/MM HH:mm')}</td>
+                    <td>${timeDisplay}</td>
                     <td>${act.aktivitas}</td>
                     <td>${act.user || 'System'}</td>
                 </tr>
             `;
-        }).join('');
+        });
         
-        console.log(`✅ ${activities.length} aktivitas dimuat`);
+        table.innerHTML = html;
+
+        // 8. RENDER PAGINATION
+        renderPagination(window.totalAktivitasDataCount, window.currentHalamanAktivitas, 'aktivitas', 'aktivitasPagination');
+        
+        console.log(`✅ Aktivitas dimuat: ${window.totalAktivitasDataCount} total data, menampilkan hal ${window.currentHalamanAktivitas}`);
         
     } catch (error) {
-        console.error("Error loading activities:", error);
-        
+        console.error("❌ Error load aktivitas:", error);
         const table = document.getElementById('aktivitasTable');
         if (table) {
-            table.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center text-danger">
-                        Error: ${error.message}
-                    </td>
-                </tr>
-            `;
+            table.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Error: ${error.message}</td></tr>`;
         }
     }
 }
@@ -6311,38 +6478,21 @@ function showModal(modalId) {
 // ============================================
 async function loadAllDataOnce() {
     try {
-        console.log("🚀 LOAD ALL DATA SEKALI UNTUK SELURUH SESSION");
+        console.log("📊 Loading all data...");
         
-        // AMBIL 3 DATA SEKALIGUS
-        const promises = [
-            db.collection('pelanggan').where('company_id', '==', globalCompanyId).get(),
-            db.collection('paket').where('company_id', '==', globalCompanyId).get(),
-            db.collection('tagihan').where('company_id', '==', globalCompanyId).get()
-        ];
+        // Load data dasar
+        await loadPelangganData();
+        await loadPaketData();
+        await loadTagihanData();
         
-        const [pelangganSnapshot, paketSnapshot, tagihanSnapshot] = await Promise.all(promises);
+        // ⭐⭐⭐ PERBAIKAN: TAMBAHKAN LOAD PROFIL PERUSAHAAN ⭐⭐⭐
+        await loadCompanyProfile();
         
-        // SIMPAN DI LOCALSTORAGE
-        const sessionData = {
-            pelanggan: pelangganSnapshot.docs.map(d => ({id: d.id, ...d.data()})),
-            paket: paketSnapshot.docs.map(d => ({id: d.id, ...d.data()})),
-            tagihan: tagihanSnapshot.docs.map(d => ({id: d.id, ...d.data()})),
-            timestamp: Date.now(),
-            company_id: globalCompanyId
-        };
-        
-        localStorage.setItem('xbill_cache', JSON.stringify(sessionData));
-        
-        console.log(`✅ DATA DISIMPAN: ${pelangganSnapshot.size} pelanggan, ${paketSnapshot.size} paket, ${tagihanSnapshot.size} tagihan`);
-        
-        return sessionData;
-        
+        console.log("✅ All data loaded successfully");
     } catch (error) {
-        console.error("❌ Gagal load all data:", error);
-        return null;
+        console.error("❌ Error loading all data:", error);
     }
 }
-
 
 // ============================================
 // FUNGSI UNTUK AMBIL DATA DARI CACHE
@@ -6396,6 +6546,22 @@ async function loadPaketSelectOptions() {
             option.textContent = `${p.nama} (${p.kecepatan})`;
             option.dataset.harga = p.harga;
             select.appendChild(option);
+        });
+        
+        // ⭐⭐ GANTI INI: PAKE addEventListener, BUKAN .onchange ⭐⭐
+        // Hapus semua event listener lama
+        const newSelect = select.cloneNode(true);
+        select.parentNode.replaceChild(newSelect, select);
+        
+        // Tambah event listener baru ke element yang baru
+        newSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const harga = selectedOption.dataset.harga;
+            
+            if (harga) {
+                document.getElementById('pelangganHarga').value = harga;
+                console.log("💰 Harga diisi: " + harga);
+            }
         });
         
     } catch (error) {
@@ -7081,50 +7247,80 @@ function renderTagihanTable(data) {
     const table = document.getElementById('tagihanTable');
     if (!table) return;
 
-    if (!data || data.length === 0) {
-        table.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-muted" style="padding: 40px;">
-                    <i class="fas fa-check-circle" style="font-size: 48px; color: #e9ecef;"></i>
-                    <h4 class="mt-3" style="color: var(--gray);">Tidak ada Tunggakan</h4>
-                    <p>Semua tagihan sudah lunas.</p>
-                </td>
-            </tr>
-        `;
+    if (data.length === 0) {
+        table.innerHTML = `<tr><td colspan="8" class="text-center">Tidak ada data</td></tr>`;
         return;
     }
+
+    // KELOMPOKKAN DATA
+    const grouped = {};
     
-    table.innerHTML = data.map((item, index) => {
+    data.forEach(item => {
+        const key = item.pelanggan_nama + "|" + item.pelanggan_telepon;
+        
+        if (!grouped[key]) {
+            grouped[key] = {
+                nama: item.pelanggan_nama,
+                telp: item.pelanggan_telepon,
+                alamat: item.pelanggan_alamat,
+                tagihan: [],
+                total: 0,
+                lunas: 0,
+                belum: 0,
+                telat: 0,
+                tglBayar: '-'
+            };
+        }
+        
+        grouped[key].tagihan.push({
+            bulan: item.bulan,
+            jumlah: item.jumlah,
+            status: item.status
+        });
+        
+        grouped[key].total += item.jumlah || 0;
+        
+        if (item.status === 'lunas') {
+            grouped[key].lunas++;
+            grouped[key].tglBayar = item.tgl_bayar || '-';
+        } else if (item.status === 'belum') {
+            grouped[key].belum++;
+        } else if (item.status === 'telat') {
+            grouped[key].telat++;
+        }
+    });
+
+    // RENDER
+    const hasil = Object.values(grouped);
+    
+    table.innerHTML = hasil.map(item => {
+        const bulanList = item.tagihan.map(t => t.bulan).join(', ');
+        
+        let status = 'Lunas', statusClass = 'badge-success';
+        if (item.telat > 0) {
+            status = 'Telat';
+            statusClass = 'badge-danger';
+        } else if (item.belum > 0) {
+            status = 'Belum';
+            statusClass = 'badge-warning';
+        }
+
         return `
             <tr>
-                <td><strong>${item.pelanggan_nama}</strong></td>
-                <td>${item.pelanggan_telepon}</td>
-                
-                <!-- ⭐ KOLOM JUMLAH BULAN (BISA DIKLIK) ⭐ -->
-                <td style="text-align: center;">
-                    <span class="badge badge-danger" 
-                          style="font-size: 16px; padding: 8px 15px; cursor: pointer;" 
-                          onclick="viewTagihanDetails('${item.pelanggan_id}')"
-                          title="Klik untuk lihat rincian bulan">
-                        ${item.jumlah_bulan} Bulan
-                    </span>
-                </td>
-                
-                <td><strong>${formatRupiah(item.total_uang)}</strong></td>
-                
-                <td>
-                    <span class="badge badge-danger">
-                        <i class="fas fa-exclamation-triangle"></i> Menunggak
-                    </span>
-                </td>
-                
+                <td><strong>${item.nama}</strong></td>
+                <td>${item.telp}</td>
+                <td>${item.alamat.substring(0, 30)}${item.alamat.length > 30 ? '...' : ''}</td>
+                <td>${bulanList}</td>
+                <td>${formatRupiah(item.total)}</td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+                <td>${item.tglBayar}</td>
                 <td>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-success" onclick="showPayAllModal('${item.pelanggan_id}')">
-                            <i class="fas fa-money-bill-wave"></i> Bayar Semua
+                        <button class="btn btn-sm btn-success" onclick="bayarSemuaTagihan('${item.nama}')">
+                            <i class="fas fa-money-bill-wave"></i>
                         </button>
-                        <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')">
-                            <i class="fas fa-list"></i> Detail
+                        <button class="btn btn-sm btn-info" onclick="lihatDetailTagihan('${item.nama}')">
+                            <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </td>
@@ -7134,7 +7330,7 @@ function renderTagihanTable(data) {
 }
 
 async function viewTagihanDetails(pelangganId) {
-    console.log("👁️ MEMBUKA DETAIL TAGIHAN...");
+    console.log("👁️ MEMBUKA RIWAYAT TAGIHAN...");
 
     try {
         // 1. AMBIL DATA PELANGGAN SEKALI SAJA
@@ -7190,7 +7386,7 @@ async function viewTagihanDetails(pelangganId) {
             return b.sort_bulan - a.sort_bulan;
         });
 
-        // 3. BUAT MODAL
+        // 3. BUAT MODAL "RIWAYAT TAGIHAN" DINAMIS
         const modalId = 'modalDetailTagihanFull';
         const oldModal = document.getElementById(modalId);
         if (oldModal) oldModal.remove();
@@ -7199,6 +7395,9 @@ async function viewTagihanDetails(pelangganId) {
         modal.id = modalId;
         modal.className = 'modal-overlay show';
         modal.style.zIndex = '1060';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
         modal.innerHTML = `
             <div class="modal modal-lg">
                 <div class="modal-header">
@@ -7288,10 +7487,10 @@ async function viewTagihanDetails(pelangganId) {
                 let statusBadge = '<span class="badge badge-danger">BELUM</span>';
                 
                 if (isLunas) {
-                    rowStyle = 'background-color: #f0fff4;';
+                    rowStyle = 'background-color: #f0fff4 !important;';
                     statusBadge = '<span class="badge badge-success">LUNAS</span>';
                 } else {
-                    rowStyle = 'background-color: #fff0f0;';
+                    rowStyle = 'background-color: #fff0f0 !important;';
                 }
 
                 // TOMBOL BAYAR
@@ -7318,7 +7517,7 @@ async function viewTagihanDetails(pelangganId) {
                 }
 
                 return `
-                    <tr style="${rowStyle}">
+                    <tr style="${rowStyle}" data-id="${t.id}"> 
                         <td><strong>${t.bulan_fix}</strong></td>
                         <td>${formatRupiah(t.jumlah)}</td>
                         <td>${statusBadge}</td>
@@ -7628,7 +7827,7 @@ function getStrukSettings() {
 
 // ==========================================
 //  FUNGSI PROSES BAYAR & UPDATE TAMPILAN NOTA
-// (BARU - TAMBAHKAN INI)
+// (PERBAIKAN: UPDATE STATUS TABEL LANGSUNG)
 // ==========================================
 async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
     try {
@@ -7644,16 +7843,12 @@ async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, n
             updated_at: new Date().toISOString()
         });
 
-        hideLoading();
-        showToast('success', 'Berhasil', 'Pembayaran Lunas!');
-
-        // 2. UPDATE TAMPILAN TOMBOL
+        // 2. UPDATE TAMPILAN NOTA
         const btnBayar = document.getElementById('btnBayarStruk');
         const btnBatal = document.getElementById('btnBatalStruk');
         const btnKirim = document.getElementById('btnKirimWA');
         const statusText = document.getElementById('notaStatusText');
         const btnContainer = document.getElementById('notaFooterContainer');
-        const strukElement = document.getElementById('strukPrintable');
 
         if (btnContainer) {
             if (btnBayar) btnBayar.style.display = 'none';
@@ -7664,17 +7859,46 @@ async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, n
                 const btnBaru = document.createElement('button');
                 btnBaru.id = 'btnSelesaiStruk';
                 btnBaru.className = 'btn';
-                btnBaru.style.cssText = 'width: 100%; background: #2ecc71; color: white; padding: 12px; border-radius: 5px; font-weight: bold; font-size: 14px; margin-top: 10px; border: none; cursor: pointer;';
+                btnBaru.style.cssText = 'width: 100%; background: #2ecc71; color: white; padding: 15px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-top: 10px; border: none; cursor: pointer;';
                 btnBaru.innerHTML = '<i class="fas fa-check-circle"></i> SELESAI';
                 btnContainer.appendChild(btnBaru);
                 
-                btnBaru.onclick = () => {
-                    document.getElementById('strukOverlay').remove();
-                    if (typeof loadTagihanData === 'function') loadTagihanData();
+                // ===============================
+                // PERBAIKAN FINAL: REFRESH DATA SEBELUM TUTUP
+                // ===============================
+                btnBaru.onclick = async function() {
+                    // Tampilkan loading sebentar
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refresh...';
+                    
+                    try {
+                        // 1. Refresh Halaman Utama
+                        if (typeof loadTagihanData === 'function') {
+                            await loadTagihanData();
+                        }
+
+                        // 2. Refresh Modal Detail (Riwayat Tagihan)
+                        // Kita panggil lagi fungsi viewTagihanDetails untuk reload data dari DB
+                        if (pelangganId) {
+                            // Hapus dulu modal lama agar bersih
+                            const oldModal = document.getElementById('modalDetailTagihanFull');
+                            if (oldModal) oldModal.remove();
+
+                            // Tampilkan modal baru (akan otomatis hijau karena data sudah lunas di DB)
+                            await viewTagihanDetails(pelangganId);
+                        }
+
+                    } catch (err) {
+                        console.error("Error refresh:", err);
+                    } finally {
+                        // Hapus Nota Overlay setelah refresh selesai (atau error)
+                        const strukOverlay = document.getElementById('strukOverlay');
+                        if (strukOverlay) strukOverlay.remove();
+                    }
                 };
             }
 
-            // --- LOGIKA TOMBOL KIRIM WA (SHARE API) ---
+            // --- LOGIKA TOMBOL KIRIM WA ---
             if (btnKirim) {
                 btnKirim.removeAttribute('disabled');
                 btnKirim.style.background = '#25D366';
@@ -7687,43 +7911,35 @@ async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, n
                     const btnOriginal = this.innerHTML;
                     
                     try {
-                        // 1. Ubah jadi Loading
                         this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
                         this.disabled = true;
 
-                        // 2. Ambil elemen nota untuk difoto
                         const strukEl = document.getElementById('strukPrintable');
                         if (!strukEl) throw new Error("Elemen nota tidak ditemukan");
 
-                        // 3. CLONE elemen (Agar tombol bawah tidak ikut terfoto)
                         const cloneStruk = strukEl.cloneNode(true);
                         const footerClone = cloneStruk.querySelector('#notaFooterContainer');
                         if (footerClone) footerClone.style.display = 'none';
 
-                        // 4. Render clone ke body (hidden) sebentar
                         cloneStruk.style.position = 'absolute';
                         cloneStruk.style.top = '-9999px';
                         cloneStruk.style.left = '-9999px';
                         cloneStruk.style.background = 'white';
                         document.body.appendChild(cloneStruk);
 
-                        // 5. Generate Canvas (Gambar)
                         const canvas = await html2canvas(cloneStruk, {
                             scale: 2, 
                             useCORS: true,
                             backgroundColor: "#ffffff"
                         });
 
-                        // 6. Hapus clone
                         document.body.removeChild(cloneStruk);
 
-                        // 7. Ubah Canvas jadi File Blob (Gambar Asli)
                         canvas.toBlob(async function(blob) {
                             if (!blob) throw new Error("Gagal membuat gambar");
 
                             const fileShare = new File([blob], `Bukti_Bayar_${tagihanId}.png`, { type: 'image/png' });
                             
-                            // Cek apakah browser support Web Share API
                             if (navigator.share && navigator.canShare({ files: [fileShare] })) {
                                 try {
                                     await navigator.share({
@@ -8423,6 +8639,8 @@ function showPaymentConfirmation(tagihanId, pelangganId, namaPelanggan, nominal,
 // ============================================
 
 function handleBayarClick(btnElement) {
+
+    
     const id = btnElement.getAttribute('data-id');
     const pid = btnElement.getAttribute('data-pid');
     const nama = btnElement.getAttribute('data-nama'); 
@@ -8432,13 +8650,10 @@ function handleBayarClick(btnElement) {
     if (!id || !pid || !nominal) return showToast('error', 'Error', 'Data tidak lengkap');
 
     bukaNotaDanKonfirmasi(id, pid, nama, nominal, bulan);
+
+    
 }
 
-
-
-// ============================================
-// 2. FUNGSI RENDER TABEL TAGIHAN (FIXED - TOMBOL AKTIF)
-// ============================================
 
 
 async function loadTagihanData() {
@@ -8582,6 +8797,20 @@ async function loadTagihanData() {
         });
 
         const groupedData = Object.values(groupedMap);
+
+        // SORTING: BELUM LUNAS DI ATAS, LUNAS DI BAWAH
+groupedData.sort((a, b) => {
+    const aBelumLunas = a.list_tagihan.filter(t => t.status !== 'lunas').length;
+    const bBelumLunas = b.list_tagihan.filter(t => t.status !== 'lunas').length;
+    
+    // 1. Urutkan berdasarkan jumlah tagihan belum lunas (descending)
+    if (bBelumLunas !== aBelumLunas) {
+        return bBelumLunas - aBelumLunas;
+    }
+    
+    // 2. Urutkan berdasarkan nama pelanggan
+    return a.pelanggan_nama.localeCompare(b.pelanggan_nama);
+});
         
         // LOG DEBUGGING
         console.log(`📊 ${groupedData.length} grup tagihan setelah validasi`);
@@ -9249,10 +9478,16 @@ async function loadPage(page) {
                 mainContent.innerHTML = pageHTML;
                 break;
                 
-            case 'setting':
+                        case 'setting':
                 console.log("⚙️ Load Page: Setting");
                 pageHTML = await getSettingHTML();
                 mainContent.innerHTML = pageHTML;
+                
+                // ⭐⭐ FIX: PANGGIL FUNGSI ISI DATA ⭐⭐
+                setTimeout(async () => {
+                    await loadCompanyProfile(); // PANGGIL YANG BENAR
+                    await loadBrandingSettings();
+                }, 100);
                 break;
                 
             default:
@@ -10116,23 +10351,32 @@ function attachDeleteEvents() {
 // FUNGSI UNTUK UPDATE TIMELINE PREVIEW DI MODAL
 function updateArrearsTimeline() {
     try {
+        // Ambil input bulan generate
         const bulanGenerateInput = document.getElementById('generateBulan').value;
         const tanggalJatuhTempo = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
         
         if (!bulanGenerateInput) return;
         
-        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM');
-        const bulanJatuhTempo = bulanGenerate.clone();
-        const bulanPemakaian = bulanGenerate.clone().subtract(1, 'month');
+        // Parse input
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM'); // Titik Akhir Loop
+        const bulanSebelumnya = bulanGenerate.clone().subtract(1, 'month'); // Bulan sebelum input
+
+        // Update UI Preview
+        // Sesuai perintah: Yang muncul "Tagihan Bulan Januari"
+        document.getElementById('previewBulanPemakaian').textContent = bulanSebelumnya.format('MMM YYYY'); // Des 2024 (Pemakaian)
+        document.getElementById('previewBulanGenerate').textContent = bulanGenerate.format('MMM YYYY'); // Jan 2025 (Generate)
         
-        document.getElementById('previewBulanPemakaian').textContent = bulanPemakaian.format('MMM YYYY');
-        document.getElementById('previewBulanGenerate').textContent = bulanGenerate.format('MMM YYYY');
-        document.getElementById('previewJatuhTempo').textContent = 
-            `${tanggalJatuhTempo} ${bulanJatuhTempo.format('MMM YYYY')}`;
-        
-        document.getElementById('summaryBulanPemakaian').textContent = bulanPemakaian.format('MMMM YYYY');
-        document.getElementById('summaryBulanJatuhTempo').textContent = bulanJatuhTempo.format('MMMM YYYY');
-        
+        // Jatuh tempo: 10 bulan berikutnya (Feb 2025) -> ATAU SESUAI LOGIKA BARU (10 Jan 2025)
+        // Karena perintah: "Generate bulan januari, yang muncul tagihan bulan januari"
+        // Maka jatuh tempo idealnya adalah di bulan berikutnya (Februari) atau akhir bulan Januari.
+        // Namun agar konsisten dengan bulan muncul:
+        const jatuhTempoDate = bulanGenerate.clone().date(tanggalJatuhTempo); // 10 Januari 2025
+        document.getElementById('previewJatuhTempo').textContent = jatuhTempoDate.format('DD MMM YYYY');
+
+        // Update Summary
+        document.getElementById('summaryBulanPemakaian').textContent = bulanSebelumnya.format('MMMM YYYY'); // Menunjukkan pemakaian bulan lalu
+        document.getElementById('summaryBulanJatuhTempo').textContent = bulanGenerate.format('MMMM YYYY'); // Menunjukkan jatuh tempo di bulan ini
+
     } catch (error) {
         console.error("Error update timeline:", error);
     }
@@ -10502,165 +10746,224 @@ async function executeDelete(id) {
 
 
 // ============================================
-// SCRIPT GENERATE TAGIHAN - FIX TOTAL (DD-MM-YYYY)
+// GENERATE TAGIHAN (LOGIKA: PASANG BULAN INI = TAGIHAN BULAN DEPAN)
 // ============================================
 
 async function generateTagihanBulk() {
-    console.log("🚀 GENERATE TAGIHAN (FIX TANGGAL)...");
+    console.log("🎯 FUNGSI generateTagihanBulk() DIPANGGIL!");
     
     try {
-        const bulanGenerateInput = document.getElementById('generateBulan').value; 
-        // Kita pakai fixed tanggal 10 sesuai contoh user
-        const tglJatuhTempoFix = 10; 
+        // 1. DEBUG: CEK VARIABLE PENTING
+        console.log("🔍 DEBUG VARIABLES:");
+        console.log("- globalCompanyId:", globalCompanyId);
+        console.log("- currentUser:", currentUser);
         
-        if (!bulanGenerateInput) {
-            showToast('error', 'Error', 'Pilih bulan generate');
+        // 2. AMBIL TOMBOL DENGAN CARA YANG AMAN
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary') || 
+                           document.getElementById('btnGenerateTagihan');
+        
+        console.log("🔘 Tombol ditemukan:", generateBtn);
+        
+        if (!generateBtn) {
+            showToast('error', 'Error', 'Tombol generate tidak ditemukan');
             return;
         }
         
-        // 1. LOADING UI
-        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        // 3. SET LOADING STATE
         const originalText = generateBtn.innerHTML;
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         generateBtn.disabled = true;
         
-        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM'); 
+        // 4. AMBIL INPUT BULAN GENERATE
+        const bulanGenerateInput = document.getElementById('generateBulan').value;
+        console.log("📅 Input bulan:", bulanGenerateInput);
         
-        // 2. AMBIL SEMUA PELANGGAN AKTIF
-        const pelangganSnapshot = await db.collection('pelanggan')
+        if (!bulanGenerateInput) {
+            showToast('error', 'Error', 'Pilih bulan generate');
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+            return;
+        }
+        
+        // 5. PASTIKAN globalCompanyId ADA
+        if (!globalCompanyId) {
+            console.warn("⚠️ globalCompanyId kosong, mencoba ensure...");
+            globalCompanyId = await ensureCompanyId();
+            
+            if (!globalCompanyId) {
+                showToast('error', 'Error', 'Company ID tidak ditemukan. Silakan login ulang.');
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+                return;
+            }
+        }
+        
+        // 6. AMBIL DATA PELANGGAN
+        console.log("📥 Mengambil data pelanggan untuk company:", globalCompanyId);
+        const snapshot = await db.collection('pelanggan')
             .where('company_id', '==', globalCompanyId)
             .where('status', '==', 'aktif')
             .get();
         
-        if (pelangganSnapshot.empty) {
-            showToast('warning', 'Data Kosong', 'Tidak ada pelanggan aktif');
-            generateBtn.disabled = false;
+        console.log("📊 Jumlah pelanggan aktif:", snapshot.size);
+        
+        if (snapshot.empty) {
+            showToast('info', 'Kosong', 'Tidak ada pelanggan aktif.');
             generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
             return;
         }
         
-        // 3. AMBIL SEMUA TAGIHAN YANG SUDAH ADA
-        const allExistingTags = await db.collection('tagihan')
+        // 7. HITUNG LIMIT DATE
+        const limitDate = moment(bulanGenerateInput, 'YYYY-MM').endOf('month');
+        console.log(`🛑 Batas generate: ${limitDate.format('DD MMMM YYYY')}`);
+        
+        // 8. AMBIL DATA TAGIHAN YANG SUDAH ADA
+        const tagihanSnapshot = await db.collection('tagihan')
             .where('company_id', '==', globalCompanyId)
             .get();
         
-        const existingTagMap = new Map();
-        allExistingTags.forEach(doc => {
-            const data = doc.data();
-            const key = `${data.pelanggan_id}_${data.bulan}`;
-            existingTagMap.set(key, true);
+        const existingMap = new Map();
+        tagihanSnapshot.forEach(doc => {
+            const t = doc.data();
+            const key = t.pelanggan_id + '_' + (t.bulan || '');
+            existingMap.set(key, true);
         });
         
-        let totalTagihanDibuat = 0;
+        console.log("📋 Tagihan yang sudah ada:", existingMap.size);
+        
+        // 9. BUAT BATCH
+        let count = 0;
         const batch = db.batch();
         const now = new Date().toISOString();
+        const jatuhTempoFix = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
         
-        // 4. PROSES PER PELANGGAN
-        for (const doc of pelangganSnapshot.docs) {
-            const pelanggan = doc.data();
-            const pelangganId = doc.id;
+        // 10. PROSES SETIAP PELANGGAN
+        for (const doc of snapshot.docs) {
+            const p = doc.data();
+            const pid = doc.id;
             
-            let tanggalPasang = moment(pelanggan.tanggal_pasang, ['YYYY-MM-DD', 'DD-MM-YYYY']);
-            if (!tanggalPasang.isValid()) tanggalPasang = moment('2020-01-01');
+            // Parse tanggal pasang
+            let tglPasang = moment(p.tanggal_pasang);
+            if (!tglPasang.isValid()) {
+                console.log(`⚠️ ${p.nama}: Tanggal pasang tidak valid, skip`);
+                continue;
+            }
             
-            // ⭐ LOGIKA: START LOOP = BULAN PASANG + 1
-            let bulanSaatIni = tanggalPasang.clone().add(1, 'month').startOf('month');
+            // Mulai dari bulan setelah pasang
+            let bulanSaatIni = tglPasang.clone().add(1, 'months').startOf('month');
             
-            const maxLoop = 24; 
-            let loopCount = 0;
+            // Skip jika sudah lewat batas
+            if (bulanSaatIni.isAfter(limitDate, 'month')) {
+                console.log(`⏭️ ${p.nama}: Lewat batas (${bulanSaatIni.format('MMM YY')} > ${limitDate.format('MMM YY')})`);
+                continue;
+            }
             
-            // Loop sampai bulan input
-            while (bulanSaatIni.isSameOrBefore(bulanGenerate, 'month') && loopCount < maxLoop) {
-                
-                // Format Key: MM-YYYY
+            // Generate per bulan
+            while (bulanSaatIni.isSameOrBefore(limitDate, 'month')) {
                 const bulanKey = bulanSaatIni.format('MM-YYYY');
+                const uniqueKey = pid + '_' + bulanKey;
                 
-                const existingKey = `${pelangganId}_${bulanKey}`;
-                
-                if (!existingTagMap.has(existingKey)) {
-                    let jumlahTagihan = Number(pelanggan.harga) || 0;
-                    let isProrata = false;
-                    let catatan = 'Tagihan normal';
-                    
-                    // Cek Prorata
-                    const bulanPertama = tanggalPasang.clone().add(1, 'month').startOf('month');
-                    if (bulanSaatIni.isSame(bulanPertama, 'month')) {
-                        isProrata = true;
-                        const daysInMonth = bulanSaatIni.daysInMonth();
-                        const sisaHari = daysInMonth - tanggalPasang.date() + 1;
-                        jumlahTagihan = Math.round((jumlahTagihan / daysInMonth) * sisaHari);
-                        catatan = `Prorata ${sisaHari} hari`;
-                    }
-                    
-                    // ⭐ FIX KRUSIAL: BANGUN TANGGAL DARI YEAR, MONTH, DATE (AGAR TIDAK SALAH)
-                    // Kita clone bulanSaatIni, lalu set tanggalnya ke 10.
-                    const jatuhTempoDate = bulanSaatIni.clone().date(tglJatuhTempoFix);
-                    
-                    // Format ke string DD-MM-YYYY
-                    const jatuhTempoString = jatuhTempoDate.format('DD-MM-YYYY');
-                    
-                    const tagihanId = `INV_${bulanKey.replace('-', '')}_${pelangganId}_${Date.now()}`;
-                    const tagihanRef = db.collection('tagihan').doc(tagihanId);
-                    
-                    batch.set(tagihanRef, {
-                        id: tagihanId,
-                        pelanggan_id: pelangganId,
-                        pelanggan_nama: pelanggan.nama || '',
-                        pelanggan_telepon: pelanggan.telepon || '',
-                        bulan: bulanKey, // 02-2026
-                        jumlah: jumlahTagihan,
-                        tanggal_jatuh_tempo: jatuhTempoString, // Hasil: 10 Feb 2026
-                        status: 'belum',
-                        company_id: globalCompanyId,
-                        created_at: now,
-                        updated_at: now,
-                        metadata: {
-                            is_prorata: isProrata,
-                            catatan: catatan,
-                            bulan_generate: bulanGenerateInput
-                        }
-                    });
-                    
-                    totalTagihanDibuat++;
-                    console.log(`   ✅ ${pelanggan.nama} - ${bulanKey} (JT: ${jatuhTempoString})`);
+                // Cek duplikat
+                if (existingMap.has(uniqueKey)) {
+                    console.log(`✅ ${p.nama} ${bulanKey}: Sudah ada`);
+                    bulanSaatIni.add(1, 'months');
+                    continue;
                 }
                 
-                bulanSaatIni.add(1, 'month');
-                loopCount++;
+                // Buat ID tagihan
+                const tagihanId = `INV_${Date.now()}_${pid}_${bulanKey.replace('-', '')}`;
+                const tagihanRef = db.collection('tagihan').doc(tagihanId);
+                
+                // Hitung jatuh tempo
+                const jatuhTempo = bulanSaatIni.clone().date(jatuhTempoFix);
+                
+                // Data tagihan
+                let jumlahTagihan = p.harga || 0;
+
+// CEK JIKA INI BULAN PERTAMA (BULAN SETELAH TANGGAL PASANG)
+// tglPasang = Januari, bulanSaatIni = Februari
+if (bulanSaatIni.isSame(tglPasang.clone().add(1, 'month'), 'month')) {
+    // HITUNG PRORATA UNTUK BULAN SEBELUMNYA (JANUARI)
+    const bulanPemakaian = bulanSaatIni.clone().subtract(1, 'month'); // Januari
+    const akhirBulanPemakaian = bulanPemakaian.clone().endOf('month'); // 31 Januari
+    const hariEfektif = akhirBulanPemakaian.diff(tglPasang, 'days') + 1; // 16 hari (15-31 Jan)
+    
+    const hargaPerHari = jumlahTagihan / 30;
+    jumlahTagihan = Math.round(hargaPerHari * hariEfektif);
+    
+    console.log(`💰 PRORATA ${p.nama}: ${hariEfektif} hari = ${formatRupiah(jumlahTagihan)}`);
+}
+
+// Data tagihan
+const tagihanData = {
+    id: tagihanId,
+    pelanggan_id: pid,
+    pelanggan_nama: p.nama || '',
+    pelanggan_telepon: p.telepon || '',
+    pelanggan_alamat: p.alamat || '',
+    paket: p.paket || '',
+    bulan: bulanKey,
+    jumlah: jumlahTagihan, // ⭐⭐ PAKE YANG SUDAH DIHITUNG
+    tanggal_jatuh_tempo: jatuhTempo.format('DD-MM-YYYY'),
+    status: 'belum',
+    company_id: globalCompanyId,
+    created_at: now,
+    updated_at: now,
+    catatan: jumlahTagihan !== p.harga ? `Tagihan prorata` : ''
+};
+
+                
+                batch.set(tagihanRef, tagihanData);
+                existingMap.set(uniqueKey, true);
+                count++;
+                
+                console.log(`✅ ${p.nama} ${bulanKey}: ${formatRupiah(p.harga || 0)} → Jatuh tempo ${jatuhTempo.format('DD-MM-YYYY')}`);
+                
+                bulanSaatIni.add(1, 'months');
             }
         }
         
-        // 5. SIMPAN
-        if (totalTagihanDibuat > 0) {
+        // 11. COMMIT BATCH
+        if (count > 0) {
+            console.log(`📤 Committing ${count} tagihan...`);
             await batch.commit();
-            console.log(`💾 BERHASIL: ${totalTagihanDibuat} tagihan disimpan.`);
-            showToast('success', 'Berhasil', `${totalTagihanDibuat} tagihan baru dibuat.`);
             
-            await db.collection('aktivitas').add({
-                aktivitas: `Generate: ${totalTagihanDibuat} tagihan (${bulanGenerate.format('MMMM YYYY')})`,
-                user: currentUser?.email || "Admin",
-                timestamp: now,
-                company_id: globalCompanyId
-            });
+            
+            
+            // Tutup modal dan refresh
+            forceCloseModal('modalGenerateTagihan');
+            await loadTagihanData();
             
         } else {
-            showToast('info', 'Info', 'Semua tagihan sudah ada.');
+            showToast('info', 'Sudah lengkap', 'Semua tagihan sudah ada hingga batas bulan ini.');
         }
         
-        forceCloseModal('modalGenerateTagihan');
-        await loadTagihanData();
-        
     } catch (error) {
-        console.error("❌ Error generate:", error);
-        showToast('error', 'Gagal', error.message);
+        console.error("❌ ERROR generateTagihanBulk:", error);
+        showToast('error', 'Gagal', error.message || 'Terjadi kesalahan');
+        
     } finally {
-        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        // 12. RESET TOMBOL
+        console.log("🔄 Reset tombol...");
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary') || 
+                           document.getElementById('btnGenerateTagihan');
+        
         if (generateBtn) {
             generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
             generateBtn.disabled = false;
         }
     }
 }
+
+function resetGenerateButton() {
+    const generateBtn = document.getElementById('btnGenerateTagihan');
+    if (generateBtn) {
+        generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
+        generateBtn.disabled = false;
+    }
+}
+
 
     
 
@@ -10803,17 +11106,42 @@ async function bayarTagihan(tagihanId) {
         console.log("Membuka form bayar untuk tagihan:", tagihanId);
         
         // Ambil data tagihan
+                // Ambil data tagihan
         const doc = await db.collection('tagihan').doc(tagihanId).get();
         if (!doc.exists) {
-            showToast('error', 'Error', 'Tagihan tidak ditemukan');
+            showToast('error', 'Error', 'Data tidak ditemukan');
             return;
         }
         
         const tagihan = doc.data();
         
-        // Isi form modal bayar
-        document.getElementById('bayarInvoice').value = tagihan.id || tagihanId;
-        document.getElementById('bayarPelanggan').value = tagihan.pelanggan_nama || 'Tidak ada nama';
+        // Ambil data pelanggan (UNTUK NAMA & STATUS)
+        let namaPelanggan = tagihan.pelanggan_nama || 'Pelanggan';
+        let statusPelanggan = 'Nonaktif'; // Default
+        let tglPasang = '-';
+        let namaPetugas = 'Admin'; // ⭐ DEFAULT PETUGAS
+
+        try {
+            const pelDoc = await db.collection('pelanggan').doc(tagihan.pelanggan_id).get();
+            if (petugasDoc.exists) {
+                const pData = petugasDoc.data();
+                namaPelanggan = pData.nama || namaPelanggan; // Update nama dari DB jika ada
+                statusPelanggan = pData.status || 'Nonaktif';
+                tglPasang = pData.tanggal_pasang || '-';
+                
+                // ⭐ AMBIL NAMA PETUGAS DARI USER LOGIN ⭐
+                namaPetugas = getNamaKaryawan(); // Fungsi helper (akan kita buat di bawah)
+            }
+        } catch (err) {
+            console.warn("Gagal ambil data pelanggan:", err);
+            // Pakai default Admin
+        }
+
+        // Isi Form Modal
+        document.getElementById('bayarInvoice').value = tagihan.id || tagihanId.substring(0, 10) + '...';
+        document.getElementById('bayarPelanggan').value = namaPelanggan;
+        document.getElementById('bayarStatusPelanggan').value = statusPelanggan;
+        document.getElementById('bayarTanggalPasang').value = tglPasang;
         document.getElementById('bayarJumlah').value = formatRupiah(tagihan.jumlah || 0);
         
         // Hitung denda jika telat
@@ -10843,6 +11171,20 @@ async function bayarTagihan(tagihanId) {
         console.error("Error membuka form bayar:", error);
         showToast('error', 'Error', 'Gagal membuka form pembayaran');
     }
+}
+
+// FUNGSI HELPER: AMBIL NAMA PETUGAS
+function getNamaKaryawan() {
+    // Coba ambil dari localStorage/Variable Global
+    if (currentUser && currentUser.name) {
+        return currentUser.name;
+    }
+    
+    // Fallback jika user object belum siap
+    const savedName = localStorage.getItem('userName');
+    if (savedName) return savedName;
+    
+    return 'Admin'; // Default
 }
 
 // FUNGSI UNTUK TOMBOL "LIHAT DETAIL"
@@ -11048,6 +11390,9 @@ function printInvoiceDetail(tagihanId) {
                     catatan_bayar: catatanBayar,
                     updated_at: new Date().toISOString()
                 });
+
+
+                
                 
                 // Log activity
                 await db.collection('aktivitas').add({
@@ -12113,27 +12458,20 @@ if (logoutBtnSmall) {
 // ============================================
 async function showCompanyProfile() {
     try {
-        const docRef = db.collection('settings').doc('company_profile');
-        const doc = await docRef.get();
+        // Load data terbaru dari Firebase sebelum buka modal
+        await loadCompanyProfile();
         
-        if (doc.exists) {
-            const data = doc.data();
-            if (document.getElementById('companyName')) document.getElementById('companyName').value = data.nama || '';
-            if (document.getElementById('companyTagline')) document.getElementById('companyTagline').value = data.tagline || '';
-            if (document.getElementById('companyAddress')) document.getElementById('companyAddress').value = data.alamat || '';
-            if (document.getElementById('companyPhone')) document.getElementById('companyPhone').value = data.telepon || '';
-            if (document.getElementById('companyEmail')) document.getElementById('companyEmail').value = data.email || '';
-            if (document.getElementById('companyWebsite')) document.getElementById('companyWebsite').value = data.website || '';
-            if (document.getElementById('companyNPWP')) document.getElementById('companyNPWP').value = data.npwp || '';
-            if (document.getElementById('companyDirector')) document.getElementById('companyDirector').value = data.direktur || '';
-            if (document.getElementById('companyType')) document.getElementById('companyType').value = data.jenis || 'isp';
-            if (document.getElementById('invoicePrefix')) document.getElementById('invoicePrefix').value = data.invoice_prefix || 'INV';
-            if (document.getElementById('invoiceFooter')) document.getElementById('invoiceFooter').value = data.invoice_footer || '';
-            if (document.getElementById('invoiceTerms')) document.getElementById('invoiceTerms').value = data.invoice_terms || '';
+        // Tampilkan modal
+        const modal = document.getElementById('modalCompanyProfile');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            showToast('info', 'Profil Perusahaan', 'Memuat data profil...');
         }
-        showModal('modalCompanyProfile');
     } catch (error) {
         console.error("Error show company profile:", error);
+        showToast('error', 'Error', 'Gagal memuat profil perusahaan');
     }
 }
 
@@ -13478,14 +13816,20 @@ async function saveCompanyProfile() {
         await db.collection('company_settings').doc('profile').set(formData, { merge: true });
 
         // Update UI
-        if (document.getElementById('companyNameNav')) {
-            document.getElementById('companyNameNav').textContent = formData.companyName;
+        const navEl = document.getElementById('companyNameNav');
+        if (navEl) {
+            navEl.innerText = formData.companyName; // ⭐ Ganti textContent dengan innerText
+            // Paksa re-render untuk mobile
+            navEl.style.display = 'none';
+            navEl.offsetHeight;
+            navEl.style.display = '';
         }
         
-        if (document.getElementById('dropdownCompanyName')) {
-            document.getElementById('dropdownCompanyName').textContent = formData.companyName;
-            document.getElementById('dropdownCompanyTagline').textContent = formData.companyTagline || 'Billing Management System';
-        }
+        const dropdownNameEl = document.getElementById('dropdownCompanyName');
+        if (dropdownNameEl) dropdownNameEl.textContent = formData.companyName;
+        
+        const dropdownTaglineEl = document.getElementById('dropdownCompanyTagline');
+        if (dropdownTaglineEl) dropdownTaglineEl.textContent = formData.companyTagline || 'Billing Management System';
 
         hideLoading();
         showToast('success', 'Berhasil', 'Profil perusahaan berhasil disimpan');
@@ -13968,27 +14312,53 @@ async function loadCompanyProfile() {
     try {
         const doc = await db.collection('company_settings').doc('profile').get();
         
-        if (doc.exists) {
-            const data = doc.data();
-            
-            // Isi form
-            document.getElementById('companyName').value = data.companyName || '';
-            document.getElementById('companyTagline').value = data.companyTagline || '';
-            document.getElementById('companyAddress').value = data.companyAddress || '';
-            document.getElementById('companyPhone').value = data.companyPhone || '';
-            document.getElementById('companyEmail').value = data.companyEmail || '';
-            document.getElementById('companyWebsite').value = data.companyWebsite || '';
-            document.getElementById('companyNPWP').value = data.companyNPWP || '';
-            document.getElementById('companyDirector').value = data.companyDirector || '';
-            document.getElementById('companyType').value = data.companyType || 'isp';
-            document.getElementById('invoicePrefix').value = data.invoicePrefix || 'INV';
-            document.getElementById('invoiceFooter').value = data.invoiceFooter || '';
-            document.getElementById('invoiceTerms').value = data.invoiceTerms || '';
-        }
+        if (!doc.exists) return;
+        
+        const data = doc.data();
+        const companyName = data.companyName;
+        const companyAddress = data.companyAddress || 'Jl. Internet Cepat No. 1';
+        
+        if (!companyName) return;
+        
+        localStorage.setItem('companyName', companyName);
+        localStorage.setItem('companyAddress', companyAddress);
+        
+        const navElement = document.getElementById('companyNameNav');
+        if (navElement) navElement.textContent = companyName;
+        
+        const dropdownElement = document.getElementById('dropdownCompanyName');
+        if (dropdownElement) dropdownElement.textContent = companyName;
+        
+        document.querySelectorAll('.company-name').forEach(element => {
+            element.textContent = companyName;
+        });
+        
+        document.querySelectorAll('[data-company-name]').forEach(element => {
+            element.textContent = companyName;
+        });
+        
+        window.namaPerusahaan = companyName;
+        window.alamatPerusahaan = companyAddress;
+        
     } catch (error) {
-        console.error("Error load company profile:", error);
+        console.error(error);
     }
 }
+
+function updateNavbarTime() {
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) {
+        const now = moment();
+        timeElement.textContent = now.format('DD/MM/YYYY HH:mm');
+    }
+}
+
+// UPDATE SETIAP MENIT (60.000 ms)
+setInterval(updateNavbarTime, 60000);
+
+// PANGGIL PERTAMA KALI
+updateNavbarTime();
+
 
 async function loadBrandingSettings() {
     try {
@@ -14161,7 +14531,263 @@ function adminAtauKaryawan() {
 }
 
 
+// ============================================
+// FUNGSI KLIK CARD LUNAS - DETAIL BULAN INI
+// ============================================
 
+function showLunasBulanIni() {
+    console.log("🟢 Membuka detail lunas bulan ini...");
+    
+    // --- TAMBAHKAN INI: PAKSA Z-INDEX TINGGI ---
+    // Kita cari semua modal lain yang mungkin ada dan turunkan z-index-nya
+    window.document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+    modal.style.zIndex = "1000"; 
+});
+
+    showModal('modalLunasBulanIni');
+    
+    // --- TAMBAHKAN INI: SET Z-INDEX MODAL INI TINGGI ---
+    // Pastikan modal lunas menang di paling atas
+    const modal = document.getElementById('modalLunasBulanIni');
+    if (modal) {
+        modal.style.zIndex = "99999"; 
+        console.log("✅ Modal Lunas Z-Index set to 99999");
+    }
+    
+    loadLunasBulanIniData();
+}
+
+// ============================================
+// FUNGSI LOAD DATA LUNAS BULAN INI (FIXED: HANYA PELANGGAN LUNAS)
+// ============================================
+
+async function loadLunasBulanIniData(page = 1) {
+    const table = document.getElementById('lunasBulanIniTable');
+    if (!table) return;
+    
+    try {
+        table.innerHTML = `<tr><td colspan="8" class="text-center"><div class="spinner" style="margin:0 auto;"></div> Memuat Data...</td></tr>`;
+        
+        // Tentukan Bulan Ini
+        const currentMonthText = moment().format('MM-YYYY');
+        
+        // 1. Ambil SEMUA tagihan bulan ini (tanpa filter status dulu)
+        const snapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('bulan', '==', currentMonthText)
+            .get();
+        
+        // 2. Kita Filter secara Manual di JavaScript agar TIDAK ERROR INDEKS
+        // Hanya ambil data pelanggan yang statusnya 'lunas'
+        let filteredDocs = [];
+        
+        if (!snapshot.empty) {
+            // Loop semua data
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                
+                // Filter Status: HANYA JIKA STATUS = 'lunas'
+                if (data.status === 'lunas') {
+                    filteredDocs.push({ id: doc.id, ...data });
+                }
+            });
+        }
+        
+        console.log(`📊 Ditemukan ${filteredDocs.length} data lunas bulan ini.`);
+        
+        if (filteredDocs.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center" style="padding: 30px;">
+                        <i class="fas fa-inbox" style="font-size: 40px; color: #e9ecef;"></i>
+                        <h4 style="margin-top:10px; color: var(--gray);">Belum Ada Pelunasan</h4>
+                        <p>Belum ada pelanggan yang membayar lunas bulan ini.</p>
+                    </td>
+                </tr>`;
+            document.getElementById('lunasPagination').innerHTML = '';
+            return;
+        }
+        
+        // 3. Pagination Logic (Sama seperti sebelumnya)
+        const totalData = filteredDocs.length;
+        const itemsPerPage = 10;
+        const totalPages = Math.ceil(totalData / itemsPerPage);
+        
+        if (page > totalPages) page = totalPages;
+        
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageDocs = filteredDocs.slice(startIndex, endIndex);
+        
+        // 4. Render Table
+        let html = '';
+        
+        // Cache map pelanggan
+        if (!window.pelangganCacheMap) window.pelangganCacheMap = {};
+        
+        for (let i = 0; i < pageDocs.length; i++) {
+            const t = pageDocs[i];
+            
+            // Ambil Nama Pelanggan
+            let namaPelanggan = t.pelanggan_nama || 'Unknown';
+            if (t.pelanggan_id && !window.pelangganCacheMap[t.pelanggan_id]) {
+                try {
+                    const pelDoc = await db.collection('pelanggan').doc(t.pelanggan_id).get();
+                    if (pelDoc.exists) {
+                        const pData = pelDoc.data();
+                        window.pelangganCacheMap[t.pelanggan_id] = pData.nama || t.pelanggan_nama;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+            
+            if (window.pelangganCacheMap[t.pelanggan_id]) {
+                namaPelanggan = window.pelangganCacheMap[t.pelanggan_id];
+            }
+            
+            // Format Tanggal Bayar
+            let tglBayarDisplay = '-';
+            if (t.tanggal_bayar) {
+                let m = moment(t.tanggal_bayar, 'DD MMMM YYYY, HH:mm');
+                if (!m.isValid()) m = moment(t.tanggal_bayar);
+                if (!m.isValid()) m = moment(t.tanggal_bayar, 'YYYY-MM-DD');
+                if (m.isValid()) tglBayarDisplay = m.format('DD/MM/YYYY');
+            }
+
+            const no = startIndex + i + 1;
+
+            html += `
+                <tr>
+                    <td style="font-weight: bold;">${no}</td>
+                    <td><strong>${namaPelanggan}</strong></td>
+                    <td>${formatRupiah(t.jumlah || 0)}</td>
+                    <td><span class="badge badge-info">${t.bulan || '-'}</span></td>
+                    <td><span class="badge badge-success"><i class="fas fa-check-circle"></i> LUNAS</span></td>
+                    <td>${tglBayarDisplay}</td>
+                    <td><small>${t.nama_petugas || t.updated_by || 'System'}</small></td>
+                </tr>
+            `;
+        }
+        
+        table.innerHTML = html;
+        
+        // Render Pagination
+        renderPagination(totalData, page, 'lunasBulanIni', 'lunasPagination');
+        
+    } catch (error) {
+        console.error("Error load data lunas:", error);
+        const table = document.getElementById('lunasBulanIniTable');
+        if(table) {
+            table.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+        }
+    }
+}
+
+
+// ============================================
+// FUNGSI DETAIL TUNGGAKAN (REAL-TIME CALCULATION)
+// ============================================
+
+function showDetailTunggakan() {
+    console.log("🔴 Membuka detail tunggakan...");
+    showModal('modalDetailTunggakan'); // Pastikan ID Modal HTML ini sama
+    loadTunggakanDynamicData();
+}
+
+// ============================================
+// LOAD DATA TUNGGAKAN DENGAN PERHITUNGAN DINAMIS
+// ============================================
+
+async function loadTunggakanDynamicData(page = 1) {
+    const table = document.getElementById('tunggakanTable');
+    if (!table) return;
+    
+    try {
+        // 1. Ambil SEMUA Tagihan BELUM LUNAS
+        const snapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', '==', 'belum') // Status belum (termasuk telat)
+            .get();
+        
+        if (snapshot.empty) {
+            table.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 40px;">Tidak ada tunggakan saat ini. Semua tagihan sudah LUNAS.</td></tr>`;
+            document.getElementById('tunggakanPagination').innerHTML = '';
+            return;
+        }
+        
+        // 2. Group Data per Pelanggan & Hitung Total
+        const groupedMap = {};
+        
+        snapshot.forEach(doc => {
+            const t = doc.data();
+            const pid = t.pelanggan_id;
+            const bulanRaw = t.bulan || "";
+            
+            // Konversi "01-2025" jadi Angka 1 (Januari)
+            const parts = bulanRaw.split('-');
+            const angkaBulan = parts[0] ? parseInt(parts[0], 10) : 0; // Ambil bagian bulan (01 jadi 1)
+            
+            if (!groupedMap[pid]) {
+                // Init pelanggan baru
+                groupedMap[pid] = {
+                    pelanggan_id: pid,
+                    pelanggan_nama: t.pelanggan_nama || 'Unknown',
+                    pelanggan_telepon: t.pelanggan_telepon || '-',
+                    total_uang: 0,
+                    list_angka_bulan: [] // Simpan angka bulan: [1, 2, 3]
+                };
+            }
+            
+            // Tambah nominal
+            groupedMap[pid].total_uang += Number(t.jumlah) || 0;
+            
+            // Simpan angka bulan (Hanya simpan angka unik agar tidak doang 1, 1, 1)
+            if (!groupedMap[pid].list_angka_bulan.includes(angkaBulan)) {
+                groupedMap[pid].list_angka_bulan.push(angkaBulan);
+            }
+        });
+        
+        // 3. Siapkan Array untuk Pagination
+        let dataArray = Object.values(groupedMap);
+        
+        // 4. Pagination
+        const itemsPerPage = 10;
+        const totalPages = Math.ceil(dataArray.length / itemsPerPage);
+        
+        if (page > totalPages) page = totalPages;
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageData = dataArray.slice(startIndex, endIndex);
+        
+        // 5. Render Table
+        let html = '';
+        
+        pageData.forEach((item, index) => {
+            const nomor = startIndex + index + 1;
+            
+            // Ubah array angka [1, 2] jadi string "1, 2"
+            const periodeString = item.list_angka_bulan.join(', ');
+            
+            html += `
+                <tr>
+                    <td>${nomor}</td>
+                    <td><strong>${item.pelanggan_nama}</strong></td>
+                    <td style="color: var(--danger); font-weight: bold;">${formatRupiah(item.total_uang)}</td>
+                    <td><span style="background: #ffebeb; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 12px;">${periodeString}</span></td>
+                </tr>
+            `;
+        });
+        
+        table.innerHTML = html;
+        
+        // Render Pagination
+        renderPagination(dataArray.length, page, 'tunggakan', 'tunggakanPagination');
+        
+    } catch (error) {
+        console.error("Error load tunggakan:", error);
+        const table = document.getElementById('tunggakanTable');
+        if(table) table.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+    }
+}
 
         
 // ============================================
@@ -14172,6 +14798,41 @@ function adminAtauKaryawan() {
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 X-BILL System Initializing...");
+
+    (async function initGlobalData() {
+        console.log("🚀 Inisialisasi Data Global Aplikasi...");
+        
+        try {
+            // Kita coba ambil data Company Profile terlebih dahulu
+            const doc = await db.collection('company_settings').doc('profile').get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                const companyName = data.companyName || 'X-BILL ISP';
+                const companyAddress = data.companyAddress || 'Jl. Internet Cepat No. 1';
+                
+                // Simpan ke Variable Global agar tidak hilang saat ganti menu
+                window.globalCompanyName = companyName;
+                window.globalCompanyAddress = companyAddress;
+                
+                // Update UI Navbar secara langsung (jika elemennya ada)
+                const navElement = document.getElementById('companyNameNav');
+                if (navElement) navElement.textContent = companyName;
+                
+                console.log("✅ Data Perusahaan dimuat dari Database:", companyName);
+            } else {
+                console.log("ℹ️ Belum ada profil perusahaan di database, gunakan default.");
+                window.globalCompanyName = 'X-BILL ISP';
+                window.globalCompanyAddress = 'Jl. Internet Cepat No. 1';
+            }
+            
+        } catch (error) {
+            console.warn("⚠️ Gagal inisialisasi data global (mungkin belum login/offline):", error);
+            // Set default jika error
+            window.globalCompanyName = 'X-BILL ISP';
+            window.globalCompanyAddress = 'Jl. Internet Cepat No. 1';
+        }
+    })();
     
     // 1. SETUP DEFAULT DATES
     const today = moment().format('DD-MM-YYYY');
@@ -14308,13 +14969,29 @@ if (loginForm) {
             await loadPage('dashboard');
             
             hideLoading();
-            showToast('success', 'Login Berhasil', `Selamat datang, ${currentUser.name}`);
+          
 
         } catch (error) {
+            // ⭐⭐ PERBAIKAN: Jangan tampilkan Toast Error jika sudah masuk Dashboard ⭐⭐
             console.error("❌ Error Login:", error);
+            
+            // Cek apakah user sudah masuk dashboard sebelum menampilkan error
+            const appContainer = document.getElementById('appContainer');
+            if (!appContainer.classList.contains('hidden')) {
+                console.log("⚠️ User sudah di dashboard, abaikan error login toast ini.");
+                return; // Stop jangan tampilkan error toast
+            }
+
             hideLoading();
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+            
+            // Kembalikan tombol
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+            
+            // Opsional: Tampilkan pesan error hanya jika benar-benar gagal total
+            // showToast('error', 'Login Gagal', error.message);
         } finally {
             // Pastikan tombol kembali normal
             if (submitBtn) {
