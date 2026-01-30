@@ -1848,13 +1848,13 @@ Terima kasih.
             <i class="fas fa-clock"></i>
             <span>Tunggakan</span>
         </a>
-        <a href="#setting" class="nav-item" data-page="setting">
-            <i class="fas fa-cog"></i>
-            <span>Setting</span>
-        </a>
         <a href="#laporan" class="nav-item" data-page="laporan">
             <i class="fas fa-chart-bar"></i>
             <span>Laporan</span>
+        </a>
+         <a href="#setting" class="nav-item" data-page="setting">
+            <i class="fas fa-cog"></i>
+            <span>Setting</span>
         </a>
     </div>
 
@@ -3593,15 +3593,7 @@ function toggleTunggakanFilter() {
                 <div class="card-header">
                     <h3>Daftar Pelanggan</h3>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="quickExportPelanggan('excel')" title="Export Excel">
-                            <i class="fas fa-file-excel"></i> Excel
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="quickExportPelanggan('csv')" title="Export CSV">
-                            <i class="fas fa-file-csv"></i> CSV
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="printPelanggan()" title="Print">
-                            <i class="fas fa-print"></i> Print
-                        </button>
+                        
                     </div>
                 </div>
                 <div class="card-body">
@@ -3719,9 +3711,7 @@ function toggleTunggakanFilter() {
                autocomplete="off" 
                oninput="filterTagihanSearch(this.value)">
                
-        <button class="btn btn-sm btn-outline" onclick="printTagihan()">
-            <i class="fas fa-print"></i> Print
-        </button>
+        
     </div>
 </div>
                 <div class="card-body">
@@ -5397,14 +5387,14 @@ async function renderDashboard() {
         console.log(`👥 ${pelangganIds.length} pelanggan valid untuk company ini`);
 
         // 5. UPDATE UI - TOTAL PELANGGAN
-        const statPelangganEl = document.getElementById('statPelanggan');
+         const statPelangganEl = document.getElementById('statPelanggan');
         if (statPelangganEl) {
             statPelangganEl.textContent = pelangganSnapshot.size;
         } else {
             console.warn("⚠️ Elemen #statPelanggan tidak ditemukan!");
         }
         
-        // 6. HITUNG TAGIHAN BULAN INI
+        // 6. HITUNG TAGIHAN BULAN INI (DAN TUNGGAKAN) ✨ PERBAIKAN DISINI
         const bulanSekarangText = moment().format('MM-YYYY');
         const tahunSekarang = moment().format('YYYY');
         const bulanAngkaSekarang = moment().format('MM');
@@ -5413,7 +5403,10 @@ async function renderDashboard() {
         let lunasCount = 0;
         let tunggakanCount = 0;
         let belumBayarCount = 0;
-        let totalNominalTunggakan = 0;
+        
+        // ✨ TAMBAHKAN VARIABEL INI YANG HILANG
+        let totalNominalTunggakan = 0; 
+
         const todayMoment = moment();
 
         // Looping Semua Tagihan
@@ -5445,7 +5438,12 @@ async function renderDashboard() {
                 }
             }
 
-            // HANYA PROSES JIKA BULAN INI
+            // ✨ HITUNG TUNGGAKAN KHUSUS: JUMLAHKAN SEMUA YANG BELUM LUNAS
+            if (statusTagihan === 'belum' || statusTagihan === 'telat') {
+                totalNominalTunggakan += jumlah;
+            }
+
+            // HANYA PROSES STATISTIK BULAN INI
             if (isBulanIni) {
                 totalTagihanBulanIni += jumlah;
                 
@@ -5461,7 +5459,7 @@ async function renderDashboard() {
         });
 
         console.log(`💰 Total Bulan Ini: ${totalTagihanBulanIni}, Lunas: ${lunasCount}, Tunggak: ${tunggakanCount}`);
-
+        
         // 7. UPDATE UI - TAGIHAN BULAN INI
         const statTagihanEl = document.getElementById('statTagihanBulanan');
         if (statTagihanEl) {
@@ -5469,7 +5467,7 @@ async function renderDashboard() {
             const currentMonthText = moment().format('MM-YYYY');
             
             // Hitung total tagihan bulan ini yang BELUM LUNAS
-            const totalTagihanBulanIni = tagihanSnapshot.docs.reduce((total, doc) => {
+            const totalTagihanBulanIniBelum = tagihanSnapshot.docs.reduce((total, doc) => {
                 const t = doc.data();
                 const bulanTagihan = t.bulan || "";
                 const statusTagihan = t.status || "";
@@ -5484,22 +5482,34 @@ async function renderDashboard() {
             }, 0);
 
             // Tampilkan di UI
-            statTagihanEl.textContent = totalTagihanBulanIni > 0 ? formatRupiah(totalTagihanBulanIni) : 'Rp 0';
+            statTagihanEl.textContent = totalTagihanBulanIniBelum > 0 ? formatRupiah(totalTagihanBulanIniBelum) : 'Rp 0';
         }
 
-            // 8. UPDATE UI - LUNAS (FIX: STATUS & COUNT)
-            const statLunasEl = document.getElementById('statLunas');
-            const statLunasCountEl = document.getElementById('statLunasCount'); // Pastikan ID ini ada di HTML
-            if (statLunasEl) {
-                statLunasEl.textContent = lunasCount; 
-                if (statLunasCountEl) statLunasCountEl.textContent = lunasCount;
-            }
+        // 8. UPDATE UI - LUNAS (FIX: STATUS & COUNT)
+        const totalP = pelangganSnapshot.size || 1;
+        const persen = Math.round((lunasCount / totalP) * 100);
+        const textPersen = `${persen}%`;
+        const textCount = `${lunasCount} dari ${totalP}`;
 
-            // 9. UPDATE UI - TUNGGAKAN
-            const statTunggakanEl = document.getElementById('statTunggakan');
-            if (statTunggakanEl) {
-                statTunggakanEl.textContent = tunggakanCount;
-            }
+        // 1. Update Persen (Cari elemen yang mengandung teks atau title 'Lunas')
+        const elsLunas = document.querySelectorAll('[class*="stat-lunas"], [id*="statLunas"]');
+        elsLunas.forEach(el => el.textContent = textPersen);
+
+        // 2. Update Jumlah (Cari elemen yang mengandung 'Count' atau di sebelah elemen Lunas)
+        const elsCount = document.querySelectorAll('.stat-lunas-count, [id*="statLunasCount"], [id*="statCount"]');
+        elsCount.forEach(el => el.textContent = textCount);
+
+        // 3. Update Total (Cari elemen yang mengandung 'Total' atau 'Pelanggan' deket card lunas)
+        const elsTotal = document.querySelectorAll('.stat-total-pelanggan, [id*="statTotalPelanggan"], [id*="statTotal"]');
+        elsTotal.forEach(el => el.textContent = totalP.toString());
+        // -----------------------------------------------------------
+
+        // 9. UPDATE UI - TUNGGAKAN (SUDAH DIPERBAIKI OLEH VARIABEL DI ATAS)
+        const statTunggakanEl = document.getElementById('statTunggakan');
+        if (statTunggakanEl) {
+            // Variabel totalNominalTunggakan sekarang sudah terisi dengan benar
+            statTunggakanEl.textContent = formatRupiah(totalNominalTunggakan);
+        }
 
             // 10. HITUNG STATUS PELANGGAN
             let aktifCount = 0;
@@ -5712,42 +5722,46 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
             
             // Buat chart
             window.tagihanChartInstance = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Tagihan (Rp)',
-                        data: monthlyData,
-                        borderColor: '#4361ee',
-                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tagihan (Rp)',
+                    data: monthlyData,
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: true },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return formatRupiah(context.raw);
-                                }
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatRupiah(context.raw);
                             }
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return formatRupiah(value);
-                                }
-                            },
-                            title: { display: true, text: 'Jumlah Tagihan' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatRupiah(value);
+                            }
                         },
-                        x: { title: { display: true, text: 'Bulan' } }
+                        title: { display: true, text: 'Jumlah Tagihan' }
+                    },
+                    x: { title: { display: true, text: 'Bulan' } }
                     }
                 }
             });
@@ -5781,20 +5795,25 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
             }
             
             window.statusChartInstance = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Aktif', 'Tunggak', 'Nonaktif'],
-                    datasets: [{
-                        data: [aktifCount, tunggakCount, nonaktifCount],
-                        backgroundColor: ['#00b894', '#ff6b6b', '#fdcb6e'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
+            type: 'doughnut',
+            data: {
+                labels: ['Aktif', 'Tunggak', 'Nonaktif'],
+                datasets: [{
+                    data: [aktifCount, tunggakCount, nonaktifCount],
+                    backgroundColor: ['#00b894', '#ff6b6b', '#fdcb6e'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1500
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom' }
+                plugins: {
+                    legend: { position: 'bottom' }
                     }
                 }
             });
@@ -14817,7 +14836,7 @@ async function generateLaporan() {
         // 6. UPDATE GRAFIK (LEWATKAN DATA SAJA, TANPA PARAMETER LABELS)
         updateLaporanCharts(laporanData);
 
-        showToast('success', 'Berhasil', `Menampilkan data 6 bulan terakhir.`);
+        
 
     } catch (error) {
         console.error("❌ Error generate laporan:", error);
