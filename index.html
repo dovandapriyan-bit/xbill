@@ -3209,7 +3209,7 @@ function getPaginatedData(data, currentPage) {
         <div class="stat-value" id="statLunasPersen">0%</div>
         
         <!-- Label & Detail Jumlah -->
-        <div class="stat-label">Kelunasan</div>
+        <div class="stat-label">Pelunasan Bulan Ini</div>
         <div class="stat-detail" style="font-size: 12px; color: #666; margin-top: 4px;">
             <span id="statLunasCount">0</span> dari <span id="statTotalPelanggan">0</span> Pelanggan
         </div>
@@ -4741,77 +4741,79 @@ function gantiHalamanTunggakan(pageNum, kategori) {
         }
         
         async function getLaporanHTML() {
-            return `
-                <div class="page laporan-page">
-                    <div class="page-header">
-                        <h2 class="page-title"><i class="fas fa-chart-bar"></i> Laporan & Analytics</h2>
-                        <div class="action-buttons">
-                            <button class="btn btn-outline" onclick="printLaporan()">
-                                <i class="fas fa-print"></i> Print
-                            </button>
-                            <button class="btn btn-primary" onclick="generateLaporan()">
-                                <i class="fas fa-sync-alt"></i> Generate Laporan
-                            </button>
-                            <button class="btn btn-success" onclick="showModal('modalExportLaporan')">
-                                <i class="fas fa-file-excel"></i> Export
-                            </button>
-                        </div>
+    return `
+        <div class="page laporan-page">
+            <div class="page-header">
+                <h2 class="page-title"><i class="fas fa-chart-bar"></i> Laporan & Analytics</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="printLaporan()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <!-- TOMBOL GENERATE TETAP ADA DISINI -->
+                    <button class="btn btn-primary" onclick="generateLaporan()">
+                        <i class="fas fa-sync-alt"></i> Generate Laporan
+                    </button>
+                </div>
+            </div>
+            
+            <div class="filters-card">
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label>Periode Awal</label>
+                        <input type="date" class="form-control" id="laporanStartDate" value="${moment().startOf('month').format('YYYY-MM-DD')}">
                     </div>
-                    
-                    <div class="filters-card">
-                        <div class="filter-row">
-                            <div class="form-group">
-                                <label>Periode Awal</label>
-                                <input type="date" class="form-control" id="laporanStartDate" value="${moment().startOf('month').format('DD-MM-YYYY')}">
-                            </div>
-                            <div class="form-group">
-                                <label>Periode Akhir</label>
-                                <input type="date" class="form-control" id="laporanEndDate" value="${moment().endOf('month').format('DD-MM-YYYY')}">
-                            </div>
-                            <div class="form-group">
-                                <label>Tipe Laporan</label>
-                                <select class="form-control" id="laporanType">
-                                    <option value="keuangan">Laporan Keuangan</option>
-                                    <option value="pelanggan">Laporan Pelanggan</option>
-                                    <option value="tagihan">Laporan Tagihan</option>
-                                    <option value="tunggakan">Laporan Tunggakan</option>
-                                    <option value="paket">Laporan Paket</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <button class="btn btn-primary" style="margin-top: 25px;" onclick="generateLaporan()">
-                                    <i class="fas fa-filter"></i> Generate
-                                </button>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Periode Akhir</label>
+                        <input type="date" class="form-control" id="laporanEndDate" value="${moment().endOf('month').format('YYYY-MM-DD')}">
                     </div>
-                    
-                    <div class="charts-container">
-                        <div class="chart-card">
-                            <h3>Grafik Pendapatan</h3>
-                            <canvas id="laporanChart1" height="150"></canvas>
-                        </div>
-                        <div class="chart-card">
-                            <h3>Distribusi Pelanggan</h3>
-                            <canvas id="laporanChart2" height="150"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Detail Laporan</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table" id="laporanTable">
-                                    <!-- Data laporan -->
-                                </table>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" style="margin-top: 25px;" onclick="generateLaporan()">
+                            <i class="fas fa-filter"></i> Tampilkan
+                        </button>
                     </div>
                 </div>
-            `;
-        }
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Grafik Pendapatan</h3>
+                    <canvas id="laporanChart1" height="150"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Distribusi Pelanggan</h3>
+                    <canvas id="laporanChart2" height="150"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Detail Laporan</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="laporanTable">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Pelanggan</th>
+                                    <th>Periode</th>
+                                    <th>Nominal</th>
+                                    <th>Status</th>
+                                    <th>Metode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center">Menunggu generate laporan...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
 
         // ============================================
@@ -9378,14 +9380,15 @@ async function loadPage(page) {
                 break;
                 
             case 'laporan':
-                if (currentRole === 'staff_billing') {
-                    showToast('error', 'Akses Ditolak', 'Menu ini hanya untuk Admin.');
-                    loadPage('tagihan');
-                    return;
-                }
-                pageHTML = await getLaporanHTML();
-                mainContent.innerHTML = pageHTML;
-                break;
+    pageHTML = await getLaporanHTML();
+    mainContent.innerHTML = pageHTML;
+    
+    // --- KODE RAHASIA: AUTO KLIK GENERATE LAPORAN ---
+    setTimeout(() => {
+        console.log("⚡ Auto-generate Laporan...");
+        generateLaporan();
+    }, 500); // Delay setengah detik biar loading UI selesai dulu
+    break;
                 
                         case 'setting':
                 console.log("⚙️ Load Page: Setting");
@@ -14698,6 +14701,243 @@ async function loadTunggakanDynamicData(page = 1) {
     }
 }
 
+
+// -------------------------------------------------------
+// 1. FUNGSI GENERATE LAPORAN (AMAN & LENGKAP)
+// -------------------------------------------------------
+async function generateLaporan() {
+    console.log("📊 Generate Laporan: 6 BULAN TERAKHIR");
+
+    const table = document.getElementById('laporanTable');
+    if (!table) return;
+
+    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data 6 Bulan...</td></tr>`;
+
+    try {
+        // 1. TENTUKAN 6 BULAN TERAKHIR
+        const listBulan = [];
+        
+        for (let i = 5; i >= 0; i--) {
+            const m = moment().subtract(i, 'months');
+            const bulanKey = m.format('MM-YYYY');
+            const labelDisplay = m.format('MMM YY');
+            
+            listBulan.push({ key: bulanKey, display: labelDisplay });
+        }
+        
+        // 2. AMBIL DATA BATCH
+        const promises = listBulan.map(item => {
+            return db.collection('tagihan')
+                .where('company_id', '==', globalCompanyId)
+                .where('bulan', '==', item.key)
+                .get();
+        });
+
+        const snapshots = await Promise.all(promises);
+
+        // 3. GABUNGKAN SEMUA DATA
+        let laporanData = [];
+        let totalPendapatan = 0;
+
+        snapshots.forEach((snap) => {
+            snap.forEach(doc => {
+                const t = doc.data();
+                const nominal = Number(t.jumlah) || 0;
+                
+                // Hitung total (Semua status, atau bisa difilter cuma Lunas)
+                totalPendapatan += nominal;
+
+                let tglDisplay = '-';
+                if (t.created_at) {
+                    let m = moment(t.created_at);
+                    if (m.isValid()) tglDisplay = m.format('DD/MM/YYYY');
+                }
+
+                // Cari label bulan yang sesuai dari listBulan
+                const bulanInfo = listBulan.find(b => b.key === t.bulan);
+
+                laporanData.push({
+                    tanggal: tglDisplay,
+                    bulanKey: t.bulan,          // Kunci untuk sorting
+                    bulanDisplay: bulanInfo ? bulanInfo.display : t.bulan,
+                    pelanggan: t.pelanggan_nama || 'Unknown',
+                    nominal: nominal,
+                    status: t.status || 'belum',
+                    metode: t.metode_bayar || '-'
+                });
+            });
+        });
+
+        // 4. URUTKAN DATA: LAMA -> BARU (ASCENDING CHRONOLOGIS)
+        laporanData.sort((a, b) => {
+            const dateA = moment(a.bulanKey, 'MM-YYYY');
+            const dateB = moment(b.bulanKey, 'MM-YYYY');
+            
+            if (dateA.isValid() && dateB.isValid()) {
+                return dateA.valueOf() - dateB.valueOf();
+            }
+            return 0;
+        });
+
+        console.log(`💰 Total Pendapatan 6 Bulan: ${formatRupiah(totalPendapatan)}`);
+
+        // 5. RENDER TABEL
+        let tableHTML = `
+            <thead>
+                <tr>
+                    <th>Periode</th>
+                    <th>Pelanggan</th>
+                    <th>Nominal</th>
+                    <th>Status</th>
+                    <th>Metode</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        // Tampilkan 50 data terakhir
+        laporanData.slice(-50).reverse().forEach(item => {
+            let badgeClass = 'badge-warning'; 
+            if (item.status === 'lunas') badgeClass = 'badge-success';
+
+            tableHTML += `
+                <tr>
+                    <td><span class="badge badge-info">${item.bulanDisplay}</span></td>
+                    <td><strong>${item.pelanggan}</strong></td>
+                    <td>${formatRupiah(item.nominal)}</td>
+                    <td><span class="badge ${badgeClass}">${item.status.toUpperCase()}</span></td>
+                    <td>${item.metode}</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `</tbody>`;
+        table.innerHTML = tableHTML;
+
+        // 6. UPDATE GRAFIK (LEWATKAN DATA SAJA, TANPA PARAMETER LABELS)
+        updateLaporanCharts(laporanData);
+
+        showToast('success', 'Berhasil', `Menampilkan data 6 bulan terakhir.`);
+
+    } catch (error) {
+        console.error("❌ Error generate laporan:", error);
+        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+    }
+}
+
+// -------------------------------------------------------
+// 2. FUNGSI UPDATE GRAFIK (MANDIRI & AMAN)
+// -------------------------------------------------------
+function updateLaporanCharts(data) {
+    // CEGAH ERROR JIKA DATA KOSONG ATAU UNDEFINED
+    if (!data || data.length === 0) {
+        console.warn("⚠️ Data chart kosong atau undefined, skip render chart.");
+        return;
+    }
+
+    // 1. GRAFIK PENDAPATAN
+    if (window.laporanChartInstance) {
+        window.laporanChartInstance.destroy();
+    }
+
+    // Grouping data berdasarkan bulanKey
+    const monthlyData = {};
+    // Ambil semua key bulan yang unik dari data untuk label sumbu X
+    const uniqueBulanKeys = [...new Set(data.map(item => item.bulanKey))];
+
+    // Inisialisasi 0
+    uniqueBulanKeys.forEach(key => {
+        monthlyData[key] = 0;
+    });
+
+    // Hitung total per bulan
+    data.forEach(item => {
+        if (monthlyData[item.bulanKey] !== undefined) {
+            monthlyData[item.bulanKey] += item.nominal;
+        }
+    });
+
+    // Urutkan Label Bulan (Ascending: Jan, Feb, Mar...)
+    uniqueBulanKeys.sort((a, b) => {
+        const dateA = moment(a, 'MM-YYYY');
+        const dateB = moment(b, 'MM-YYYY');
+        return dateA.valueOf() - dateB.valueOf();
+    });
+
+    // Ambil total pendapatan berdasarkan urutan key
+    const monthlyTotals = uniqueBulanKeys.map(key => monthlyData[key]);
+
+    // Format Labels agar cantik
+    const formattedLabels = uniqueBulanKeys.map(bulan => {
+        const parts = bulan.split('-');
+        if (parts.length === 2) {
+            const dateObj = moment(`${parts[1]}-${parts[0]}-01`);
+            return dateObj.isValid() ? dateObj.format('MMM YY') : bulan;
+        }
+        return bulan;
+    });
+
+    const ctx = document.getElementById('laporanChart1');
+    if (ctx) {
+        window.laporanChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: formattedLabels,
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: monthlyTotals,
+                    backgroundColor: 'rgba(67, 97, 238, 0.6)',
+                    borderColor: '#4361ee',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatRupiah(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. GRAFIK DISTRIBUSI (PIE CHART - METODE PEMBAYARAN)
+    const ctx2 = document.getElementById('laporanChart2');
+    if (ctx2) {
+        if (window.laporanChart2Instance) {
+            window.laporanChart2Instance.destroy();
+        }
+
+        const metodeCounts = {};
+        data.forEach(item => {
+            const metode = item.metode || 'Lainnya';
+            metodeCounts[metode] = (metodeCounts[metode] || 0) + 1;
+        });
+
+        window.laporanChart2Instance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(metodeCounts),
+                datasets: [{
+                    data: Object.values(metodeCounts),
+                    backgroundColor: ['#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#ff7675']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+}
         
 // ============================================
 // INITIALIZATION & EVENT HANDLERS (FIXED VERSION)
