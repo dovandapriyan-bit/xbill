@@ -7333,7 +7333,7 @@ async function viewTagihanDetails(pelangganId) {
     console.log("👁️ MEMBUKA RIWAYAT TAGIHAN...");
 
     try {
-        // 1. AMBIL DATA PELANGGAN SEKALI SAJA
+        // 1. AMBIL DATA PELANGGAN
         const pelDoc = await db.collection('pelanggan').doc(pelangganId).get();
         const pelData = pelDoc.exists ? pelDoc.data() : {};
         const teleponPelanggan = pelData.telepon || '';
@@ -7447,24 +7447,18 @@ async function viewTagihanDetails(pelangganId) {
             tbody.innerHTML = pageData.map(t => {
                 const isLunas = t.status === 'lunas';
                 
-                // --- PERBAIKAN: AMBIL LANGSUNG DARI DATABASE, JANGAN DIHITUNG LAGI ---
+                // --- AMBIL LANGSUNG DARI DATABASE ---
                 let tglJatuhTempoDisplay = '-';
-                
-                // Kita cek langsung field 'tanggal_jatuh_tempo' yang disimpan oleh generator
                 if (t.tanggal_jatuh_tempo) {
-                    // Parse sesuai format yang disimpan (DD-MM-YYYY)
                     const jatuhTempoDate = moment(t.tanggal_jatuh_tempo, 'DD-MM-YYYY');
                     if (jatuhTempoDate.isValid()) {
                         tglJatuhTempoDisplay = jatuhTempoDate.format('DD MMM YYYY');
                     } else {
-                        // Fallback kalau formatnya aneh
                         tglJatuhTempoDisplay = t.tanggal_jatuh_tempo; 
                     }
                 }
                 
-                // --- AKHIR PERBAIKAN ---
-                
-                // TANGGAL BAYAR (Tetap Sama)
+                // TANGGAL BAYAR
                 let tglBayarDisplay = '-';
                 if (isLunas && t.tanggal_bayar) {
                     let date = null;
@@ -7493,35 +7487,168 @@ async function viewTagihanDetails(pelangganId) {
                     rowStyle = 'background-color: #fff0f0 !important;';
                 }
 
-                // TOMBOL BAYAR
+                // ========================================
+                // LOGIKA TOMBOL: JIKA LUNAS KIRIM, JIKA BELUM LUNAS BAYAR
+                // ========================================
                 let btnAksi = '';
-                if (!isLunas) {
-                    btnAksi = `
-                        <button class="btn btn-sm btn-success" 
-                                onclick="handleBayarClick(this)"
-                                data-id="${t.id}"
-                                data-pid="${pelangganId}"
-                                data-nama="${namaPelanggan}"
-                                data-nominal="${t.jumlah || 0}"
-                                data-bulan="${t.bulan_fix || t.bulan || ''}">
-                            <i class="fas fa-money-bill-wave"></i> Bayar
-                        </button>
-                    `;
                 
-                } else {
+                if (isLunas) {
+                    // JIKA SUDAH LUNAS: TOMBOL KIRIM STRUK (GAMBAR)
                     btnAksi = `
-                        <button class="btn btn-sm btn-info" onclick="kirimUlangStruk('${t.id}')">
-                            <i class="fas fa-share-alt"></i> Kirim
-                        </button>
+                    <button class="btn btn-sm btn-success" id="btnKirimLunas_${t.id}">
+                        <i class="fas fa-share"></i> Kirim
+                    </button>
+                    `;
+
+                    // Pasang Event Listener Kirim Struk
+                    setTimeout(() => {
+                        const btn = document.getElementById(`btnKirimLunas_${t.id}`);
+                        if (btn) {
+                            btn.onclick = async function() {
+                                try {
+                                    const originalText = this.innerHTML;
+                                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Proses...';
+                                    this.disabled = true;
+
+                                    // Data Struk
+                                    const nominal = t.jumlah || 0;
+                                    const tglBayarStr = t.tanggal_bayar ? moment(t.tanggal_bayar).format('DD MMMM YYYY') : moment().format('DD MMMM YYYY');
+                                    const namaPetugas = t.nama_petugas || t.updated_by || getNamaKaryawan();
+                                    const namaPerusahaan = window.globalCompanyName || 'X-BILL ISP';
+                                    const alamatPerusahaan = window.globalCompanyAddress || 'Jl. Internet Cepat No. 1';
+                                    const noInvoice = `INV/${t.id.substring(t.id.length - 6).toUpperCase()}`;
+
+                                    // Buat Struk HTML
+                                    const strukContainer = document.createElement('div');
+                                    strukContainer.style.position = 'absolute';
+                                    strukContainer.style.left = '-9999px';
+                                    strukContainer.style.top = '0';
+                                    strukContainer.style.width = '300px'; 
+                                    strukContainer.style.background = 'white';
+                                    strukContainer.style.padding = '15px'; 
+                                    strukContainer.style.fontFamily = 'Courier New, Courier, monospace'; 
+                                    strukContainer.style.fontSize = '12px'; 
+                                    strukContainer.style.color = '#000000'; 
+                                    strukContainer.style.border = '1px solid #000';
+                                    
+                                    strukContainer.innerHTML = `
+                                        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+                                            <h2 style="margin: 0; font-size: 16px; font-weight: bold;">${namaPerusahaan}</h2>
+                                            <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 10px;">
+                                            <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                                                <tr>
+                                                    <td style="padding: 2px 0; width: 30%; color: #666;">TGL</td>
+                                                    <td style="padding: 2px 0; font-weight: bold; text-align: right;">${tglBayarStr}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 2px 0; color: #666;">NO</td>
+                                                    <td style="padding: 2px 0; font-weight: bold; text-align: right;">${noInvoice}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 2px 0; color: #666;">PETUGAS</td>
+                                                    <td style="padding: 2px 0; font-weight: bold; text-align: right;">${namaPetugas.toUpperCase()}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                        <div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 8px 0; margin-bottom: 10px;">
+                                            <div style="font-size: 11px; color: #666; margin-bottom: 2px;">PELANGGAN</div>
+                                            <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">${namaPelanggan}</div>
+                                        </div>
+
+                                        <div style="margin-bottom: 10px;">
+                                            <div style="display: flex; justify-content: space-between; font-size: 11px; border-bottom: 1px dotted #eee; padding-bottom: 5px;">
+                                                <span>PAKET INTERNET</span>
+                                                <span>${formatRupiah(nominal)}</span>
+                                            </div>
+                                            <div style="font-size: 10px; color: #666; margin-top: 2px; padding-left: 5px;">
+                                                ${pelData.paket || 'Paket Internet'} (${t.bulan_fix})
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 5px; border-top: 2px solid #000; font-weight: bold; font-size: 14px;">
+                                            <span>TOTAL</span>
+                                            <span>${formatRupiah(nominal)}</span>
+                                        </div>
+
+                                        <div style="text-align: center; margin-top: 5px; font-size: 11px;">
+                                            <div id="notaStatusText" style="font-weight: bold; color: #27ae60;">LUNAS</div>
+                                        </div>
+
+                                        <div style="margin-top: 20px; text-align: center; border-top: 1px dashed #ccc; padding-top: 10px; font-size: 10px; color: #666;">
+                                            <p style="margin: 0 0 5px 0;">Terima Kasih atas kepercayaan Anda</p>
+                                            <p style="margin: 0;">Simpan struk ini sebagai bukti pembayaran yang sah.</p>
+                                        </div>
+                                    `;
+                                    
+                                    document.body.appendChild(strukContainer);
+                                    await new Promise(r => setTimeout(r, 100));
+
+                                    const canvas = await html2canvas(strukContainer, {
+                                        scale: 2, useCORS: true, backgroundColor: "#ffffff"
+                                    });
+
+                                    canvas.toBlob(async function(blob) {
+                                        document.body.removeChild(strukContainer);
+                                        if (!blob) throw new Error("Gagal membuat gambar");
+
+                                        const fileShare = new File([blob], `Bukti_Lunas_${t.id}.png`, { type: 'image/png' });
+                                        
+                                        if (navigator.share && navigator.canShare({ files: [fileShare] })) {
+                                            try {
+                                                await navigator.share({
+                                                    title: 'Bukti Pembayaran',
+                                                    text: `Halo Kak ${namaPelanggan}, berikut bukti pelunasan tagihan ${t.bulan_fix}.`,
+                                                    files: [fileShare] 
+                                                });
+                                                // TIDAK MENGUBAH TEKS TOMBOL MENJADI "TERKIRIM"
+                                            } catch (shareError) {
+                                                console.log("Share dibatalkan user");
+                                                // PERBAIKAN: Pastikan tombol kembali normal jika user batal
+                                            }
+                                        } else {
+                                            alert("Browser tidak support share otomatis.");
+                                            const url = URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.download = `Bukti_Lunas_${t.id}.png`;
+                                            link.click();
+                                        }
+                                        // PENTING: Reset tombol di luar catch/finally agar selalu jalan
+                                        btn.innerHTML = originalText;
+                                        btn.disabled = false;
+                                    }, 'image/png');
+
+                                } catch (error) {
+                                    console.error("Error:", error);
+                                    // Reset tombol jika error
+                                    btn.innerHTML = originalText; 
+                                    btn.disabled = false;
+                                    showToast('error', 'Gagal', 'Gagal memproses gambar: ' + error.message);
+                                }
+                            };
+                        }
+                    }, 100);
+                } else {
+                    // JIKA BELUM LUNAS: TOMBOL BAYAR (BUKA FORM)
+                    btnAksi = `
+                    <button class="btn btn-sm btn-success" 
+                        onclick="bukaNotaDanKonfirmasi('${t.id}', '${pelangganId}', '${namaPelanggan}', ${t.jumlah}, '${t.bulan_fix}')" 
+                        title="Bayar Sekarang">
+                        <i class="fas fa-money-bill-wave"></i> Bayar
+                    </button>
                     `;
                 }
-
+                
                 return `
                     <tr style="${rowStyle}" data-id="${t.id}"> 
                         <td><strong>${t.bulan_fix}</strong></td>
                         <td>${formatRupiah(t.jumlah)}</td>
                         <td>${statusBadge}</td>
-                        <td>${tglJatuhTempoDisplay}</td> <!-- HASILNYA SEKARANG AKAN BENAR 10 APRIL -->
+                        <td>${tglJatuhTempoDisplay}</td>
                         <td>${tglBayarDisplay}</td>
                         <td>${btnAksi}</td>
                     </tr>
@@ -7565,6 +7692,8 @@ async function viewTagihanDetails(pelangganId) {
         showToast('error', 'Gagal', 'Gagal memuat detail: ' + error.message);
     }
 }
+
+
 
 
 async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanString) {
