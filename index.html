@@ -3559,7 +3559,8 @@ function toggleTunggakanFilter() {
                 <div class="filter-row">
                     <div class="form-group">
                         <label>Status</label>
-                        <select class="form-control" id="filterStatus" onchange="loadPelangganData()">
+                        <select class="form-control" id="filterStatus" onchange="saveFilterState(); loadPelangganData()">
+
                             <option value="">Semua Status</option>
                             <option value="aktif">Aktif</option>
                             <option value="nonaktif">Nonaktif</option>
@@ -3568,7 +3569,8 @@ function toggleTunggakanFilter() {
                     </div>
                     <div class="form-group">
                         <label>Paket</label>
-                        <select class="form-control" id="filterPaket" onchange="loadPelangganData()">
+                        <select class="form-control" id="filterPaket" onchange="saveFilterState(); loadPelangganData()">
+
                             <option value="">Semua Paket</option>
                             <!-- OPSI PAKET AKAN DIISI OLEH JS -->
                         </select>
@@ -6350,60 +6352,40 @@ function showModal(modalId) {
             }
         }
         
-        async function loadPelangganData() {
+       async function loadPelangganData() {
     const table = document.getElementById('pelangganTable');
-    if (!table) return;
+    if (!table) {
+        console.warn("⚠️ Tabel pelanggan tidak ditemukan!");
+        return;
+    }
 
     // Tampilkan Loading
     table.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data...</td></tr>`;
 
     try {
-        // ⭐⭐ DEBUG: LOG QUERY PARAMETER ⭐⭐
-        console.log("🔍 DEBUG LOAD PELANGGAN");
-        console.log("📌 globalCompanyId:", globalCompanyId);
-        
-        // AMBIL DATA DARI FIREBASE DENGAN FILTER COMPANY_ID
+        // 1. AMBIL DATA DARI FIREBASE
         const snapshot = await db.collection('pelanggan')
             .where('company_id', '==', globalCompanyId)
             .get();
         
-        // ⭐⭐ DEBUG: LOG QUERY RESULT ⭐⭐
-        console.log("📊 Query result - size:", snapshot.size, "| empty:", snapshot.empty);
-        
-        // LOG SEMUA DATA YANG DIDAPAT
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            console.log(`   📍 ${data.nama} | company_id: ${data.company_id} | match: ${data.company_id === globalCompanyId}`);
-        });
-        
         if (snapshot.empty) {
-            console.log("📭 Database pelanggan kosong untuk company:", globalCompanyId);
             table.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center" style="padding: 40px;">
                         <i class="fas fa-inbox" style="font-size: 48px; color: #e9ecef;"></i>
-                        <h4 class="mt-3 text-muted">Database Kosong</h4>
-                        <p>Belum ada data pelanggan untuk perusahaan ini</p>
+                        <h4 style="margin-top:15px; color: var(--gray);">Database Kosong</h4>
+                        <p>Belum ada data pelanggan untuk perusahaan Anda.</p>
                         <button class="btn btn-primary mt-2" onclick="showAddPelangganModal()">
                             <i class="fas fa-plus"></i> Tambah Pelanggan Pertama
                         </button>
                     </td>
-                </tr>
-            `;
-            pelangganData = []; // RESET VARIABLE GLOBAL
+                </tr>`;
+            pelangganData = []; 
             return;
         }
         
-        // ⭐⭐ FILTER KETAT: PASTIKAN COMPANY_ID COCOK ⭐⭐
-        const validDocs = snapshot.docs.filter(doc => {
-            const data = doc.data();
-            return data.company_id === globalCompanyId;
-        });
-        
-        console.log(`✅ Valid data setelah filter: ${validDocs.length} pelanggan`);
-        
-        // MAP DATA
-        pelangganData = validDocs.map(doc => ({
+        // 2. SIMPAN DATA KE ARRAY GLOBAL (PENTING!)
+        pelangganData = snapshot.docs.map(doc => ({
             id: doc.id,
             nama: doc.data().nama || 'Tidak ada nama',
             telepon: doc.data().telepon || '-',
@@ -6415,18 +6397,18 @@ function showModal(modalId) {
             tanggal_pasang: doc.data().tanggal_pasang || '',
             koordinat: doc.data().koordinat || '',
             catatan: doc.data().catatan || '',
-            company_id: doc.data().company_id || 'TIDAK ADA' // TAMBAH FIELD INI
+            company_id: doc.data().company_id || 'TIDAK ADA'
         }));
         
-        console.log(`🎯 ${pelangganData.length} pelanggan berhasil dimuat`);
-        
-        // APLIKASI FILTER UI
+        // 3. AMBIL NILAI FILTER DARI UI
+        // Saat pertama load, value akan kosong, sehingga SEMUA data muncul otomatis
         const statusFilter = document.getElementById('filterStatus')?.value || '';
         const paketFilter = document.getElementById('filterPaket')?.value || '';
         const searchFilter = document.getElementById('searchPelanggan')?.value || '';
-        
+
         let filteredData = [...pelangganData];
         
+        // LOGIKA PENCARIAN & FILTER
         if (statusFilter) {
             filteredData = filteredData.filter(p => p.status === statusFilter);
         }
@@ -6436,7 +6418,7 @@ function showModal(modalId) {
         }
         
         if (searchFilter) {
-            const keyword = searchFilter.toLowerCase();
+            const keyword = searchFilter.toLowerCase().trim();
             filteredData = filteredData.filter(p => 
                 (p.nama && p.nama.toLowerCase().includes(keyword)) ||
                 (p.telepon && p.telepon.includes(keyword)) ||
@@ -6445,7 +6427,7 @@ function showModal(modalId) {
             );
         }
         
-        // PAGINATION
+        // 5. PAGINATION
         const itemsPerPage = 10;
         const totalItems = filteredData.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -6455,22 +6437,37 @@ function showModal(modalId) {
         }
         
         const startIndex = (currentPagePelanggan - 1) * itemsPerPage;
-        const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+        const endIndex = startIndex + itemsPerPage;
         const pageData = filteredData.slice(startIndex, endIndex);
         
-        // RENDER TABEL
+        // 6. RENDER TABEL
         renderPelangganTable(pageData, totalItems);
         
-        // RENDER PAGINATION
+        // 7. RENDER PAGINATION
         renderPelangganPagination(totalItems);
         
-        // LOAD DROPDOWN PAKET UNTUK FILTER
-        loadPaketSelectOptions();
+        // 8. LOAD DROPDOWN PAKET UNTUK FILTER (JIKA SUDAH ADA)
+        const paketSelect = document.getElementById('filterPaket');
+        if (paketSelect && paketSelect.options.length <= 1) {
+             loadPaketSelectOptions();
+        }
         
     } catch (error) {
         console.error("❌ Error Load Pelanggan:", error);
         table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
+}
+
+// TAMBAHKAN FUNGSI UNTUK MENYIMPAN FILTER SAAT USER MENGUBAH INPUT
+function saveFilterState() {
+    const statusVal = document.getElementById('filterStatus')?.value || '';
+    const paketVal = document.getElementById('filterPaket')?.value || '';
+    
+    if (statusVal) localStorage.setItem('last_filter_status', statusVal);
+    else localStorage.removeItem('last_filter_status');
+    
+    if (paketVal) localStorage.setItem('last_filter_paket', paketVal);
+    else localStorage.removeItem('last_filter_paket');
 }
 
 // ============================================
@@ -6526,11 +6523,18 @@ function getCachedData() {
 }
 
 // FUNGSI BARU: LOAD PAKET KE DROPDOWN FILTER
+// FUNGSI BARU: LOAD PAKET KE DROPDOWN FILTER
 async function loadPaketSelectOptions() {
     try {
-        const select = document.getElementById('pelangganPaket');
-        if (!select) return;
+        const select = document.getElementById('filterPaket');
+        if (!select) {
+            console.warn("⚠️ Element #filterPaket tidak ditemukan");
+            return;
+        }
         
+        // Simpan nilai yang sedang dipilih user agar tidak hilang saat refresh
+        const currentSelected = select.value;
+
         // AMBIL DATA PAKET
         const snapshot = await db.collection('paket')
             .where('company_id', '==', globalCompanyId)
@@ -6538,34 +6542,22 @@ async function loadPaketSelectOptions() {
             .get();
         
         // ISI DROPDOWN
-        select.innerHTML = '<option value="">-- Pilih Paket --</option>';
+        select.innerHTML = '<option value="">-- Semua Paket --</option>';
         snapshot.forEach(doc => {
             const p = doc.data();
             const option = document.createElement('option');
             option.value = p.nama;
-            option.textContent = `${p.nama} (${p.kecepatan})`;
-            option.dataset.harga = p.harga;
+            option.textContent = p.nama;
             select.appendChild(option);
         });
         
-        // ⭐⭐ GANTI INI: PAKE addEventListener, BUKAN .onchange ⭐⭐
-        // Hapus semua event listener lama
-        const newSelect = select.cloneNode(true);
-        select.parentNode.replaceChild(newSelect, select);
-        
-        // Tambah event listener baru ke element yang baru
-        newSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const harga = selectedOption.dataset.harga;
-            
-            if (harga) {
-                document.getElementById('pelangganHarga').value = harga;
-                console.log("💰 Harga diisi: " + harga);
-            }
-        });
+        // Kembalikan pilihan user sebelumnya jika masih valid
+        if (currentSelected) {
+            select.value = currentSelected;
+        }
         
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Error load paket select options:", error);
     }
 }
 
@@ -6582,48 +6574,75 @@ function renderPelangganTable(data, totalItems) {
     if (!table) return;
 
     if (!data || data.length === 0) {
+        // Tampilan jika data kosong TANPA tombol reset
         table.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center text-muted" style="padding: 40px;">
                     <i class="fas fa-search" style="font-size: 48px; color: #e9ecef; margin-bottom: 15px;"></i>
                     <h4 style="color: var(--gray);">Tidak ada data</h4>
                     <p>Tidak ada pelanggan yang sesuai dengan filter yang dipilih.</p>
-                    <button class="btn btn-outline mt-2" onclick="document.getElementById('filterStatus').value=''; 
-                                                                  document.getElementById('filterPaket').value=''; 
-                                                                  document.getElementById('searchPelanggan').value=''; 
-                                                                  loadPelangganData();">
-                        <i class="fas fa-times"></i> Reset Filter
-                    </button>
                 </td>
-            </tr>
-        `;
+            </tr>`;
+        
+        // Reset pagination jika kosong
+        const paginationContainer = document.getElementById('pelangganPagination');
+        if (paginationContainer) paginationContainer.innerHTML = '';
+        
+        const elStart = document.getElementById('pelangganStart');
+        const elEnd = document.getElementById('pelangganEnd');
+        const elTotal = document.getElementById('pelangganTotal');
+        
+        if (elStart) elStart.textContent = '0';
+        if (elEnd) elEnd.textContent = '0';
+        if (elTotal) elTotal.textContent = '0';
+        
         return;
     }
     
     const startIndex = ((currentPagePelanggan - 1) * itemsPerPage);
     
     table.innerHTML = data.map((pelanggan, index) => {
+        const nama = pelanggan.nama || '-';
+        const telepon = pelanggan.telepon || '-';
+        const alamat = pelanggan.alamat || '-';
+        const paket = pelanggan.paket || '-';
+        const harga = pelanggan.harga || 0;
+        const status = pelanggan.status || 'nonaktif';
+        
+        let badgeClass = 'badge-warning';
+        if (status === 'aktif') badgeClass = 'badge-success';
+        if (status === 'tunggak') badgeClass = 'badge-danger';
+        
         return `
             <tr>
                 <td style="font-weight: bold;">${startIndex + index + 1}</td>
-                <td><strong>${pelanggan.nama || '-'}</strong></td>
-                <td>${pelanggan.telepon || '-'}</td>
-                <td>${(pelanggan.alamat || '-').substring(0, 40)}${(pelanggan.alamat || '').length > 40 ? '...' : ''}</td>
                 <td>
-                    <span class="badge badge-primary">${pelanggan.paket || '-'}</span>
-                    <br>
-                    <small class="text-success">${formatRupiah(pelanggan.harga || 0)}/bln</small>
+                    <strong>${nama}</strong>
+                    ${pelanggan.email ? `<br><small class="text-muted">${pelanggan.email}</small>` : ''}
+                </td>
+                <td>${telepon}</td>
+                <td>
+                    ${alamat.substring(0, 40)}${alamat.length > 40 ? '...' : ''}
+                    ${pelanggan.koordinat ? `<br><small class="text-info"><i class="fas fa-map-marker-alt"></i> ${pelanggan.koordinat}</small>` : ''}
                 </td>
                 <td>
-                    <span class="badge ${pelanggan.status === 'aktif' ? 'badge-success' : pelanggan.status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">
-                        <i class="fas ${pelanggan.status === 'aktif' ? 'fa-check-circle' : pelanggan.status === 'tunggak' ? 'fa-exclamation-triangle' : 'fa-times-circle'}"></i>
-                        ${(pelanggan.status || 'nonaktif').charAt(0).toUpperCase() + (pelanggan.status || '').slice(1)}
+                    <span class="badge badge-primary">${paket}</span>
+                    <br>
+                    <small class="text-success">${formatRupiah(harga)}/bln</small>
+                </td>
+                <td>
+                    <span class="badge ${badgeClass}">
+                        <i class="fas ${status === 'aktif' ? 'fa-check-circle' : status === 'tunggak' ? 'fa-exclamation-triangle' : 'fa-times-circle'}"></i>
+                        ${status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
                 </td>
                 <td>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline" onclick="editPelanggan('${pelanggan.id}')" title="Edit">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="viewDetailPelanggan('${pelanggan.id}')" title="Detail">
+                            <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn btn-sm btn-outline" onclick="deletePelanggan('${pelanggan.id}')" title="Hapus">
                             <i class="fas fa-trash"></i>
@@ -6634,13 +6653,17 @@ function renderPelangganTable(data, totalItems) {
         `;
     }).join('');
     
-    // UPDATE INFO
-    const start = ((currentPagePelanggan - 1) * itemsPerPage) + 1;
+    // UPDATE INFO TOTAL
+    const start = ((currentPagePelanggan - 1) * itemsPerPage);
     const end = Math.min(currentPagePelanggan * itemsPerPage, totalItems);
     
-    document.getElementById('pelangganStart').textContent = start;
-    document.getElementById('pelangganEnd').textContent = end;
-    document.getElementById('pelangganTotal').textContent = totalItems;
+    const elStart = document.getElementById('pelangganStart');
+    const elEnd = document.getElementById('pelangganEnd');
+    const elTotal = document.getElementById('pelangganTotal');
+    
+    if (elStart) elStart.textContent = start + 1;
+    if (elEnd) elEnd.textContent = end;
+    if (elTotal) elTotal.textContent = totalItems;
 }
 
 function renderPelangganPagination(totalItems) {
@@ -6676,8 +6699,6 @@ function renderPelangganPagination(totalItems) {
     paginationHtml += '</div>';
     container.innerHTML = paginationHtml;
 }
-
-
 
 
 
@@ -6777,199 +6798,10 @@ function applyPelangganFilters(data) {
     });
 }
 
-function renderPelangganTable(data) {
-    const table = document.getElementById('pelangganTable');
-    if (!table) return;
-    
-    if (data.length === 0) {
-        table.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data</td></tr>';
-        return;
-    }
-    
-    table.innerHTML = data.map((pelanggan, index) => {
-        const startIndex = ((currentPagePelanggan - 1) * itemsPerPage);
-        return `
-            <tr>
-                <td>${startIndex + index + 1}</td>
-                <td><strong>${pelanggan.nama || '-'}</strong></td>
-                <td>${pelanggan.telepon || '-'}</td>
-                <td>${pelanggan.alamat?.substring(0, 30) || '-'}${pelanggan.alamat?.length > 30 ? '...' : ''}</td>
-                <td>
-                    <span class="badge badge-primary">${pelanggan.paket || '-'}</span><br>
-                    <small>${formatRupiah(pelanggan.harga || 0)}</small>
-                </td>
-                <td>
-                    <span class="badge ${pelanggan.status === 'aktif' ? 'badge-success' : pelanggan.status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">
-                        ${pelanggan.status || 'nonaktif'}
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="editPelanggan('${pelanggan.id}')" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="deletePelanggan('${pelanggan.id}')" title="Hapus">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
 
-// FUNGSI SEBENARNYA UNTUK LOAD DATA
-async function loadPelangganDataActual(tableBody) {
-    console.log("🔍 Mengambil data dari Firebase...");
-    
-    // AMBIL DATA DENGAN RETRY LOGIC
-    let retryCount = 0;
-    const maxRetries = 2;
-    
-    while (retryCount <= maxRetries) {
-        try {
-            const snapshot = await db.collection('pelanggan')
-    .where('company_id', '==', globalCompanyId)  // ⭐ FILTER COMPANY
-    .get();
-            
-            if (snapshot.empty) {
-                console.log("📭 Database pelanggan kosong");
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center" style="padding: 40px;">
-                            <i class="fas fa-inbox" style="font-size: 48px; color: #e9ecef;"></i>
-                            <h4 class="mt-3 text-muted">Database Kosong</h4>
-                            <p>Belum ada data pelanggan</p>
-                            <button class="btn btn-primary mt-2" onclick="showAddPelangganModal()">
-                                <i class="fas fa-plus"></i> Tambah Pelanggan Pertama
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                pelangganData = [];
-                return;
-            }
-            
-            pelangganData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                nama: doc.data().nama || 'Tidak ada nama',
-                telepon: doc.data().telepon || '-',
-                alamat: doc.data().alamat || '-',
-                paket: doc.data().paket || '-',
-                harga: doc.data().harga || 0,
-                status: doc.data().status || 'nonaktif',
-                email: doc.data().email || `${doc.data().telepon || ''}@xbill.com`
-            }));
-            
-            console.log(`✅ ${pelangganData.length} pelanggan berhasil dimuat`);
-            
-            // RENDER TABLE
-            renderPelangganTable();
-            break; // BERHASIL, KELUAR DARI LOOP
-            
-        } catch (error) {
-            retryCount++;
-            console.warn(`🔄 Retry ${retryCount}/${maxRetries}:`, error.message);
-            
-            if (retryCount > maxRetries) {
-                throw error; // GAGAL SETELAH MAX RETRY
-            }
-            
-            // TUNGGU SEBELUM RETRY
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-        }
-    }
-}
 
-// FUNGSI RENDER PELANGGAN TABLE - PERBAIKAN
-function renderPelangganTable() {
-    console.log("Memulai renderPelangganTable...");
-    console.log("Data yang akan dirender:", pelangganData);
-    
-    const table = document.getElementById('pelangganTable');
-    if (!table) {
-        console.error("ERROR: Tabel pelangganTable tidak ditemukan untuk dirender!");
-        return;
-    }
 
-    if (!pelangganData || pelangganData.length === 0) {
-        console.log("Data pelanggan kosong, menampilkan pesan kosong");
-        table.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted" style="padding: 40px;">
-                    <i class="fas fa-search" style="font-size: 48px; color: #e9ecef; margin-bottom: 15px;"></i>
-                    <h4 style="color: var(--gray);">Tidak ada data</h4>
-                    <p>Tidak ada pelanggan yang sesuai dengan filter yang dipilih.</p>
-                    <button class="btn btn-outline mt-2" onclick="document.getElementById('filterStatus').value=''; 
-                                                                  document.getElementById('filterPaket').value=''; 
-                                                                  document.getElementById('searchPelanggan').value=''; 
-                                                                  loadPelangganData();">
-                        <i class="fas fa-times"></i> Reset Filter
-                    </button>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    console.log("Merender", pelangganData.length, "baris data");
-    
-    table.innerHTML = pelangganData.map((pelanggan, index) => {
-        // Pastikan semua field memiliki nilai default
-        const nama = pelanggan.nama || '-';
-        const telepon = pelanggan.telepon || '-';
-        const alamat = pelanggan.alamat || '-';
-        const paket = pelanggan.paket || '-';
-        const harga = pelanggan.harga || 0;
-        const status = pelanggan.status || 'nonaktif';
-        
-        // Tentukan warna badge berdasarkan status
-        let badgeClass = 'badge-warning';
-        if (status === 'aktif') badgeClass = 'badge-success';
-        if (status === 'tunggak') badgeClass = 'badge-danger';
-        
-        return `
-            <tr>
-                <td style="font-weight: bold;">${index + 1}</td>
-                <td>
-                    <strong>${nama}</strong>
-                    ${pelanggan.email ? `<br><small class="text-muted">${pelanggan.email}</small>` : ''}
-                </td>
-                <td>${telepon}</td>
-                <td>
-                    ${alamat.substring(0, 40)}${alamat.length > 40 ? '...' : ''}
-                    ${pelanggan.koordinat ? `<br><small class="text-info"><i class="fas fa-map-marker-alt"></i> ${pelanggan.koordinat}</small>` : ''}
-                </td>
-                <td>
-                    <span class="badge badge-primary">${paket}</span>
-                    <br>
-                    <small class="text-success">${formatRupiah(harga)}/bln</small>
-                </td>
-                <td>
-                    <span class="badge ${badgeClass}">
-                        <i class="fas ${status === 'aktif' ? 'fa-check-circle' : status === 'tunggak' ? 'fa-exclamation-triangle' : 'fa-times-circle'}"></i>
-                        ${status.charAt(0).toUpperCase() + status.slice(1)}
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="editPelanggan('${pelanggan.id}')" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="viewDetailPelanggan('${pelanggan.id}')" title="Detail">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline btn-danger" onclick="deletePelanggan('${pelanggan.id}')" title="Hapus">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-    
-    console.log("Render tabel selesai");
-}
+
 
 // TAMBAHKAN FUNGSI VIEW DETAIL (Opsional, untuk tombol detail)
 async function viewDetailPelanggan(id) {
@@ -7027,59 +6859,7 @@ async function viewDetailPelanggan(id) {
     }
 }
         
-        function renderPelangganTable() {
-    const table = document.getElementById('pelangganTable');
-    if (!table) return;
-
-    if (!pelangganData || pelangganData.length === 0) {
-        table.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center text-muted">
-                    <i class="fas fa-inbox"></i> Tidak ada data pelanggan ditemukan
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    table.innerHTML = pelangganData.map((pelanggan, index) => {
-        // Cegah error jika field undefined
-        const nama = pelanggan.nama || '-';
-        const telepon = pelanggan.telepon || '-';
-        const alamat = pelanggan.alamat || '-';
-        const paket = pelanggan.paket || '-';
-        const harga = pelanggan.harga || 0;
-        const status = pelanggan.status || 'nonaktif';
         
-        return `
-            <tr>
-                <td>${index + 1}</td>
-                <td><strong>${nama}</strong></td>
-                <td>${telepon}</td>
-                <td>${alamat.substring(0, 30)}${alamat.length > 30 ? '...' : ''}</td>
-                <td>
-                    <span class="badge badge-primary">${paket}</span><br>
-                    <small>${formatRupiah(harga)}</small>
-                </td>
-                <td>
-                    <span class="badge ${status === 'aktif' ? 'badge-success' : status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">
-                        ${status}
-                    </span>
-                </td>
-                <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="editPelanggan('${pelanggan.id}')" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="deletePelanggan('${pelanggan.id}')" title="Hapus">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
         
         // PERBAIKI loadPaketData():
 async function loadPaketData() {
