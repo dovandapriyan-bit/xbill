@@ -2381,91 +2381,102 @@ Terima kasih.
     </div>
     
     <!-- MODAL: KIRIM REMINDER -->
-    <div class="modal-overlay hidden" id="modalReminder">
-        <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-envelope"></i> Kirim Reminder Tagihan</h3>
-                <button class="modal-close" onclick="hideModal('modalReminder')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Pilih Pelanggan</label>
-                    <select class="form-control" id="reminderPelanggan" multiple style="height: 150px;">
-                        <!-- Pelanggan akan diisi -->
-                    </select>
-                    <small class="text-muted">Tekan Ctrl untuk memilih multiple</small>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tipe Reminder</label>
-                        <select class="form-control" id="reminderType">
-                            <option value="email">Email</option>
-                            <option value="whatsapp">WhatsApp</option>
-                            <option value="sms">SMS</option>
-                            <option value="all">Semua Media</option>
-                        </select>
+<div class="modal-overlay hidden" id="modalReminder">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-envelope"></i> Kirim Reminder Tagihan</h3>
+            <button class="modal-close" onclick="hideModal('modalReminder')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- SUMMARY BOX -->
+            <div class="summary-box" style="background: #f0f9ff; border-left: 4px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #2c3e50;">
+                    <i class="fas fa-info-circle"></i> Summary Pengiriman
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div>
+                        <small style="color: #7f8c8d;">Jumlah Pelanggan</small>
+                        <div style="font-size: 24px; font-weight: bold; color: #2c3e50;" id="summaryJumlahPelanggan">0</div>
                     </div>
-                    <div class="form-group">
-                        <label>Jadwal Kirim</label>
-                        <select class="form-control" id="reminderSchedule">
-                            <option value="now">Sekarang</option>
-                            <option value="tomorrow">Besok Pagi (08:00)</option>
-                            <option value="custom">Custom</option>
-                        </select>
+                    <div>
+                        <small style="color: #7f8c8d;">Media</small>
+                        <div style="font-size: 16px; font-weight: bold; color: #3498db;" id="summaryMedia">WhatsApp</div>
+                    </div>
+                    <div>
+                        <small style="color: #7f8c8d;">Jadwal Kirim</small>
+                        <div style="font-size: 16px; font-weight: bold; color: #27ae60;" id="summaryWaktuReminder">Sekarang</div>
                     </div>
                 </div>
-                
-                <div id="customSchedule" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Tanggal</label>
-                            <input type="date" class="form-control" id="reminderDate">
-                        </div>
-                        <div class="form-group">
-                            <label>Jam</label>
-                            <input type="time" class="form-control" id="reminderTime">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Template Pesan</label>
-                    <select class="form-control" id="reminderTemplate">
-                        <option value="standard">Standar</option>
-                        <option value="urgent">Mendesak</option>
-                        <option value="friendly">Ramah</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Preview Pesan</label>
-                    <div class="email-content" id="previewPesan">
-                        <p>Yth. [Nama Pelanggan],</p>
-                        <p>Tagihan bulan [Bulan] sebesar [Jumlah] jatuh tempo pada [Tanggal Jatuh Tempo].</p>
-                        <p>Silakan lakukan pembayaran sebelum jatuh tempo.</p>
-                        <p>Terima kasih.</p>
-                    </div>
-                </div>
-                
-                <div id="reminderSummary" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                    <h4>Summary:</h4>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>Jumlah pelanggan: <span id="summaryPelanggan" style="font-weight: bold;">0</span></li>
-                        <li>Media pengiriman: <span id="summaryMedia" style="font-weight: bold;">Email</span></li>
-                        <li>Waktu pengiriman: <span id="summaryWaktuReminder" style="font-weight: bold;">Sekarang</span></li>
-                    </ul>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                    <small style="color: #7f8c8d;">Status:</small>
+                    <span id="summaryStatus" class="badge badge-warning" style="margin-left: 10px;">MENUNGGU</span>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="hideModal('modalReminder')">Batal</button>
-                <button class="btn btn-primary" onclick="kirimReminder()">
-                    <i class="fas fa-paper-plane"></i> Kirim Reminder
-                </button>
+            
+            <!-- LIST PELANGGAN YANG AKAN DIKIRIM -->
+            <div class="form-group">
+                <label style="font-weight: bold; margin-bottom: 10px; display: block;">
+                    <i class="fas fa-users"></i> Pelanggan dengan Tunggakan (Otomatis Terpilih)
+                </label>
+                <div id="reminderPelangganList" style="
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 15px;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    background: #f8f9fa;
+                ">
+                    <div class="text-center text-muted" style="padding: 20px;">
+                        <i class="fas fa-spinner fa-spin"></i> Memuat daftar pelanggan...
+                    </div>
+                </div>
+                <small class="text-muted">Semua pelanggan dengan tagihan belum lunas akan dikirimi reminder</small>
+            </div>
+            
+            <!-- TYPE REMINDER -->
+            <div class="form-group">
+                <label>Media Pengiriman</label>
+                <select class="form-control" id="reminderType" onchange="updateSummaryReminder()">
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                </select>
+            </div>
+            
+            <!-- JADWAL KIRIM -->
+            <div class="form-group">
+                <label>Jadwal Kirim</label>
+                <select class="form-control" id="reminderSchedule" onchange="updateSummaryReminder()">
+                    <option value="now">Sekarang</option>
+                    <option value="tomorrow">Besok Pagi (08:00)</option>
+                    <option value="afternoon">Sore Ini (16:00)</option>
+                </select>
+            </div>
+            
+            <!-- PREVIEW PESAN -->
+            <div class="form-group">
+                <label>Pesan Reminder</label>
+                <textarea class="form-control" id="previewPesan" rows="6" style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px;">
+Halo [Nama],
+
+Ini adalah pengingat untuk tagihan internet Anda yang belum lunas.
+
+Silakan lakukan pembayaran segera.
+
+Terima kasih,
+[Perusahaan Anda]
+                </textarea>
+                <small class="text-muted">Pesan akan dikirim ke semua pelanggan di atas</small>
             </div>
         </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="hideModal('modalReminder')">Batal</button>
+            <button class="btn btn-primary" onclick="kirimReminder()" style="padding: 10px 25px;">
+                <i class="fas fa-paper-plane"></i> Kirim ke Semua Pelanggan
+            </button>
+        </div>
     </div>
+</div>
     
     <!-- MODAL: EXPORT LAPORAN -->
     <div class="modal-overlay hidden" id="modalExportLaporan">
@@ -2888,9 +2899,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).format(number);
         }
         
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.add('show');
-        }
+        
         
        function hideModal(modalId) {
     const modalEl = typeof modalId === 'string' 
@@ -3143,11 +3152,70 @@ function getPaginatedData(data, currentPage) {
     return data.slice(startIndex, endIndex);
 }
         
-        function confirmDialog(message, callback) {
-            if (confirm(message)) {
-                callback();
-            }
+        // ============================================
+// FUNGSI CONFIRM DIALOG (VERSI POP UP KUSTOM)
+// ============================================
+function confirmDialog(message, callback) {
+    // Buat elemen HTML Overlay Gelap
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+    overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+
+    // Buat Kotak Pop-up
+    const popup = document.createElement('div');
+    popup.style.backgroundColor = 'white';
+    popup.style.padding = '30px';
+    popup.style.borderRadius = '16px';
+    popup.style.textAlign = 'center';
+    popup.style.boxShadow = '0 15px 50px rgba(0,0,0,0.3)';
+    popup.style.maxWidth = '400px';
+    popup.style.width = '90%';
+    popup.style.transform = 'scale(0.8)';
+    popup.style.opacity = '0';
+    popup.style.transition = 'all 0.3s ease';
+
+    // Isi Konten
+    popup.innerHTML = `
+        <div style="font-size: 40px; color: #6c5ce7; margin-bottom: 20px;">
+            <i class="fas fa-question-circle"></i>
+        </div>
+        <h3 style="margin: 0 0 10px 0; color: #2d3436;">Konfirmasi</h3>
+        <p style="color: #636e72; margin-bottom: 25px;">${message}</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="btnCancel" style="padding: 10px 20px; border: none; background: #dfe6e9; color: #2d3436; border-radius: 8px; cursor: pointer; font-weight: 600;">Batal</button>
+            <button id="btnOk" style="padding: 10px 20px; border: none; background: #4361ee; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Oke</button>
+        </div>
+    `;
+
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+
+    // Animasi Muncul
+    setTimeout(() => {
+        popup.style.transform = 'scale(1)';
+        popup.style.opacity = '1';
+    }, 10);
+
+    // Logika Tombol
+    document.getElementById('btnCancel').onclick = function() {
+        document.body.removeChild(overlay);
+    };
+
+    document.getElementById('btnOk').onclick = function() {
+        document.body.removeChild(overlay);
+        if (typeof callback === 'function') {
+            callback();
         }
+    };
+}
         
         // Generate unique ID
         function generateId(prefix = '') {
@@ -3211,7 +3279,7 @@ function getPaginatedData(data, currentPage) {
         <!-- Label & Detail Jumlah -->
         <div class="stat-label">Pelunasan Bulan Ini</div>
         <div class="stat-detail" style="font-size: 12px; color: #666; margin-top: 4px;">
-            <span id="statLunasCount">0</span> dari <span id="statTotalPelanggan">0</span> Pelanggan
+            <span id="statLunasCount">0</span> Pelanggan
         </div>
         
         <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #00b894;">
@@ -3743,33 +3811,115 @@ function toggleTunggakanFilter() {
 }
 
 async function resetGenerate() {
-    if (!confirm('PERINGATAN!\n\nIni akan MENGHAPUS SEMUA data tagihan yang belum lunas.\nData pelanggan tetap aman.\n\nLanjutkan?')) {
-        return;
-    }
-
-    try {
-        showLoading();
-        // Hapus hanya status 'belum'
-        const snapshot = await db.collection('tagihan').where('status', '==', 'belum').get();
-        const batch = db.batch();
-
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-        hideLoading();
-       
-
+    // GANTI confirm() bawaan browser dengan POPUP KUSTOM
+    const modalId = 'modalResetConfirm';
+    
+    // Hapus modal lama jika ada
+    const oldModal = document.getElementById(modalId);
+    if (oldModal) oldModal.remove();
+    
+    // Buat modal kustom
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay show';
+    modal.style.zIndex = '999999';
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: #e74c3c;">
+                    <i class="fas fa-exclamation-triangle"></i> PERINGATAN!
+                </h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 15px 0;">
+                    <div style="font-size: 48px; color: #e74c3c; margin-bottom: 15px;">
+                        <i class="fas fa-trash-restore"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Reset Generate Tagihan</h4>
+                    <p style="color: #7f8c8d; line-height: 1.5;">
+                        Ini akan <strong style="color: #e74c3c;">MENGHAPUS SEMUA</strong> data tagihan yang <strong>BELUM LUNAS</strong>.<br>
+                        Data pelanggan tetap aman dan tidak terpengaruh.
+                    </p>
+                    <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 10px; margin: 15px 0; text-align: left;">
+                        <i class="fas fa-info-circle" style="color: #ff9800;"></i>
+                        <small>Hanya tagihan dengan status "belum" yang akan dihapus.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                <button class="btn btn-outline" onclick="document.getElementById('${modalId}').remove()" style="padding: 10px 20px;">
+                    <i class="fas fa-times"></i> BATAL
+                </button>
+                <button id="btnConfirmReset" class="btn btn-danger" style="padding: 10px 20px;">
+                    <i class="fas fa-check"></i> YA, RESET SEKARANG
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event listener untuk tombol konfirmasi
+    document.getElementById('btnConfirmReset').onclick = async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MEMPROSES...';
+        btn.disabled = true;
         
+        try {
+            showLoading();
+            
+            // Hapus hanya status 'belum'
+            const snapshot = await db.collection('tagihan')
+                .where('status', '==', 'belum')
+                .where('company_id', '==', globalCompanyId) // ⭐ Tambah filter company
+                .get();
+            
+            const batch = db.batch();
+            const deletedCount = snapshot.size;
+
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            
+            // Tutup modal
+            document.getElementById(modalId).remove();
+            document.body.style.overflow = 'auto';
+            
+            hideLoading();
+            
+            // Tampilkan notifikasi sukses
+            if (deletedCount > 0) {
+                showToast('success', 'Reset Berhasil', 
+                    `${deletedCount} tagihan belum lunas berhasil dihapus.`);
+            } else {
+                showToast('info', 'Tidak Ada Data', 
+                    'Tidak ada tagihan belum lunas untuk direset.');
+            }
+            
+            // Refresh data tagihan
             await loadTagihanData();
-        
-
-    } catch (error) {
-        hideLoading();
-        console.error("Error reset:", error);
-        showToast('error', 'Gagal', 'Gagal mereset tagihan: ' + error.message);
-    }
+            
+            // Log aktivitas
+            await db.collection('aktivitas').add({
+                aktivitas: `Reset generate tagihan: ${deletedCount} data dihapus`,
+                user: getUserLogName(),
+                timestamp: new Date().toISOString(),
+                company_id: globalCompanyId
+            });
+            
+        } catch (error) {
+            hideLoading();
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            console.error("Error reset:", error);
+            showToast('error', 'Gagal', 'Gagal mereset tagihan: ' + error.message);
+        }
+    };
 }
 
 // Fungsi Khusus untuk Buka Modal Generate Tagihan (Fix Tidak Bisa Muncul)
@@ -3814,9 +3964,9 @@ async function getTunggakanHTML() {
                     <button class="btn btn-success" onclick="showModal('modalReminder')">
                         <i class="fas fa-envelope"></i> Kirim Reminder
                     </button>
-                    <button class="btn btn-info" onclick="location.reload()">
-                        <i class="fas fa-sync-alt"></i> Refresh Data
-                    </button>
+                    <button class="btn btn-info" onclick="refreshTunggakan()">
+    <i class="fas fa-sync-alt"></i> Refresh Data
+</button>
                 </div>
             </div>
             
@@ -4816,7 +4966,7 @@ function gantiHalamanTunggakan(pageNum, kategori) {
 // TAMPILKAN/SEMBUNYIKAN PANEL IMPORT/EXPORT
 function showImportExportPanel() {
     document.getElementById('importExportPanel').classList.remove('hidden');
-    showToast('info', 'Import/Export', 'Buka panel import/export data pelanggan');
+    
 }
 
 function hideImportExportPanel() {
@@ -4851,18 +5001,18 @@ function downloadTemplatePelanggan() {
 }
 
 // IMPORT DATA DARI EXCEL/CSV
+// IMPORT DATA DARI EXCEL/CSV - VERSI PERBAIKAN (HANYA TAMBAH DATA BARU)
 async function importDataPelanggan() {
     const fileInput = document.getElementById('fileImportPelanggan');
-    const action = document.getElementById('importActionPelanggan').value;
     
+    if (!fileInput) return;
     if (!fileInput.files.length) {
-        showToast('error', 'Error', 'Pilih file terlebih dahulu');
+        showToast('error', 'Error', 'Pilih file dulu');
         return;
     }
     
     try {
         showLoading();
-        
         const file = fileInput.files[0];
         const reader = new FileReader();
         
@@ -4872,110 +5022,137 @@ async function importDataPelanggan() {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) throw new Error('File kosong');
+
+                // 1. AMBIL DATA PELANGGAN YANG SUDAH ADA DI DATABASE
+                const existingSnapshot = await db.collection('pelanggan')
+                    .where('company_id', '==', globalCompanyId)
+                    .get();
                 
-                console.log(`📊 Data dari file: ${jsonData.length} baris`);
+                // Simpan Nomor HP yang sudah ada di database ke Set
+                const existingPhones = new Set();
                 
-                if (jsonData.length === 0) {
-                    throw new Error('File kosong atau format tidak sesuai');
+                existingSnapshot.forEach(doc => {
+                    const t = doc.data();
+                    if (t.telepon) {
+                        const phoneClean = t.telepon.toString().trim();
+                        existingPhones.add(phoneClean);
+                    }
+                });
+
+                // 2. FUNGSI BANTUAN MENCARI KEY (CASE INSENSITIVE)
+                function findKeySmart(row, search) {
+                    return Object.keys(row).find(key => {
+                        const keyString = key.toString();
+                        const keyClean = keyString.trim().toLowerCase(); 
+                        return keyClean === search.toLowerCase();
+                    });
                 }
-                
-                // Validasi kolom minimal
-                const requiredFields = ['nama', 'telepon', 'alamat', 'paket'];
-                const firstRow = jsonData[0];
-                const missingFields = requiredFields.filter(field => !firstRow.hasOwnProperty(field));
-                
-                if (missingFields.length > 0) {
-                    throw new Error(`Kolom wajib tidak ditemukan: ${missingFields.join(', ')}`);
-                }
-                
-                // Proses import berdasarkan aksi
-                let successCount = 0;
-                let errorCount = 0;
-                const errors = [];
-                
-                // Batch write ke Firebase
+
+                let insertCount = 0;
+                let skipCount = 0;
                 const batch = db.batch();
                 const now = new Date().toISOString();
-                
+
                 for (let i = 0; i < jsonData.length; i++) {
                     try {
                         const row = jsonData[i];
                         
-                        // Validasi data
-                        if (!row.nama || !row.telepon) {
-                            errors.push(`Baris ${i + 2}: Nama atau telepon kosong`);
-                            errorCount++;
+                        // Gunakan findKeySmart untuk semua pencarian key
+                        const keyNama = findKeySmart(row, 'nama');
+                        const keyTelepon = findKeySmart(row, 'telepon');
+
+                        if (!keyNama || !keyTelepon) {
+                            skipCount++;
                             continue;
                         }
+
+                        const namaRaw = row[keyNama];
+                        const teleponRaw = row[keyTelepon];
+
+                        if (!namaRaw || !teleponRaw) {
+                            skipCount++;
+                            continue;
+                        }
+
+                        const namaClean = namaRaw.toString().trim();
+                        const teleponClean = teleponRaw.toString().trim();
+
+                        // LOGIKA UTAMA: Hanya tambah jika BELUM ADA di database
+                        if (existingPhones.has(teleponClean)) {
+                            // SUDAH ADA -> SKIP (tidak ditambahkan, tidak diupdate)
+                            console.log(`⏭️ SKIP (SUDAH ADA): ${namaClean} - ${teleponClean}`);
+                            skipCount++;
+                            continue;
+                        }
+
+                        // BELUM ADA -> TAMBAH BARU
+                        console.log(`✅ INSERT (BARU): ${namaClean} - ${teleponClean}`);
                         
-                        // Format data
+                        // Buat data pelanggan baru
                         const pelangganData = {
-                            nama: row.nama.toString().trim(),
-                            telepon: row.telepon.toString().trim(),
-                            email: row.email ? row.email.toString().trim() : `${row.telepon}@xbill.com`,
-                            alamat: row.alamat ? row.alamat.toString().trim() : '',
-                            paket: row.paket ? row.paket.toString().trim() : 'Paket 10 Mbps',
-                            harga: parseInt(row.harga) || 150000,
-                            tanggal_pasang: row.tanggal_pasang || new Date().toISOString().split('T')[0],
-                            status: row.status || 'aktif',
-                            koordinat: row.koordinat || '',
+                            nama: namaClean,
+                            telepon: teleponClean,
+                            email: row[findKeySmart(row, 'email')] ? row[findKeySmart(row, 'email')].toString().trim() : `${teleponClean}@xbill.com`,
+                            alamat: row[findKeySmart(row, 'alamat')] ? row[findKeySmart(row, 'alamat')].toString().trim() : '',
+                            paket: row[findKeySmart(row, 'paket')] ? row[findKeySmart(row, 'paket')].toString().trim() : 'Paket 10 Mbps',
+                            harga: parseInt(row[findKeySmart(row, 'harga')]) || 150000,
+                            tanggal_pasang: row[findKeySmart(row, 'tanggalpasang')] || row[findKeySmart(row, 'tanggal_pasang')] ? 
+                                (row[findKeySmart(row, 'tanggalpasang')] || row[findKeySmart(row, 'tanggal_pasang')]).toString().trim() : 
+                                new Date().toISOString().split('T')[0],
+                            status: row[findKeySmart(row, 'status')] ? row[findKeySmart(row, 'status')].toString().trim() : 'aktif',
+                            koordinat: row[findKeySmart(row, 'koordinat')] ? row[findKeySmart(row, 'koordinat')].toString().trim() : '',
+                            catatan: row[findKeySmart(row, 'catatan')] ? row[findKeySmart(row, 'catatan')].toString().trim() : '',
                             company_id: globalCompanyId,
-                            catatan: row.catatan || '',
                             created_at: now,
                             updated_at: now
                         };
-                        
-                        // Generate ID
-                        const pelangganId = `CUST_${Date.now()}_${i}`;
-                        const pelangganRef = db.collection('pelanggan').doc(pelangganId);
-                        
-                        // Add to batch
-                        batch.set(pelangganRef, pelangganData);
-                        successCount++;
-                        
-                    } catch (rowError) {
-                        errors.push(`Baris ${i + 2}: ${rowError.message}`);
-                        errorCount++;
+
+                        const newId = `CUST_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}`;
+                        const docRef = db.collection('pelanggan').doc(newId);
+                        batch.set(docRef, pelangganData);
+                        insertCount++;
+
+                    } catch (errRow) {
+                        console.error("Error baris " + i, errRow);
+                        skipCount++;
                     }
                 }
-                
-                // Execute batch
-                await batch.commit();
-                
-                // Log aktivitas
-                await db.collection('aktivitas').add({
-                    aktivitas: `Import data pelanggan: ${successCount} berhasil, ${errorCount} gagal`,
-                    user: getUserLogName(),
-                    timestamp: now
-                });
-                
-                // Update log di UI
-                updateImportExportLog(`Import: ${successCount} data berhasil, ${errorCount} error`);
-                
+
+                // 3. EKSEKUSI SIMPAN KE DATABASE (hanya jika ada data baru)
+                if (insertCount > 0) {
+                    await batch.commit();
+                    
+                    // LOG AKTIVITAS
+                    await db.collection('aktivitas').add({
+                        aktivitas: `Import Pelanggan: ${insertCount} data baru ditambahkan`,
+                        user: getUserLogName(),
+                        timestamp: now,
+                        company_id: globalCompanyId
+                    });
+                }
+
                 hideLoading();
-                
-                // Tampilkan hasil
-                const resultMessage = `
-                    📊 Hasil Import:
-                    ✅ Berhasil: ${successCount} data
-                    ❌ Gagal: ${errorCount} data
-                    ${errors.length > 0 ? `\n📝 Error:\n${errors.slice(0, 5).join('\n')}` : ''}
-                `;
-                
-                showToast('success', 'Import Berhasil', resultMessage);
-                
-                // Refresh data pelanggan
-                if (currentPage === 'pelanggan') {
-                    await loadPelangganData();
+
+                // 4. REFRESH TABEL AGAR DATA BARU MUNCUL
+                await loadPelangganData();
+
+                // 5. NOTIFIKASI
+                if (insertCount === 0) {
+                    showToast('info', 'Tidak Ada Data Baru', 
+                        `Semua data sudah ada di database (${skipCount} data dilewati)`);
+                } else {
+                    showToast('success', 'Import Berhasil', 
+                        `${insertCount} data baru ditambahkan. ${skipCount} data dilewati (sudah ada).`);
                 }
                 
-                // Reset file input
                 fileInput.value = '';
-                
+
             } catch (parseError) {
                 hideLoading();
-                console.error("Error parsing file:", parseError);
-                showToast('error', 'Error Parsing', parseError.message);
+                console.error("Error parsing:", parseError);
+                showToast('error', 'Error', 'Gagal membaca file: ' + parseError.message);
             }
         };
         
@@ -4989,7 +5166,7 @@ async function importDataPelanggan() {
     } catch (error) {
         hideLoading();
         console.error("Error import:", error);
-        showToast('error', 'Error', 'Gagal import data: ' + error.message);
+        showToast('error', 'Gagal', 'Gagal import data: ' + error.message);
     }
 }
 
@@ -5112,7 +5289,7 @@ async function exportDataPelanggan() {
         });
         
         hideLoading();
-        showToast('success', 'Export Berhasil', `${snapshot.size} data berhasil diexport`);
+        showToast('success', 'Export Berhasil', `Data berhasil diexport`);
         
     } catch (error) {
         hideLoading();
@@ -5550,6 +5727,9 @@ async function renderDashboard() {
             if (loadingEl) loadingEl.classList.add('hidden');
         }
     }
+
+
+
 
 // FUNGSI REFRESH STATS ONLY
 async function refreshDashboardStats() {
@@ -6194,27 +6374,43 @@ function closeModalButton(modalId) {
     forceCloseModal(modalId);
 }
 
-// Fungsi untuk show modal yang bener
+// ============================================
+// FUNGSI showModal() DENGAN AUTO LOAD REMINDER
+// ============================================
+
 function showModal(modalId) {
-    // ⭐ PERBAIKAN 1: Ambil elemen modal
+    // 1. Ambil elemen modal
     const modal = document.getElementById(modalId);
     if (!modal) {
         console.error("❌ Modal tidak ditemukan:", modalId);
         return;
     }
     
-    // ⭐ PERBAIKAN 2: Kunci scroll body (PENTING!)
+    // 2. Kunci scroll body
     document.body.style.overflow = 'hidden';
     
-    // ⭐ PERBAIKAN 3: Tampilkan modal
-    // Kita HAPUS class 'hidden' dan TAMBAHKAN class 'show'
+    // 3. Tampilkan modal
     modal.classList.remove('hidden');
     modal.classList.add('show');
-    
-    // ⭐ PERBAIKAN 4 (KRUCIAL): Paksa display jadi 'flex'
-    // Karena CSS asli Anda pakai .hidden { display: none }
-    // Maka kita wajib set display: flex secara inline saat .show aktif
     modal.style.display = 'flex';
+    
+    // ⭐⭐⭐ PERBAIKAN: AUTO LOAD DATA UNTUK MODAL REMINDER ⭐⭐⭐
+    if (modalId === 'modalReminder') {
+        console.log("✅ Modal reminder dibuka, auto load data...");
+        
+        // Tampilkan loading
+        const container = document.getElementById('reminderPelangganList');
+        if (container) {
+            container.innerHTML = '<div class="text-center">Memuat...</div>';
+        }
+        
+        // Load data setelah modal tampil
+        setTimeout(() => {
+            if (typeof loadPelangganForReminder === 'function') {
+                loadPelangganForReminder();
+            }
+        }, 100);
+    }
 }
 
 
@@ -6782,72 +6978,72 @@ function renderPelangganPagination(totalItems) {
 
 async function deletePelanggan(id) {
     if (localStorage.getItem('userRole') !== 'admin') {
-        alert('HANYA ADMIN!'); 
+        showToast('error', 'Akses Ditolak', 'HANYA ADMIN!'); 
         return;
     }
     
-    if (!confirm('HAPUS?')) return;
-    
-    try {
-        showLoading();
-        
-        // 1. HAPUS DARI DATABASE
-        await db.collection('pelanggan').doc(id).delete();
-        
-        // 2. UPDATE VARIABLE GLOBAL `pelangganData`
-        if (Array.isArray(pelangganData)) {
-            pelangganData = pelangganData.filter(p => p.id !== id);
+    // ⭐ GANTI BROWSER BAWAAN JADI CUSTOM POP UP ⭐
+    confirmDialog('HAPUS?', async () => {
+        try {
+            showLoading();
+            
+            // 1. HAPUS DARI DATABASE
+            await db.collection('pelanggan').doc(id).delete();
+            
+            // 2. UPDATE VARIABLE GLOBAL `pelangganData`
+            if (Array.isArray(pelangganData)) {
+                pelangganData = pelangganData.filter(p => p.id !== id);
+            }
+            
+            // 3. UPDATE CACHE
+            if (window.pelangganDataCache) {
+                window.pelangganDataCache = window.pelangganDataCache.filter(p => p.id !== id);
+            }
+            
+            // 4. RENDER ULANG DENGAN FUNGSI ASLI ANDA
+            let filteredData = [...pelangganData];
+            
+            const statusFilter = document.getElementById('filterStatus')?.value;
+            if (statusFilter) {
+                filteredData = filteredData.filter(p => p.status === statusFilter);
+            }
+            
+            const paketFilter = document.getElementById('filterPaket')?.value;
+            if (paketFilter) {
+                filteredData = filteredData.filter(p => p.paket === paketFilter);
+            }
+            
+            const searchFilter = document.getElementById('searchPelanggan')?.value;
+            if (searchFilter) {
+                const keyword = searchFilter.toLowerCase();
+                filteredData = filteredData.filter(p => 
+                    (p.nama && p.nama.toLowerCase().includes(keyword)) ||
+                    (p.telepon && p.telepon.includes(keyword)) ||
+                    (p.alamat && p.alamat.toLowerCase().includes(keyword))
+                );
+            }
+            
+            // PAGINATION
+            const itemsPerPage = 10;
+            const start = (currentPagePelanggan - 1) * itemsPerPage;
+            const pageData = filteredData.slice(start, start + itemsPerPage);
+            
+            // PANGGIL FUNGSI RENDER ASLI ANDA
+            renderPelangganTable(pageData);
+            
+            // 5. UPDATE PAGINATION
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            renderPelangganPagination(totalPages);
+            
+            showToast('success', 'Berhasil', 'Data terhapus');
+            hideLoading();
+            
+        } catch (error) {
+            console.error("Error delete pelanggan:", error);
+            showToast('error', 'Gagal', 'Gagal menghapus: ' + error.message);
+            hideLoading();
         }
-        
-        // 3. UPDATE CACHE
-        if (window.pelangganDataCache) {
-            window.pelangganDataCache = window.pelangganDataCache.filter(p => p.id !== id);
-        }
-        
-        // 4. ⭐⭐ RENDER ULANG DENGAN FUNGSI ASLI ANDA ⭐⭐
-        // Filter data sesuai filter aktif
-        let filteredData = [...pelangganData];
-        
-        const statusFilter = document.getElementById('filterStatus')?.value;
-        if (statusFilter) {
-            filteredData = filteredData.filter(p => p.status === statusFilter);
-        }
-        
-        const paketFilter = document.getElementById('filterPaket')?.value;
-        if (paketFilter) {
-            filteredData = filteredData.filter(p => p.paket === paketFilter);
-        }
-        
-        const searchFilter = document.getElementById('searchPelanggan')?.value;
-        if (searchFilter) {
-            const keyword = searchFilter.toLowerCase();
-            filteredData = filteredData.filter(p => 
-                (p.nama && p.nama.toLowerCase().includes(keyword)) ||
-                (p.telepon && p.telepon.includes(keyword)) ||
-                (p.alamat && p.alamat.toLowerCase().includes(keyword))
-            );
-        }
-        
-        // PAGINATION
-        const itemsPerPage = 10;
-        const start = (currentPagePelanggan - 1) * itemsPerPage;
-        const pageData = filteredData.slice(start, start + itemsPerPage);
-        
-        // ⭐⭐ PANGGIL FUNGSI RENDER ASLI ANDA ⭐⭐
-        renderPelangganTable(pageData);
-        
-        // 5. UPDATE PAGINATION
-        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-        renderPelangganPagination(totalPages);
-        
-        showToast('success', 'Berhasil', 'Data terhapus');
-        hideLoading();
-        
-    } catch (error) {
-        console.error("Error delete pelanggan:", error);
-        showToast('error', 'Gagal', 'Gagal menghapus: ' + error.message);
-        hideLoading();
-    }
+    });
 }
 
 function applyPelangganFilters(data) {
@@ -7492,15 +7688,19 @@ async function viewTagihanDetails(pelangganId) {
                     }, 100);
                 } else {
                     // JIKA BELUM LUNAS: TOMBOL BAYAR (BUKA FORM)
-                    btnAksi = `
-                    <button class="btn btn-sm btn-success" 
-                        onclick="bukaNotaDanKonfirmasi('${t.id}', '${pelangganId}', '${namaPelanggan}', ${t.jumlah}, '${t.bulan_fix}')" 
-                        title="Bayar Sekarang">
-                        <i class="fas fa-money-bill-wave"></i> Bayar
-                    </button>
-                    `;
-                }
-                
+                   // JIKA BELUM LUNAS: TOMBOL BAYAR + TOMBOL TAGIH
+btnAksi = `
+<div class="btn-group">
+    <button class="btn btn-sm btn-success" 
+        onclick="bukaNotaDanKonfirmasi('${t.id}', '${pelangganId}', '${namaPelanggan}', ${t.jumlah}, '${t.bulan_fix}')" 
+        title="Bayar Sekarang">
+        <i class="fas fa-money-bill-wave"></i> Bayar
+    </button>
+   
+</div>
+`;
+}
+                  
                 return `
                     <tr style="${rowStyle}" data-id="${t.id}"> 
                         <td><strong>${t.bulan_fix}</strong></td>
@@ -7515,22 +7715,48 @@ async function viewTagihanDetails(pelangganId) {
 
             // FOOTER
             if (footerDiv) {
-                let footerHTML = `<button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">Tutup</button>`;
+    // Hitung total tagihan belum lunas
+    const listBelumUrut = tagihanList.filter(item => item.status !== 'lunas');
+    const totalBelum = listBelumUrut.reduce((sum, item) => sum + (item.jumlah || 0), 0);
+    const bulanList = listBelumUrut.map(item => item.bulan_fix).join(', ');
+    
+    let footerHTML = '';
+    
+    if (listBelumUrut.length > 0) {
+        const idsBelumUrut = listBelumUrut.map(item => item.id).join(',');
+        
+        footerHTML = `
+            <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+                <button class="btn btn-warning" 
+                    onclick="kirimTagihanSemuaViaWA('${pelangganId}', '${namaPelanggan}', ${totalBelum}, '${bulanList}', '${idsBelumUrut}')"
+                    style="flex: 1; background: #ffc107; border-color: #ffc107;">
+                    <i class="fas fa-paper-plane"></i> Tagih Semua (${listBelumUrut.length} Bulan)
+                </button>
                 
-                const listBelumUrut = tagihanList.filter(item => item.status !== 'lunas');
-                if (listBelumUrut.length > 0) {
-                    const idsBelumUrut = listBelumUrut.map(item => item.id).join(',');
-                    const totalBelum = listBelumUrut.reduce((sum, item) => sum + (item.jumlah || 0), 0);
-
-                    footerHTML = `
-                        <button class="btn btn-success" onclick="executePayAllDirect('${pelangganId}', '${idsBelumUrut}', ${totalBelum}, 'Riwayat')">
-                            <i class="fas fa-money-bill-wave"></i> Bayar Semua
-                        </button>
-                        <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">Tutup</button>
-                    `;
-                }
-                footerDiv.innerHTML = footerHTML;
-            }
+                <button class="btn btn-success" 
+                    onclick="executePayAllDirect('${pelangganId}', '${idsBelumUrut}', ${totalBelum}, '${bulanList}')"
+                    style="flex: 1;">
+                    <i class="fas fa-money-bill-wave"></i> Bayar Semua
+                </button>
+                
+                <button class="btn btn-primary" 
+                    onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'"
+                    style="flex: 0.5;">
+                    Tutup
+                </button>
+            </div>
+        `;
+    } else {
+        footerHTML = `
+            <button class="btn btn-primary" 
+                onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto'">
+                Tutup
+            </button>
+        `;
+    }
+    
+    footerDiv.innerHTML = footerHTML;
+}
 
             // PAGINATION
             if (paginationDiv) {
@@ -7552,6 +7778,407 @@ async function viewTagihanDetails(pelangganId) {
 }
 
 
+async function kirimTagihanSemuaViaWA(pelangganId, namaPelanggan, totalNominal, bulanList, tagihanIds) {
+    try {
+        // 1. CEK COOLDOWN 24 JAM
+        const cooldownKey = `wa_cooldown_all_${pelangganId}`;
+        const lastSentTime = localStorage.getItem(cooldownKey);
+        
+        if (lastSentTime) {
+            const now = Date.now();
+            const timeDiff = now - parseInt(lastSentTime);
+            const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+            
+            if (hoursDiff < 24) {
+                const remainingHours = 24 - hoursDiff;
+                showToast('warning', 'Tunggu dulu', 
+                    `Bisa kirim tagihan lagi dalam ${remainingHours} jam.`);
+                return;
+            }
+        }
+        
+        // 2. AMBIL DATA PELANGGAN
+        const pelangganDoc = await db.collection('pelanggan').doc(pelangganId).get();
+        if (!pelangganDoc.exists) {
+            showToast('error', 'Error', 'Data pelanggan tidak ditemukan');
+            return;
+        }
+        
+        const pelangganData = pelangganDoc.data();
+        const telepon = pelangganData.telepon || '';
+        
+        if (!telepon || telepon.length < 10) {
+            showToast('error', 'Error', 'Nomor telepon pelanggan tidak valid');
+            return;
+        }
+        
+        // 3. AMBIL TEMPLATE DARI SETTINGS
+        let template = await getTemplateFromSettings('tagihan');
+        
+        // 4. AMBIL DATA PERUSAHAAN UNTUK VARIABEL
+        const companyData = await getCompanyProfile();
+        
+        // 5. GENERATE INVOICE NUMBER
+        const invoiceNumber = `INV/${moment().format('YYYYMMDD')}/${pelangganId.substring(0, 6).toUpperCase()}`;
+        
+        // 6. FORMAT VARIABEL SESUAI TEMPLATE YANG ADA
+        const jatuhTempo = moment().add(7, 'days').format('DD MMMM YYYY');
+        const jumlahBulan = bulanList.split(',').length;
+        
+        // JIKA TEMPLATE KOSONG, PAKAI DEFAULT YANG SESUAI
+        if (!template || template.trim() === '') {
+            template = `Yth. [nama_pelanggan],\n` +
+                      `Tagihan bulan [bulan_tagihan] sebesar [jumlah_tagihan] telah tersedia.\n` +
+                      `Jatuh tempo: [jatuh_tempo]\n` +
+                      `Invoice: [invoice_number]\n` +
+                      `Terima kasih.\n` +
+                      `[nama_perusahaan]`;
+        }
+        
+        // REPLACE VARIABEL DENGAN DATA ASLI
+        const pesanTagihan = template
+            .replace(/\[nama_pelanggan\]/g, namaPelanggan)
+            .replace(/\[nama_perusahaan\]/g, companyData.nama_perusahaan || 'X-BILL ISP')
+            .replace(/\[bulan_tagihan\]/g, `${jumlahBulan} bulan (${bulanList})`)
+            .replace(/\[jumlah_tagihan\]/g, formatRupiah(totalNominal))
+            .replace(/\[jatuh_tempo\]/g, jatuhTempo)
+            .replace(/\[invoice_number\]/g, invoiceNumber)
+            .replace(/\[link_pembayaran\]/g, `https://xbill.com/pay/${invoiceNumber}`)
+            .replace(/\[no_telepon_admin\]/g, companyData.telepon || '081234567890')
+            .replace(/\[alamat_perusahaan\]/g, companyData.alamat || 'Jl. Internet No. 1')
+            .replace(/\[website_perusahaan\]/g, companyData.website || 'https://xbill.com');
+        
+        const noWA = "62" + telepon.replace(/^0/, '');
+        
+        // 7. TAMPILKAN POPUP KUSTOM
+        showCustomConfirm(
+            'Kirim Tagihan via WhatsApp',
+            `<div style="text-align: left;">
+                <div style="margin-bottom: 15px;">
+                    <strong>Kirim ke:</strong><br>
+                    👤 ${namaPelanggan}<br>
+                    📱 ${telepon}
+                </div>
+                <div style="margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <strong>⚠️ TAGIHAN ${jumlahBulan} BULAN SEKALIGUS</strong><br>
+                    📅 Periode: ${bulanList}<br>
+                    💰 Total: ${formatRupiah(totalNominal)}<br>
+                    📊 Invoice: ${invoiceNumber}<br>
+                    ⏰ Jatuh Tempo: ${jatuhTempo}
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; font-size: 14px; max-height: 200px; overflow-y: auto;">
+                    <strong>Preview Pesan:</strong><br>
+                    <div style="white-space: pre-wrap; font-family: monospace; margin-top: 5px; font-size: 12px;">
+                        ${pesanTagihan.substring(0, 400)}${pesanTagihan.length > 400 ? '...' : ''}
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                    <i class="fas fa-info-circle"></i> WhatsApp akan terbuka dengan pesan tagihan ${jumlahBulan} bulan
+                </div>
+            </div>`,
+            
+            // CALLBACK JIKA KONFIRM
+            async function() {
+                try {
+                    // SIMPAN COOLDOWN 24 JAM
+                    localStorage.setItem(cooldownKey, Date.now().toString());
+                    
+                    // BUKA WHATSAPP
+                    const url = `https://wa.me/${noWA}?text=${encodeURIComponent(pesanTagihan)}`;
+                    window.open(url, '_blank');
+                    
+                    // LOG AKTIVITAS
+                    await db.collection('aktivitas').add({
+                        aktivitas: `Kirim tagihan ${jumlahBulan} bulan via WA: ${namaPelanggan}`,
+                        user: getUserLogName(),
+                        timestamp: new Date().toISOString(),
+                        company_id: globalCompanyId,
+                        type: 'tagihan_wa',
+                        details: {
+                            pelanggan_id: pelangganId,
+                            bulan: bulanList,
+                            jumlah_bulan: jumlahBulan,
+                            total_nominal: totalNominal,
+                            invoice_number: invoiceNumber,
+                            telepon: telepon
+                        }
+                    });
+                    
+                    showToast('success', 'Berhasil', `WhatsApp terbuka, siap kirim tagihan`);
+                    
+                } catch (error) {
+                    console.error("❌ Error saat mengirim:", error);
+                    showToast('error', 'Gagal', 'Gagal menyimpan log: ' + error.message);
+                }
+            },
+            
+            // CALLBACK JIKA BATAL
+            function() {
+                console.log("Pengiriman tagihan dibatalkan");
+            }
+        );
+        
+    } catch (error) {
+        console.error("❌ Error kirim tagihan WA:", error);
+        showToast('error', 'Gagal', 'Gagal mengirim tagihan: ' + error.message);
+    }
+}
+
+async function getTemplateFromSettings(templateType) {
+    try {
+        // AMBIL DARI COLLECTION message_templates
+        const templateRef = db.collection('message_templates').doc(globalCompanyId);
+        const templateDoc = await templateRef.get();
+        
+        if (templateDoc.exists) {
+            const templateData = templateDoc.data();
+            
+            // MAP TEMPLATE TYPE KE FIELD YANG SESUAI
+            const templateMap = {
+                'tagihan': 'new_invoice',          // Untuk kirim tagihan, pakai template new_invoice
+                'reminder_3hari': 'reminder_3hari',
+                'reminder_1hari': 'reminder_1hari',
+                'reminder_overdue': 'reminder_overdue',
+                'payment_confirmed': 'payment_confirmed'
+            };
+            
+            const fieldName = templateMap[templateType] || templateType;
+            
+            if (templateData[fieldName] && templateData[fieldName].trim() !== '') {
+                return templateData[fieldName].trim();
+            }
+        }
+        
+        // JIKA TIDAK DITEMUKAN, RETURN STRING KOSONG
+        return '';
+        
+    } catch (error) {
+        console.error("Error get template from settings:", error);
+        return '';
+    }
+}
+
+function showTemplateWarning() {
+    const modalId = 'modalTemplateWarning';
+    
+    // Hapus modal lama
+    const oldModal = document.getElementById(modalId);
+    if (oldModal) oldModal.remove();
+    
+    // Buat modal warning
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay show';
+    modal.style.zIndex = '999999';
+    
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header" style="background: #fff3cd; border-color: #ffeaa7;">
+                <h3 class="modal-title" style="color: #856404;">
+                    <i class="fas fa-exclamation-triangle"></i> Template Pesan Kosong
+                </h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto';">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="font-size: 48px; color: #fdcb6e; margin-bottom: 15px;">
+                        <i class="fas fa-comment-slash"></i>
+                    </div>
+                    <h4 style="color: #856404; margin-bottom: 10px;">Template Pesan Belum Diatur</h4>
+                    <p style="color: #666; line-height: 1.5;">
+                        Anda belum mengatur template pesan tagihan di menu Settings.<br>
+                        Silakan atur template terlebih dahulu sebelum mengirim tagihan via WhatsApp.
+                    </p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left;">
+                        <strong>Langkah-langkah:</strong>
+                        <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                            <li>Buka menu <strong>Settings</strong></li>
+                            <li>Pilih tab <strong>Template Pesan</strong></li>
+                            <li>Isi template untuk kategori <strong>"Tagihan"</strong></li>
+                            <li>Simpan template</li>
+                            <li>Coba kirim tagihan lagi</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                <button id="btnCloseWarning" class="btn btn-outline" style="padding: 10px 20px;">
+                    <i class="fas fa-times"></i> Tutup
+                </button>
+                <button id="btnGoToSettings" class="btn btn-primary" style="padding: 10px 20px;">
+                    <i class="fas fa-cog"></i> Buka Settings
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event listeners
+    document.getElementById('btnCloseWarning').onclick = function() {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    };
+    
+    document.getElementById('btnGoToSettings').onclick = function() {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+        // ARAHKAN KE MENU SETTINGS
+        loadPage('settings');
+        // SCROLL KE BAGIAN TEMPLATE PESAN
+        setTimeout(() => {
+            const templateSection = document.getElementById('templatePesanSection');
+            if (templateSection) {
+                templateSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            showToast('info', 'Settings', 'Silakan isi template pesan tagihan');
+        }, 500);
+    };
+}
+
+// DEFAULT TEMPLATE JIKA TIDAK ADA DI SETTINGS
+function getDefaultTemplate(templateType) {
+    if (templateType === 'tagihan') {
+        return `*TAGIHAN INTERNET [bulan]*\n\n` +
+               `Kepada: [nama]\n` +
+               `Telepon: [telepon]\n` +
+               `Alamat: [alamat]\n` +
+               `Paket: [paket]\n` +
+               `Harga: [harga]/bulan\n` +
+               `Periode: [bulan]\n` +
+               `Jumlah: [nominal]\n` +
+               `Status: [status]\n` +
+               `Tanggal: [tanggal]\n` +
+               `Jatuh Tempo: [jatuh_tempo]\n\n` +
+               `*RINCIAN:*\n` +
+               `- Total tagihan [jumlah_bulan] bulan\n` +
+               `- Pembayaran dapat dicicil per bulan\n` +
+               `- Hubungi admin untuk info lebih lanjut\n\n` +
+               `*PEMBAYARAN:*\n` +
+               `- Transfer Bank\n` +
+               `- Cash di Kantor\n\n` +
+               `_Pesan otomatis dari sistem_`;
+    }
+    
+    return `Tagihan [bulan] untuk [nama]: [nominal]. Jatuh tempo: [jatuh_tempo]`;
+}
+
+// ============================================
+// FUNGSI CEK STATUS COOLDOWN
+// ============================================
+
+function cekStatusCooldown(pelangganId, bulan) {
+    const cooldownKey = `wa_cooldown_${pelangganId}_${bulan}`;
+    const lastSentTime = localStorage.getItem(cooldownKey);
+    
+    if (!lastSentTime) {
+        return { bisaKirim: true, pesan: 'Bisa kirim sekarang' };
+    }
+    
+    const now = Date.now();
+    const timeDiff = now - parseInt(lastSentTime);
+    const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+    
+    if (hoursDiff >= 24) {
+        localStorage.removeItem(cooldownKey); // Hapus jika sudah lewat 24 jam
+        return { bisaKirim: true, pesan: 'Bisa kirim sekarang' };
+    } else {
+        const remainingHours = 24 - hoursDiff;
+        return { 
+            bisaKirim: false, 
+            pesan: `Tunggu ${remainingHours} jam lagi`,
+            jamTersisa: remainingHours
+        };
+    }
+}
+
+// ============================================
+// FUNGSI UNTUK TAMPILKAN TOMBOL DENGAN STATUS COOLDOWN
+// (Ganti tombol di modal detail)
+// ============================================
+
+function getTombolKirimTagihanHTML(pelangganId, namaPelanggan, nominal, bulan, tagihanId) {
+    const cooldownStatus = cekStatusCooldown(pelangganId, bulan);
+    
+    if (!cooldownStatus.bisaKirim) {
+        // Tampilkan tombol disabled dengan info cooldown
+        return `
+        <button class="btn btn-sm btn-outline" 
+            title="${cooldownStatus.pesan}" 
+            disabled
+            style="cursor: not-allowed; opacity: 0.6;">
+            <i class="fas fa-clock"></i> ${cooldownStatus.jamTersisa}j
+        </button>
+        `;
+    } else {
+        // Tampilkan tombol aktif
+        return `
+        <button class="btn btn-sm btn-warning" 
+            onclick="kirimTagihanViaWA('${pelangganId}', '${namaPelanggan}', ${nominal}, '${bulan}')" 
+            title="Kirim tagihan via WhatsApp">
+            <i class="fas fa-paper-plane"></i> Tagih
+        </button>
+        `;
+    }
+}
+
+
+
+// ============================================
+// FUNGSI POPUP KUSTOM KONFIRMASI
+// ============================================
+function showCustomConfirm(title, message, confirmCallback, cancelCallback) {
+    const modalId = 'modalCustomConfirmWA';
+    
+    // Hapus modal lama
+    const oldModal = document.getElementById(modalId);
+    if (oldModal) oldModal.remove();
+    
+    // Buat modal baru
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay show';
+    modal.style.zIndex = '999999';
+    
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-paper-plane" style="color: #25D366;"></i> ${title}
+                </h3>
+                <button class="modal-close" onclick="document.getElementById('${modalId}').remove(); document.body.style.overflow='auto';">&times;</button>
+            </div>
+            <div class="modal-body">
+                ${message}
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                <button id="btnCancelWA" class="btn btn-outline" style="padding: 10px 25px;">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button id="btnSendWA" class="btn btn-success" style="padding: 10px 25px; background: #25D366;">
+                    <i class="fab fa-whatsapp"></i> Buka WhatsApp
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event listeners
+    document.getElementById('btnCancelWA').onclick = function() {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+        if (typeof cancelCallback === 'function') cancelCallback();
+    };
+    
+    document.getElementById('btnSendWA').onclick = function() {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+        if (typeof confirmCallback === 'function') confirmCallback();
+    };
+}
 
 
 async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanString) {
@@ -9774,96 +10401,57 @@ if (paketSelect && paketData) {
 }
 }
 
-// ============================================
-// FUNGSI TEMPLATE PESAN - FIX
-// ============================================
 
-// 1. FUNGSI SAVE TEMPLATE PESAN
-async function saveMessageTemplates() {
-    console.log("🔄 Menyimpan template pesan...");
-    
-    try {
-        // Ambil data dari form
-        const templateData = {
-            // Reminder templates
-            reminder_3hari: document.getElementById('templateReminder3Days').value,
-            reminder_1hari: document.getElementById('templateReminder1Day').value,
-            reminder_overdue: document.getElementById('templateOverdue').value,
-            
-            // Konfirmasi templates
-            payment_confirmed: document.getElementById('templatePaymentConfirmed').value,
-            new_invoice: document.getElementById('templateNewInvoice').value,
-            
-            // Metadata
-            updated_at: new Date().toISOString(),
-            updated_by: currentUser.email,
-            company_id: globalCompanyId
-        };
-
-        // Validasi
-        if (!templateData.reminder_3hari || !templateData.payment_confirmed) {
-            showToast('error', 'Validasi Gagal', 'Template utama harus diisi');
-            return;
-        }
-
-        showLoading();
-
-        // Simpan ke Firestore
-        await db.collection('message_templates').doc(globalCompanyId).set(templateData, { merge: true });
-
-        // Log aktivitas
-        await db.collection('aktivitas').add({
-            aktivitas: 'Menyimpan template pesan otomatis',
-            user: getUserLogName(),
-            timestamp: new Date().toISOString()
-        });
-
-        hideLoading();
-        hideModal('modalMessageTemplates');
-        showToast('success', 'Berhasil', 'Template pesan berhasil disimpan!');
-
-    } catch (error) {
-        hideLoading();
-        console.error("❌ Error saveMessageTemplates:", error);
-        showToast('error', 'Gagal', 'Gagal menyimpan template: ' + error.message);
-    }
-}
 
 // 2. FUNGSI LOAD TEMPLATE PESAN
 async function loadMessageTemplates() {
-    console.log("📥 Memuat template pesan...");
-    
     try {
-        const doc = await db.collection('message_templates').doc(globalCompanyId).get();
+        console.log("📋 Memuat template pesan...");
         
-        if (doc.exists) {
-            const data = doc.data();
-            console.log("✅ Template ditemukan:", data);
+        showLoading();
+        
+        // AMBIL DARI COLLECTION message_templates
+        const templateRef = db.collection('message_templates').doc(globalCompanyId);
+        const templateDoc = await templateRef.get();
+        
+        if (templateDoc.exists) {
+            const templateData = templateDoc.data();
             
-            // Map data ke field yang sesuai
-            const fieldMapping = {
-                'templateReminder3Days': data.reminder_3hari,
-                'templateReminder1Day': data.reminder_1hari,
-                'templateOverdue': data.reminder_overdue,
-                'templatePaymentConfirmed': data.payment_confirmed,
-                'templateNewInvoice': data.new_invoice
-            };
-
-            // Isi setiap textarea
-            Object.entries(fieldMapping).forEach(([fieldId, value]) => {
-                const element = document.getElementById(fieldId);
-                if (element && value) {
-                    element.value = value;
-                }
-            });
+            // ISI FORM DENGAN DATA DARI DATABASE
+            document.getElementById('templateReminder3Days').value = 
+                templateData.reminder_3hari || '';
             
-            console.log("✅ Template berhasil dimuat ke form");
+            document.getElementById('templateReminder1Day').value = 
+                templateData.reminder_1hari || '';
+            
+            document.getElementById('templateOverdue').value = 
+                templateData.reminder_overdue || '';
+            
+            document.getElementById('templatePaymentConfirmed').value = 
+                templateData.payment_confirmed || '';
+            
+            document.getElementById('templateNewInvoice').value = 
+                templateData.new_invoice || '';
+            
+            console.log("✅ Template dimuat dari database");
+            
         } else {
-            console.log("ℹ️ Belum ada template tersimpan, gunakan default");
-            // Biarkan nilai default dari HTML
+            // JIKA BELUM ADA, ISI DENGAN DEFAULT
+            console.log("ℹ️ Template belum ada, menggunakan default");
+            
+            document.getElementById('templateReminder3Days').value = 
+                `Yth. [nama_pelanggan],\nTagihan bulan [bulan_tagihan] sebesar [jumlah_tagihan] akan jatuh tempo pada [jatuh_tempo].\nSilakan lakukan pembayaran sebelum jatuh tempo.\nTerima kasih.\n[nama_perusahaan]`;
+            
+            document.getElementById('templateNewInvoice').value = 
+                `Yth. [nama_pelanggan],\nTagihan bulan [bulan_tagihan] sebesar [jumlah_tagihan] telah tersedia.\nJatuh tempo: [jatuh_tempo]\nLink pembayaran: [link_pembayaran]\nTerima kasih.\n[nama_perusahaan]`;
         }
+        
+        hideLoading();
+        
     } catch (error) {
-        console.error("❌ Error loadMessageTemplates:", error);
+        hideLoading();
+        console.error("❌ Error load templates:", error);
+        showToast('error', 'Gagal', 'Gagal memuat template: ' + error.message);
     }
 }
 
@@ -10254,68 +10842,7 @@ async function editPelangganDetail(pelangganId) {
     }
 }
         
-// ============================================
-// FUNGSI deletePelanggan() - VERSI HEMAT
-// ============================================
-async function deletePelanggan(id) {
-    if (localStorage.getItem('userRole') !== 'admin') {
-        alert('HANYA ADMIN!'); 
-        return;
-    }
-    
-    if (!confirm('HAPUS PELANGGAN INI?')) return;
-    
-    try {
-        showLoading();
-        
-        // 1. HAPUS DARI DATABASE
-        await db.collection('pelanggan').doc(id).delete();
-        
-        // ⭐⭐ 2. UPDATE CACHE LOKAL LANGSUNG ⭐⭐
-        if (window.pelangganDataCache) {
-            window.pelangganDataCache = window.pelangganDataCache.filter(p => p.id !== id);
-        }
-        
-        // ⭐⭐ 3. UPDATE LOCALSTORAGE CACHE LANGSUNG ⭐⭐
-        const cached = localStorage.getItem('xbill_cache');
-        if (cached) {
-            try {
-                const data = JSON.parse(cached);
-                if (data.pelanggan) {
-                    data.pelanggan = data.pelanggan.filter(p => p.id !== id);
-                    data.timestamp = Date.now();
-                    localStorage.setItem('xbill_cache', JSON.stringify(data));
-                }
-            } catch(e) {
-                // ignore parse error
-            }
-        }
-        
-        // ⭐⭐ 4. RENDER ULANG TABEL LANGSUNG DARI CACHE ⭐⭐
-        if (window.pelangganDataCache) {
-            renderPelangganTable(window.pelangganDataCache);
-        } else {
-            // Jika tidak ada cache, load dari database
-            await loadPelangganData();
-        }
-        
-        showToast('success', 'Berhasil', 'Data terhapus');
-        hideLoading();
-        
-        // 5. LOG AKTIVITAS
-        await db.collection('aktivitas').add({
-            aktivitas: `Hapus pelanggan: ${nama}`,
-            user: currentUser?.email || "Admin",
-            timestamp: new Date().toISOString(),
-            company_id: globalCompanyId  // ⭐ TAMBAH INI!
-        });
-        
-    } catch (error) {
-        console.error("Error delete pelanggan:", error);
-        showToast('error', 'Gagal', 'Gagal menghapus: ' + error.message);
-        hideLoading();
-    }
-}
+
 
 // TAMBAHKAN INI DI renderPelangganTable()
 function attachDeleteEvents() {
@@ -10705,30 +11232,29 @@ async function executeDelete(id) {
 }
         
         async function deletePaket(id) {
-            confirmDialog('Hapus paket ini? Pelanggan yang menggunakan paket ini akan terpengaruh.', async () => {
-                try {
-                    showLoading();
-                    await db.collection('paket').doc(id).delete();
-                    
-                    // Log activity
-                    await db.collection('aktivitas').add({
-                        aktivitas: 'Menghapus paket',
-                        user: getUserLogName(),
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    hideLoading();
-                    showToast('success', 'Berhasil', 'Paket berhasil dihapus');
-                    
-                    await loadPaketData();
-                    
-                } catch (error) {
-                    console.error("Error deleting paket:", error);
-                    hideLoading();
-                    showToast('error', 'Error', 'Gagal menghapus paket');
-                }
+    // ⭐⭐ GANTI confirm(...) JADI confirmDialog(...) ⭐⭐
+    confirmDialog('Hapus paket ini? Pelanggan yang menggunakan paket ini akan terpengaruh.', async () => {
+        try {
+            showLoading();
+            await db.collection('paket').doc(id).delete();
+            
+            await db.collection('aktivitas').add({
+                aktivitas: 'Menghapus paket',
+                user: getUserLogName(),
+                timestamp: new Date().toISOString()
             });
+            
+            hideLoading();
+            showToast('success', 'Berhasil', 'Paket berhasil dihapus');
+            await loadPaketData();
+            
+        } catch (error) {
+            console.error("Error deleting paket:", error);
+            hideLoading();
+            showToast('error', 'Error', 'Gagal menghapus paket');
         }
+    });
+}
         
 
 
@@ -10899,13 +11425,22 @@ async function generateTagihanBulk() {
 
         forceCloseModal('modalGenerateTagihan');
         await loadTagihanData();
-        showToast('success', 'Berhasil', `${count} Tagihan dibuat (Hemat Biaya)`);
         
     } catch (error) {
         console.error("❌ Error generateTagihanBulk:", error);
         showToast('error', 'Gagal', error.message);
     } finally {
         resetGenerateButton();
+    }
+}
+
+// Helper untuk reset tombol (biar rapi)
+function resetGenerateButton() {
+    const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary') || 
+                       document.getElementById('btnGenerateTagihan');
+    if (generateBtn) {
+        generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
+        generateBtn.disabled = false;
     }
 }
 
@@ -10948,7 +11483,53 @@ async function cekTagihanSudahAda(pelangganId, bulanKey) {
     }
 }
 
+        async function getCompanyProfile() {
+    try {
+        // CEK CACHE DULU
+        const cacheKey = `company_profile_${globalCompanyId}`;
+        const cached = localStorage.getItem(cacheKey);
         
+        if (cached) {
+            return JSON.parse(cached);
+        }
+        
+        // AMBIL DARI DATABASE
+        const companyRef = db.collection('companies').doc(globalCompanyId);
+        const companyDoc = await companyRef.get();
+        
+        let companyData = {
+            nama_perusahaan: 'X-BILL ISP',
+            telepon: '081234567890',
+            alamat: 'Jl. Internet Cepat No. 1',
+            website: 'https://xbill.com'
+        };
+        
+        if (companyDoc.exists) {
+            const data = companyDoc.data();
+            companyData = {
+                ...companyData,
+                ...data
+            };
+        }
+        
+        // SIMPAN KE CACHE (1 JAM)
+        localStorage.setItem(cacheKey, JSON.stringify(companyData));
+        setTimeout(() => {
+            localStorage.removeItem(cacheKey);
+        }, 60 * 60 * 1000);
+        
+        return companyData;
+        
+    } catch (error) {
+        console.error("Error get company profile:", error);
+        return {
+            nama_perusahaan: 'X-BILL ISP',
+            telepon: '081234567890',
+            alamat: 'Jl. Internet Cepat No. 1',
+            website: 'https://xbill.com'
+        };
+    }
+}
 
 // FUNGSI UNTUK AMBIL DATA TUNGGAKAN
 async function getTunggakanData() {
@@ -11443,33 +12024,159 @@ function printInvoiceDetail(tagihanId) {
 }
         
         // ============================================
-        // REMINDER FUNCTIONS
+        // FUNGSI: KIRIM REMINDER
         // ============================================
         
         async function kirimReminder() {
+    // GANTI INI:
+    // const select = document.getElementById('reminderPelanggan');
+    // if (!select.value) { ... }
+    
+    // MENJADI INI:
+    const jenis = document.getElementById('reminderType')?.value || 'whatsapp';
+    const pesan = document.getElementById('previewPesan')?.value || '';
+    const jadwal = document.getElementById('reminderSchedule')?.value || 'now';
+    
+    if (!pesan.trim()) {
+        showToast('error', 'Error', 'Pesan tidak boleh kosong!');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // Update tombol
+        const btn = document.querySelector('#modalReminder .btn-primary');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGIRIM...';
+            btn.disabled = true;
+        }
+        
+        // 1. Ambil semua pelanggan dengan tunggakan
+        const tunggakanSnapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
+        
+        if (tunggakanSnapshot.empty) {
+            hideLoading();
+            showToast('warning', 'Tidak Ada Data', 'Tidak ada pelanggan dengan tunggakan');
+            return;
+        }
+        
+        const pelangganIds = [];
+        tunggakanSnapshot.forEach(doc => {
+            const pelId = doc.data().pelanggan_id;
+            if (pelId && !pelangganIds.includes(pelId)) {
+                pelangganIds.push(pelId);
+            }
+        });
+        
+        // 2. Kirim ke setiap pelanggan
+        let berhasil = 0;
+        const totalPelanggan = pelangganIds.length;
+        
+        for (const id of pelangganIds) {
             try {
-                showLoading();
-                
-                // Simulate sending reminders
-                setTimeout(() => {
-                    hideLoading();
-                    hideModal('modalReminder');
-                    showToast('success', 'Berhasil', 'Reminder berhasil dikirim ke pelanggan');
+                const doc = await db.collection('pelanggan').doc(id).get();
+                if (doc.exists) {
+                    const p = doc.data();
                     
-                    // Log activity
-                    db.collection('aktivitas').add({
-                        aktivitas: 'Mengirim reminder tagihan',
-                        user: currentUser?.name || 'Administrator',
-                        timestamp: new Date().toISOString()
+                    // Log pengiriman
+                    await db.collection('reminder_log').add({
+                        pelanggan_id: id,
+                        pelanggan_nama: p.nama || '',
+                        pelanggan_telepon: p.telepon || '',
+                        jenis: jenis,
+                        pesan: pesan.trim(),
+                        status: 'terkirim',
+                        tanggal: new Date().toISOString(),
+                        jadwal_kirim: jadwal,
+                        company_id: globalCompanyId,
+                        user: getUserLogName()
                     });
-                }, 2000);
-                
-            } catch (error) {
-                console.error("Error sending reminder:", error);
-                hideLoading();
-                showToast('error', 'Error', 'Gagal mengirim reminder');
+                    
+                    berhasil++;
+                }
+            } catch (err) {
+                console.error(`Gagal log untuk ${id}:`, err);
             }
         }
+        
+        // 3. Tampilkan hasil
+        hideLoading();
+        
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim ke Semua Pelanggan';
+            btn.disabled = false;
+        }
+        
+        showToast('success', 'Berhasil', 
+            `${berhasil} dari ${totalPelanggan} reminder berhasil dikirim`);
+        
+        // 4. Update summary status
+        const summaryStatus = document.getElementById('summaryStatus');
+        if (summaryStatus) {
+            summaryStatus.innerHTML = 
+                `<span class="badge badge-success">TERKIRIM ${berhasil}/${totalPelanggan}</span>`;
+        }
+        
+        // 5. Auto close modal setelah 2 detik
+        setTimeout(() => {
+            hideModal('modalReminder');
+        }, 2000);
+        
+    } catch (error) {
+        hideLoading();
+        console.error("Error kirim reminder:", error);
+        showToast('error', 'Gagal', error.message);
+        
+        // Reset tombol
+        const btn = document.querySelector('#modalReminder .btn-primary');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim ke Semua Pelanggan';
+            btn.disabled = false;
+        }
+    }
+}
+
+// 1. FUNGSI loadPelangganForReminder() - YANG SUDAH ADA
+// 2. FUNGSI kirimReminder() - YANG SUDAH ADA
+// 3. FUNGSI BARU: updateSummaryReminder()
+
+function updateSummaryReminder() {
+    const media = document.getElementById('reminderType').value;
+    const jadwal = document.getElementById('reminderSchedule').value;
+    
+    let waktuText = "Sekarang";
+    if (jadwal === "tomorrow") waktuText = "Besok Pagi (08:00)";
+    if (jadwal === "afternoon") waktuText = "Sore Ini (16:00)";
+    
+    document.getElementById('summaryMedia').textContent = media;
+    document.getElementById('summaryWaktuReminder').textContent = waktuText;
+}
+
+// ============================================
+// INITIALIZE
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Event saat modal dibuka
+    const modal = document.getElementById('modalReminder');
+    if (modal) {
+        modal.addEventListener('click', function() {
+            if (this.classList.contains('show')) {
+                loadPelangganForReminder();
+            }
+        });
+    }
+    
+    // Tombol kirim
+    const btnKirim = document.getElementById('btnKirimReminder');
+    if (btnKirim) {
+        btnKirim.onclick = kirimReminder;
+    }
+});
         
         // ============================================
         // EXPORT FUNCTIONS
@@ -11612,10 +12319,359 @@ function printInvoiceDetail(tagihanId) {
             showToast('info', 'Coming Soon', 'Export PDF akan segera tersedia');
         }
         
-        function exportTunggakan() {
-            document.getElementById('exportType').value = 'tunggakan';
-            exportData();
+        // FUNGSI EXPORT TUNGGAKAN - PERBAIKAN
+async function exportTunggakan() {
+    try {
+        showLoading();
+        
+        // Ambil data tunggakan langsung dari database
+        const snapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
+        
+        if (snapshot.empty) {
+            hideLoading();
+            showToast('warning', 'Data Kosong', 'Tidak ada data tunggakan untuk diexport');
+            return;
         }
+        
+        // Ambil data pelanggan untuk mapping
+        const pelangganSnapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        const pelangganMap = {};
+        pelangganSnapshot.forEach(doc => {
+            pelangganMap[doc.id] = doc.data();
+        });
+        
+        // Format data untuk Excel
+        const data = [
+            ['No', 'Nama Pelanggan', 'Telepon', 'Bulan Tagihan', 'Nominal', 'Jatuh Tempo', 'Hari Telat', 'Status']
+        ];
+        
+        let index = 1;
+        snapshot.forEach(doc => {
+            const t = doc.data();
+            const pelanggan = pelangganMap[t.pelanggan_id] || {};
+            const hariTelat = t.tanggal_jatuh_tempo ? 
+                Math.max(0, moment().diff(moment(t.tanggal_jatuh_tempo, 'DD-MM-YYYY'), 'days')) : 0;
+            
+            data.push([
+                index++,
+                pelanggan.nama || '-',
+                pelanggan.telepon || '-',
+                t.bulan || '-',
+                t.jumlah || 0,
+                t.tanggal_jatuh_tempo || '-',
+                hariTelat,
+                t.status === 'telat' ? 'Telat' : 'Belum Bayar'
+            ]);
+        });
+        
+        // Buat Excel
+        const now = moment().format('YYYYMMDD_HHmmss');
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Tunggakan');
+        XLSX.writeFile(wb, `Data_Tunggakan_${now}.xlsx`);
+        
+        hideLoading();
+        showToast('success', 'Export Berhasil', `${snapshot.size} data berhasil diexport`);
+        
+    } catch (error) {
+        hideLoading();
+        console.error("❌ Error export tunggakan:", error);
+        showToast('error', 'Error', 'Gagal export data: ' + error.message);
+    }
+}
+
+// FUNGSI PERBAIKAN: SETUP MODAL REMINDER
+function setupReminderModal() {
+    console.log("⚙️ Setup modal reminder...");
+    
+    const modal = document.getElementById('modalReminder');
+    if (!modal) {
+        console.warn("⚠️ Modal reminder tidak ditemukan");
+        return;
+    }
+    
+    // 1. Setup tombol close
+    const closeBtn = modal.querySelector('.modal-close');
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            modal.classList.remove('show');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+    }
+    
+    // 2. Setup form submit
+    const form = document.getElementById('reminderForm');
+    if (form) {
+        form.onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const pelangganSelect = document.getElementById('reminderPelanggan');
+            const jenisSelect = document.getElementById('reminderJenis');
+            const pesanInput = document.getElementById('reminderPesan');
+            
+            if (!pelangganSelect || !jenisSelect || !pesanInput) {
+                showToast('error', 'Error', 'Form tidak lengkap');
+                return;
+            }
+            
+            const selectedPelanggan = pelangganSelect.value;
+            const jenisReminder = jenisSelect.value;
+            const pesan = pesanInput.value.trim();
+            
+            if (!selectedPelanggan) {
+                showToast('warning', 'Peringatan', 'Pilih pelanggan terlebih dahulu');
+                return;
+            }
+            
+            if (!pesan) {
+                showToast('warning', 'Peringatan', 'Masukkan pesan reminder');
+                return;
+            }
+            
+            // Proses kirim reminder...
+            console.log("Kirim reminder:", { selectedPelanggan, jenisReminder, pesan });
+            showToast('success', 'Berhasil', 'Reminder berhasil dikirim');
+            
+            // Tutup modal
+            modal.classList.remove('show');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+    }
+    
+    // 3. Load pelanggan saat modal dibuka
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal || modal.classList.contains('show')) {
+            // Tunggu sebentar untuk memastikan modal benar-benar terbuka
+            setTimeout(() => {
+                loadPelangganForReminder();
+            }, 200);
+        }
+    });
+}
+
+// FUNGSI LOAD PELANGGAN UNTUK REMINDER (FIXED)
+async function loadPelangganForReminder() {
+    const container = document.getElementById('reminderPelangganList');
+    if (!container) {
+        console.error("❌ Element #reminderPelangganList tidak ditemukan!");
+        return;
+    }
+    
+    try {
+        container.innerHTML = '<div class="text-center"><div class="spinner"></div> Memuat pelanggan...</div>';
+        
+        // Ambil pelanggan dengan tunggakan
+        const tunggakanSnapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
+        
+        if (tunggakanSnapshot.empty) {
+            container.innerHTML = '<div class="text-center text-muted">Tidak ada pelanggan dengan tunggakan</div>';
+            
+            // Update summary
+            document.getElementById('summaryJumlahPelanggan').textContent = '0';
+            document.getElementById('summaryStatus').innerHTML = 
+                '<span class="badge badge-secondary">TIDAK ADA DATA</span>';
+            
+            return;
+        }
+        
+        // Kumpulkan ID pelanggan unik
+        const pelangganIds = [];
+        tunggakanSnapshot.forEach(doc => {
+            const pelId = doc.data().pelanggan_id;
+            if (pelId && !pelangganIds.includes(pelId)) {
+                pelangganIds.push(pelId);
+            }
+        });
+        
+        // Ambil detail pelanggan
+        let html = '';
+        let count = 0;
+        
+        for (const id of pelangganIds) {
+            const doc = await db.collection('pelanggan').doc(id).get();
+            if (doc.exists) {
+                const p = doc.data();
+                count++;
+                
+                html += `
+    <div style="
+        display: grid;
+        grid-template-columns: 2fr 1.5fr 1.5fr auto;
+        gap: 15px;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: white;
+        align-items: center;
+    ">
+        <div>
+            <strong>${p.nama || 'Tanpa Nama'}</strong>
+        </div>
+        <div>
+            <i class="fas fa-phone" style="color: #3498db;"></i>
+            ${p.telepon || '-'}
+        </div>
+        <div>
+            <i class="fas fa-envelope" style="color: #e74c3c;"></i>
+            ${p.email || '-'}
+        </div>
+        <div style="color: #e74c3c; font-weight: bold; font-size: 12px;">
+            ⚠️ TUNGGAKAN
+        </div>
+    </div>
+`;
+            }
+        }
+        
+        container.innerHTML = html;
+        
+        // Update summary
+        document.getElementById('summaryJumlahPelanggan').textContent = count;
+        updateSummaryReminder(); // Panggil update summary
+        
+        console.log(`✅ ${count} pelanggan dengan tunggakan dimuat`);
+        
+    } catch (error) {
+        console.error("❌ Error load pelanggan:", error);
+        container.innerHTML = '<div class="text-center text-danger">Error memuat data</div>';
+    }
+}
+
+
+// Panggil setup saat halaman load
+document.addEventListener('DOMContentLoaded', function() {
+    setupReminderModal();
+});
+
+// ============================================
+// FUNGSI TAMBAHAN: BUKA MODAL REMINDER
+// ============================================
+
+function openReminderModal() {
+    console.log("📩 Membuka modal kirim reminder...");
+    
+    const modal = document.getElementById('modalReminder');
+    if (!modal) {
+        showToast('error', 'Error', 'Modal reminder tidak ditemukan');
+        return;
+    }
+    
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Reset form
+    const form = document.getElementById('reminderForm');
+    if (form) form.reset();
+    
+    // Load pelanggan ke dropdown
+    setTimeout(() => {
+        loadPelangganForReminder();
+    }, 300);
+    
+    showToast('info', 'Kirim Reminder', 'Pilih pelanggan yang akan dikirimi reminder');
+}
+
+// ============================================
+// EVENT LISTENER UNTUK MODAL REMINDER
+// ============================================
+
+// Pasang event listener saat halaman load
+document.addEventListener('DOMContentLoaded', function() {
+    // Tombol "Kirim Reminder" di halaman Tunggakan
+    const btnReminder = document.querySelector('[onclick*="modalReminder"]');
+    if (btnReminder) {
+        btnReminder.onclick = openReminderModal;
+    }
+    
+    // Tombol close modal
+    const modalClose = document.querySelector('#modalReminder .modal-close');
+    if (modalClose) {
+        modalClose.onclick = function() {
+            document.getElementById('modalReminder').classList.remove('show');
+            document.getElementById('modalReminder').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+    }
+    
+    // Tombol di quick actions (jika ada)
+    const quickActionBtn = document.getElementById('btnKirimReminder');
+    if (quickActionBtn) {
+        quickActionBtn.onclick = openReminderModal;
+    }
+});
+
+// FUNGSI REFRESH TUNGGAKAN SAJA
+// FUNGSI REFRESH TUNGGAKAN SAJA (TIDAK RELOAD HALAMAN)
+function refreshTunggakan() {
+    console.log("🔄 Refresh data tunggakan...");
+    
+    try {
+        // 1. Tampilkan loading indicator di tabel
+        const table = document.getElementById('tunggakanTable');
+        if (table) {
+            const originalContent = table.innerHTML;
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center" style="padding: 30px;">
+                        <div class="spinner" style="width: 30px; height: 30px; margin: 0 auto;"></div>
+                        <p style="margin-top: 10px; color: #666;">Memperbarui data tunggakan...</p>
+                    </td>
+                </tr>
+            `;
+            
+            // 2. Reset input pencarian (opsional, bisa dihapus jika tidak mau reset)
+            const searchInput = document.getElementById('searchTunggakan');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // 3. Reset ke halaman 1
+            halamanTunggakanSaatIni = 1;
+            
+            // 4. Load ulang data setelah delay kecil untuk efek visual
+            setTimeout(async () => {
+                try {
+                    await loadTunggakanData('semua');
+                } catch (error) {
+                    // Kembalikan konten asli jika error
+                    table.innerHTML = originalContent;
+                    console.error("Error refresh:", error);
+                    showToast('error', 'Gagal', 'Gagal memuat data ulang');
+                }
+            }, 500);
+        } else {
+            // Jika tabel tidak ditemukan, cukup panggil loadTunggakanData
+            loadTunggakanData('semua');
+            showToast('info', 'Refresh', 'Memuat ulang data tunggakan');
+        }
+        
+    } catch (error) {
+        console.error("Error refreshTunggakan:", error);
+        showToast('error', 'Error', 'Gagal refresh data');
+    }
+}
+
+// UPDATE TOMBOL REFRESH DI HTML (ganti onclick yang ada):
+// Dari: onclick="location.reload()"
+// Menjadi: onclick="refreshTunggakan()"
+
+
         
         function generateTunggakanReport() {
             showToast('info', 'Coming Soon', 'Laporan tunggakan akan segera tersedia');
@@ -12361,53 +13417,167 @@ function validateEmail(email) {
 // ============================================
 
 // Fungsi Logout Utama (Global - bisa dipanggil dari tombol mana saja)
+// ============================================
+// FUNGSI LOGOUT DENGAN POPUP KUSTOM MINIMALIS
+// ============================================
+
 async function handleLogout() {
     console.log("🚪 Proses Logout dimulai...");
     
-    // Konfirmasi Logout
-    if (!confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
-        console.log("❌ Logout dibatalkan oleh user.");
-        return;
-    }
+    // Buat overlay gelap
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+    `;
     
-    try {
-        showLoading(); // Tampilkan loading
+    // Buat modal sederhana
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        width: 90%;
+        max-width: 300px;
+        animation: slideUp 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    `;
+    
+    modal.innerHTML = `
+        <div style="color: #4361ee; font-size: 42px; margin-bottom: 15px;">
+            <i class="fas fa-sign-out-alt"></i>
+        </div>
+        <h3 style="margin: 0 0 10px 0; color: #2d3436;">Logout?</h3>
+        <p style="color: #636e72; margin-bottom: 25px; font-size: 14px;">Anda akan keluar dari sistem</p>
+        <div style="display: flex; gap: 10px;">
+            <button id="btnLogoutCancel" style="
+                flex: 1;
+                padding: 12px;
+                border: 1px solid #ddd;
+                background: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                color: #636e72;
+                transition: all 0.2s;
+            " onmouseover="this.style.borderColor='#4361ee'" onmouseout="this.style.borderColor='#ddd'">
+                Batal
+            </button>
+            <button id="btnLogoutConfirm" style="
+                flex: 1;
+                padding: 12px;
+                border: none;
+                background: #4361ee;
+                color: white;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='#3a56d4'" onmouseout="this.style.background='#4361ee'">
+                Logout
+            </button>
+        </div>
+        <style>
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        </style>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    
+    // Fungsi untuk menutup modal
+    const closeModal = () => {
+        overlay.remove();
+        document.body.style.overflow = 'auto';
+    };
+    
+    // Event listeners
+    document.getElementById('btnLogoutCancel').onclick = closeModal;
+    
+    document.getElementById('btnLogoutConfirm').onclick = async function() {
+        const btn = this;
+        const originalText = btn.textContent;
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
         
-        // 1. Logout dari Firebase (jika ada sesi aktif)
-        if (firebase.auth()) {
-            await firebase.auth().signOut();
-            console.log("✅ Firebase sign-out berhasil");
+        try {
+            // Log aktivitas
+            await db.collection('aktivitas').add({
+                aktivitas: `User logout`,
+                user: getUserLogName(),
+                timestamp: new Date().toISOString(),
+                company_id: globalCompanyId
+            });
+            
+            // Reset login attempts
+            resetLoginAttempts();
+            
+            // Firebase logout
+            if (firebase.auth()) {
+                await firebase.auth().signOut();
+            }
+            
+            // Reset variabel
+            currentUser = null;
+            globalCompanyId = null;
+            
+            // Clear localStorage
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('xbill_user');
+            localStorage.removeItem('xbill_company_id');
+            
+            // Close modal
+            closeModal();
+            
+            // Show login page
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            
+            // Reset login form
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) loginForm.reset();
+            
+            // Toast notification
+            showToast('success', 'Logout Berhasil', 'Sampai jumpa kembali!');
+            
+        } catch (error) {
+            console.error("Logout error:", error);
+            closeModal();
+            showToast('error', 'Error', 'Gagal logout');
         }
-
-        // 2. Hapus LocalStorage
-        localStorage.removeItem('xbill_user');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('userName');
-        
-        console.log("✅ Localstorage dibersihkan");
-        
-        // 3. Reload Halaman untuk kembali ke Login Page
-        window.location.reload();
-        
-    } catch (error) {
-        console.error("❌ Error saat logout:", error);
-        hideLoading();
-        alert('Terjadi kesalahan saat logout. Silakan coba lagi.');
-    }
+    };
+    
+    // Close on overlay click
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    };
 }
 
 // Event Listener untuk tombol logout di Navbar (ID: logoutBtn)
 const logoutBtnMain = document.getElementById('logoutBtn');
 if (logoutBtnMain) {
     logoutBtnMain.addEventListener('click', handleLogout);
-    console.log("✅ Event listener logoutBtn terpasang");
 }
 
 // Event Listener untuk tombol logout kecil di User Menu (ID: logoutBtnSmall)
 const logoutBtnSmall = document.getElementById('logoutBtnSmall');
 if (logoutBtnSmall) {
     logoutBtnSmall.addEventListener('click', handleLogout);
-    console.log("✅ Event listener logoutBtnSmall terpasang");
 }
         
 
@@ -14238,34 +15408,58 @@ function uploadUserPhoto(input) {
     }
 }
 
-// 11. SIMPAN TEMPLATE PESAN
+// ============================================
+// FUNGSI TEMPLATE PESAN - FIX
+// ============================================
+
+// 11. FUNGSI SAVE TEMPLATE PESAN
 async function saveMessageTemplates() {
+    console.log("🔄 Menyimpan template pesan...");
+    
     try {
-        const formData = {
-            // Reminder
-            templateReminder3Days: document.getElementById('templateReminder3Days').value,
-            templateReminder1Day: document.getElementById('templateReminder1Day').value,
-            templateOverdue: document.getElementById('templateOverdue').value,
+        // Ambil data dari form
+        const templateData = {
+            // Reminder templates
+            reminder_3hari: document.getElementById('templateReminder3Days').value,
+            reminder_1hari: document.getElementById('templateReminder1Day').value,
+            reminder_overdue: document.getElementById('templateOverdue').value,
             
-            // Konfirmasi
-            templatePaymentConfirmed: document.getElementById('templatePaymentConfirmed').value,
-            templateNewInvoice: document.getElementById('templateNewInvoice').value,
+            // Konfirmasi templates
+            payment_confirmed: document.getElementById('templatePaymentConfirmed').value,
+            new_invoice: document.getElementById('templateNewInvoice').value,
             
-            updated_at: new Date().toISOString()
+            // Metadata
+            updated_at: new Date().toISOString(),
+            updated_by: currentUser.email,
+            company_id: globalCompanyId
         };
+
+        // Validasi - template utama harus diisi
+        if (!templateData.reminder_3hari || !templateData.new_invoice) {
+            showToast('error', 'Validasi Gagal', 'Template Reminder 3 Hari dan Template Tagihan Baru harus diisi');
+            return;
+        }
 
         showLoading();
 
-        // Simpan ke Firebase
-        await db.collection('company_settings').doc('templates').set(formData, { merge: true });
+        // Simpan ke Firestore
+        await db.collection('message_templates').doc(globalCompanyId).set(templateData, { merge: true });
+
+        // Log aktivitas
+        await db.collection('aktivitas').add({
+            aktivitas: 'Menyimpan template pesan otomatis',
+            user: getUserLogName(),
+            timestamp: new Date().toISOString(),
+            company_id: globalCompanyId
+        });
 
         hideLoading();
         hideModal('modalMessageTemplates');
-        showToast('success', 'Berhasil', 'Template pesan berhasil disimpan');
+        showToast('success', 'Berhasil', 'Template pesan berhasil disimpan!');
 
     } catch (error) {
         hideLoading();
-        console.error("Error save templates:", error);
+        console.error("❌ Error saveMessageTemplates:", error);
         showToast('error', 'Gagal', 'Gagal menyimpan template: ' + error.message);
     }
 }
