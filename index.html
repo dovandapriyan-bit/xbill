@@ -1740,7 +1740,7 @@ Terima kasih.
     <nav class="top-navbar">
         <div class="navbar-brand">
             <i class="fas fa-file-invoice-dollar"></i>
-            <span id="companyNameNav">X-BILL ISP</span>
+            <span id="companyNameNav">X-BILL</span>
         </div>
         
         <div class="user-menu">
@@ -3016,8 +3016,22 @@ async function handleLoginSuccess() {
         }
         
         // 4. ⭐⭐ INI YANG PERLU DITAMBAH - LOAD PROFIL PERUSAHAAN ⭐⭐
-        console.log("🔄 Memuat profil perusahaan...");
-        await loadCompanyProfile();
+         console.log("🔄 Memuat profil perusahaan...");
+    await loadCompanyProfile();
+    
+    // ⭐⭐ TAMBAHKAN INI: CEK LOGO DARI LOCALSTORAGE
+    const savedLogo = localStorage.getItem('companyLogo');
+    if (savedLogo) {
+        setTimeout(() => {
+            updateLogoInUI(savedLogo, localStorage.getItem('companyName') || 'X-BILL');
+        }, 1000);
+    }
+
+      // Update waktu pertama kali
+    updateNavbarTime();
+    
+    // Update setiap 1 menit (60,000 ms)
+    setInterval(updateNavbarTime, 60000);
         
         // 5. Load data lainnya
         await loadAllDataOnce();
@@ -4530,29 +4544,56 @@ async function loadTunggakanData(filterKategori = 'semua') {
             }).join(', ');
 
             // Helper buat string jatuh tempo & hitung hari terlambat
-            let jatuhTempoText = '-';
-            let jatuhTempoDate = null;
+let jatuhTempoText = '-';
+let jatuhTempoDate = null;
+
+if (item.list_tagihan.length > 0) {
+    // ⭐⭐ CARI BULAN TERAKHIR DARI SEMUA TAGIHAN ⭐⭐
+    let latestMonth = null;
+    let latestTimestamp = 0;
+    
+    item.list_tagihan.forEach(tagihan => {
+        if (tagihan.bulan) {
+            // Coba parse bulan (berbagai format)
+            let monthMoment = null;
             
-            if (item.list_tagihan.length > 0) {
-                const sortedTagihan = [...item.list_tagihan].sort((a, b) => {
-                    const getTime = (val) => {
-                        if (!val) return 0;
-                        let m = moment(val, 'DD-MM-YYYY');
-                        if (!m.isValid()) m = moment(val);
-                        return m.isValid() ? m.valueOf() : 0;
-                    };
-                    return getTime(a.tanggal_jatuh_tempo) - getTime(b.tanggal_jatuh_tempo);
-                });
-                
-                if (sortedTagihan[0].tanggal_jatuh_tempo) {
-                    let mJatuhTempo = moment(sortedTagihan[0].tanggal_jatuh_tempo, 'DD-MM-YYYY');
-                    if (!mJatuhTempo.isValid()) mJatuhTempo = moment(sortedTagihan[0].tanggal_jatuh_tempo);
-                    if (mJatuhTempo.isValid()) {
-                        jatuhTempoText = mJatuhTempo.format('DD MMM YYYY');
-                        jatuhTempoDate = mJatuhTempo;
+            // Coba format MM-YYYY
+            if (tagihan.bulan.includes('-')) {
+                const parts = tagihan.bulan.split('-');
+                if (parts.length === 2) {
+                    if (parts[0].length === 2) { // MM-YYYY
+                        monthMoment = moment(`${parts[1]}-${parts[0]}-01`);
+                    } else if (parts[0].length === 4) { // YYYY-MM
+                        monthMoment = moment(`${parts[0]}-${parts[1]}-01`);
                     }
                 }
             }
+            
+            if (monthMoment && monthMoment.isValid()) {
+                const timestamp = monthMoment.valueOf();
+                if (timestamp > latestTimestamp) {
+                    latestTimestamp = timestamp;
+                    latestMonth = monthMoment;
+                }
+            }
+        }
+    });
+    
+    // JIKA KETEMU BULAN TERAKHIR
+    if (latestMonth) {
+        // ⭐⭐ JATUH TEMPO = TANGGAL 10 BULAN TERAKHIR ⭐⭐
+        jatuhTempoDate = latestMonth.date(10); // Tanggal 10
+        jatuhTempoText = jatuhTempoDate.format('DD MMM YYYY'); // Contoh: 10 Apr 2026
+    } else {
+        // FALLBACK: pakai tanggal jatuh tempo pertama
+        if (item.list_tagihan[0].tanggal_jatuh_tempo) {
+            jatuhTempoDate = moment(item.list_tagihan[0].tanggal_jatuh_tempo, 'DD-MM-YYYY');
+            if (jatuhTempoDate.isValid()) {
+                jatuhTempoText = jatuhTempoDate.format('DD MMM YYYY');
+            }
+        }
+    }
+}
 
             // Hitung hari terlambat
             item.list_tagihan.forEach(t => {
@@ -4678,8 +4719,8 @@ async function loadTunggakanData(filterKategori = 'semua') {
                         </span>
                     </td>
                     <td>
-                        <span class="badge badge-danger">
-                            <i class="fas fa-clock"></i> Menunggak
+                        <span class="badge badge-warning">
+                            <i class="fas fa-clock"></i> Belum Lunas</span>
                         </span>
                     </td>
                     <td>
@@ -4923,9 +4964,16 @@ function gantiHalamanTunggakan(pageNum, kategori) {
                     <canvas id="laporanChart1" height="150"></canvas>
                 </div>
                 <div class="chart-card">
-                    <h3>Distribusi Pelanggan</h3>
-                    <canvas id="laporanChart2" height="150"></canvas>
-                </div>
+    <h3>
+        <i class="fas fa-users"></i> Distribusi Pelanggan
+        <small style="font-size: 12px; color: #666; margin-left: 10px;">
+            <span id="pelangganAktifCount">0</span> Aktif | 
+            <span id="pelangganTunggakCount">0</span> Tunggak | 
+            <span id="pelangganNonaktifCount">0</span> Nonaktif
+        </small>
+    </h3>
+    <canvas id="laporanChart2" height="150"></canvas>
+</div>
             </div>
             
             <div class="card">
@@ -5842,7 +5890,7 @@ function updateElementText(selector, value) {
 // ============================================
 
 async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
-    console.log("📊 Rendering charts...");
+    console.log("📊 Rendering dashboard charts...");
 
     // 1. CHART TAGIHAN
     const ctx1 = document.getElementById('chartTagihan');
@@ -5905,46 +5953,46 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
             
             // Buat chart
             window.tagihanChartInstance = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Tagihan (Rp)',
-                    data: monthlyData,
-                    borderColor: '#4361ee',
-                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                animation: {
-                    duration: 2000,
-                    easing: 'easeOutQuart'
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tagihan (Rp)',
+                        data: monthlyData,
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
-                plugins: {
-                    legend: { display: true },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return formatRupiah(context.raw);
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatRupiah(context.raw);
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return formatRupiah(value);
-                            }
-                        },
-                        title: { display: true, text: 'Jumlah Tagihan' }
                     },
-                    x: { title: { display: true, text: 'Bulan' } }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatRupiah(value);
+                                }
+                            },
+                            title: { display: true, text: 'Jumlah Tagihan' }
+                        },
+                        x: { title: { display: true, text: 'Bulan' } }
                     }
                 }
             });
@@ -5967,6 +6015,64 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
             }
         }
     }
+    
+    // 2. CHART STATUS PELANGGAN
+    const ctx2 = document.getElementById('chartStatus');
+    if (ctx2) {
+        try {
+            if (window.statusChartInstance) {
+                window.statusChartInstance.destroy();
+                window.statusChartInstance = null;
+            }
+            
+            // ⭐⭐ PERBAIKAN DI SINI: PAKAI PARAMETER, BUKAN DUMMY ⭐⭐
+            console.log("📈 Data real untuk chart:", {
+                aktif: aktifCount,
+                tunggak: tunggakCount,
+                nonaktif: nonaktifCount
+            });
+            
+            window.statusChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aktif', 'Tunggak', 'Nonaktif'],
+                    datasets: [{
+                        // ⭐⭐ DATA REAL DARI PARAMETER ⭐⭐
+                        data: [aktifCount, tunggakCount, nonaktifCount],
+                        backgroundColor: ['#00b894', '#ff6b6b', '#fdcb6e'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1500
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = aktifCount + tunggakCount + nonaktifCount;
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return `${label}: ${value} pelanggan (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error("❌ Error Chart Status:", error);
+        }
+    }
+}
     
     // 2. CHART STATUS PELANGGAN
     const ctx2 = document.getElementById('chartStatus');
@@ -6004,6 +6110,33 @@ async function renderDashboardCharts(aktifCount, nonaktifCount, tunggakCount) {
         } catch (error) {
             console.error("❌ Error Chart Status:", error);
         }
+    }
+
+
+async function updatePelangganStats() {
+    try {
+        const snapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        let aktif = 0, tunggak = 0, nonaktif = 0;
+        
+        snapshot.forEach(doc => {
+            const status = doc.data().status || 'nonaktif';
+            if (status === 'aktif') aktif++;
+            else if (status === 'tunggak') tunggak++;
+            else nonaktif++;
+        });
+        
+        // Update UI
+        if (document.getElementById('pelangganAktifCount')) {
+            document.getElementById('pelangganAktifCount').textContent = aktif;
+            document.getElementById('pelangganTunggakCount').textContent = tunggak;
+            document.getElementById('pelangganNonaktifCount').textContent = nonaktif;
+        }
+        
+    } catch (error) {
+        console.error("Error update pelanggan stats:", error);
     }
 }
 
@@ -7780,21 +7913,14 @@ btnAksi = `
 
 async function kirimTagihanSemuaViaWA(pelangganId, namaPelanggan, totalNominal, bulanList, tagihanIds) {
     try {
-        // 1. CEK COOLDOWN 24 JAM
-        const cooldownKey = `wa_cooldown_all_${pelangganId}`;
-        const lastSentTime = localStorage.getItem(cooldownKey);
+        // 1. CEK COOLDOWN 1x PER HARI (TANGGAL, BUKAN 24 JAM)
+        const today = moment().format('YYYY-MM-DD');
+        const cooldownKey = `wa_daily_${pelangganId}_${today}`;
         
-        if (lastSentTime) {
-            const now = Date.now();
-            const timeDiff = now - parseInt(lastSentTime);
-            const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
-            
-            if (hoursDiff < 24) {
-                const remainingHours = 24 - hoursDiff;
-                showToast('warning', 'Tunggu dulu', 
-                    `Bisa kirim tagihan lagi dalam ${remainingHours} jam.`);
-                return;
-            }
+        if (localStorage.getItem(cooldownKey)) {
+            showToast('warning', 'Sudah dikirim hari ini', 
+                `Sudah mengirim tagihan ke ${namaPelanggan} hari ini.\nBisa kirim lagi besok.`);
+            return;
         }
         
         // 2. AMBIL DATA PELANGGAN
@@ -7812,45 +7938,83 @@ async function kirimTagihanSemuaViaWA(pelangganId, namaPelanggan, totalNominal, 
             return;
         }
         
-        // 3. AMBIL TEMPLATE DARI SETTINGS
-        let template = await getTemplateFromSettings('tagihan');
+        // 3. AMBIL DATA TAGIHAN UNTUK URUTKAN DAN HITUNG JATUH TEMPO
+        const tagihanSnapshot = await db.collection('tagihan')
+            .where('pelanggan_id', '==', pelangganId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
         
-        // 4. AMBIL DATA PERUSAHAAN UNTUK VARIABEL
-        const companyData = await getCompanyProfile();
-        
-        // 5. GENERATE INVOICE NUMBER
-        const invoiceNumber = `INV/${moment().format('YYYYMMDD')}/${pelangganId.substring(0, 6).toUpperCase()}`;
-        
-        // 6. FORMAT VARIABEL SESUAI TEMPLATE YANG ADA
-        const jatuhTempo = moment().add(7, 'days').format('DD MMMM YYYY');
-        const jumlahBulan = bulanList.split(',').length;
-        
-        // JIKA TEMPLATE KOSONG, PAKAI DEFAULT YANG SESUAI
-        if (!template || template.trim() === '') {
-            template = `Yth. [nama_pelanggan],\n` +
-                      `Tagihan bulan [bulan_tagihan] sebesar [jumlah_tagihan] telah tersedia.\n` +
-                      `Jatuh tempo: [jatuh_tempo]\n` +
-                      `Invoice: [invoice_number]\n` +
-                      `Terima kasih.\n` +
-                      `[nama_perusahaan]`;
+        if (tagihanSnapshot.empty) {
+            showToast('info', 'Tidak ada tagihan', 'Semua tagihan sudah lunas');
+            return;
         }
         
-        // REPLACE VARIABEL DENGAN DATA ASLI
+        // 4. URUTKAN TAGIHAN DARI PALING LAMA KE BARU
+        let tagihanList = [];
+        tagihanSnapshot.forEach(doc => {
+            const t = doc.data();
+            tagihanList.push({
+                id: doc.id,
+                bulan: t.bulan || '',
+                jumlah: t.jumlah || 0,
+                jatuh_tempo: t.tanggal_jatuh_tempo || ''
+            });
+        });
+        
+        // SORT BY DATE: PALING LAMA → BARU
+        tagihanList.sort((a, b) => {
+            // Convert bulan to date (MM-YYYY)
+            const dateA = moment(a.bulan, 'MM-YYYY');
+            const dateB = moment(b.bulan, 'MM-YYYY');
+            return dateA.valueOf() - dateB.valueOf(); // Ascending (oldest first)
+        });
+        
+        // 5. HITUNG JATUH TEMPO (BULAN TERAKHIR/TERBARU)
+        // 5. HITUNG JATUH TEMPO (TANGGAL 10 BULAN TERAKHIR)
+let jatuhTempo = '';
+if (tagihanList.length > 0) {
+    // Ambil bulan terakhir
+    const lastTagihan = tagihanList[tagihanList.length - 1];
+    // Jatuh tempo = tanggal 10 bulan terakhir
+    const bulanTerakhir = moment(lastTagihan.bulan, 'MM-YYYY').date(10); // Tanggal 10
+    jatuhTempo = bulanTerakhir.format('DD MMMM YYYY'); // Contoh: 10 April 2026
+} else {
+    jatuhTempo = moment().date(10).format('DD MMMM YYYY');
+}
+        
+        // 6. FORMAT BULAN LIST (DARI LAMA KE BARU)
+        const bulanFormatted = tagihanList.map(t => {
+            const bulanMoment = moment(t.bulan, 'MM-YYYY');
+            return bulanMoment.format('MMMM YYYY');
+        }).join(', ');
+        
+        const jumlahBulan = tagihanList.length;
+        
+        // 7. AMBIL TEMPLATE
+        let template = await getTemplateFromSettings('tagihan');
+        if (!template || template.trim() === '') {
+            template = `Yth. [nama_pelanggan],\nTagihan bulan [bulan_tagihan] sebesar [jumlah_tagihan].\nJatuh tempo: [jatuh_tempo]\nTerima kasih.\n[nama_perusahaan]`;
+        }
+        
+        // 8. AMBIL DATA PERUSAHAAN
+        const companyData = await getCompanyProfile();
+        
+        // 9. FORMAT PESAN
         const pesanTagihan = template
             .replace(/\[nama_pelanggan\]/g, namaPelanggan)
             .replace(/\[nama_perusahaan\]/g, companyData.nama_perusahaan || 'X-BILL ISP')
-            .replace(/\[bulan_tagihan\]/g, `${jumlahBulan} bulan (${bulanList})`)
+            .replace(/\[bulan_tagihan\]/g, `${jumlahBulan} bulan (${bulanFormatted})`)
             .replace(/\[jumlah_tagihan\]/g, formatRupiah(totalNominal))
             .replace(/\[jatuh_tempo\]/g, jatuhTempo)
-            .replace(/\[invoice_number\]/g, invoiceNumber)
-            .replace(/\[link_pembayaran\]/g, `https://xbill.com/pay/${invoiceNumber}`)
-            .replace(/\[no_telepon_admin\]/g, companyData.telepon || '081234567890')
-            .replace(/\[alamat_perusahaan\]/g, companyData.alamat || 'Jl. Internet No. 1')
-            .replace(/\[website_perusahaan\]/g, companyData.website || 'https://xbill.com');
+            .replace(/\[invoice_number\]/g, `INV/${moment().format('YYYYMMDD')}/${pelangganId.substring(0, 4)}`)
+            .replace(/\[link_pembayaran\]/g, `https://xbill.com/pay/${pelangganId}`)
+            .replace(/\[no_telepon_admin\]/g, companyData.telepon || '')
+            .replace(/\[alamat_perusahaan\]/g, companyData.alamat || '')
+            .replace(/\[website_perusahaan\]/g, companyData.website || '');
         
         const noWA = "62" + telepon.replace(/^0/, '');
         
-        // 7. TAMPILKAN POPUP KUSTOM
+        // 10. POPUP KONFIRMASI
         showCustomConfirm(
             'Kirim Tagihan via WhatsApp',
             `<div style="text-align: left;">
@@ -7860,67 +8024,55 @@ async function kirimTagihanSemuaViaWA(pelangganId, namaPelanggan, totalNominal, 
                     📱 ${telepon}
                 </div>
                 <div style="margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107;">
-                    <strong>⚠️ TAGIHAN ${jumlahBulan} BULAN SEKALIGUS</strong><br>
-                    📅 Periode: ${bulanList}<br>
+                    <strong>${jumlahBulan} BULAN SEKALIGUS</strong><br>
+                    📅 Periode: ${bulanFormatted}<br>
                     💰 Total: ${formatRupiah(totalNominal)}<br>
-                    📊 Invoice: ${invoiceNumber}<br>
-                    ⏰ Jatuh Tempo: ${jatuhTempo}
+                    ⏰ Jatuh Tempo: ${jatuhTempo}<br>
+                    📊 Urutan: ${tagihanList.map((t, i) => `${i+1}. ${moment(t.bulan, 'MM-YYYY').format('MMM YYYY')}`).join(', ')}
                 </div>
                 <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; font-size: 14px; max-height: 200px; overflow-y: auto;">
                     <strong>Preview Pesan:</strong><br>
                     <div style="white-space: pre-wrap; font-family: monospace; margin-top: 5px; font-size: 12px;">
-                        ${pesanTagihan.substring(0, 400)}${pesanTagihan.length > 400 ? '...' : ''}
+                        ${pesanTagihan.substring(0, 300)}${pesanTagihan.length > 300 ? '...' : ''}
                     </div>
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: #666;">
-                    <i class="fas fa-info-circle"></i> WhatsApp akan terbuka dengan pesan tagihan ${jumlahBulan} bulan
                 </div>
             </div>`,
             
-            // CALLBACK JIKA KONFIRM
+            // JIKA KONFIRM
             async function() {
                 try {
-                    // SIMPAN COOLDOWN 24 JAM
-                    localStorage.setItem(cooldownKey, Date.now().toString());
+                    // SIMPAN COOLDOWN (1 HARI)
+                    localStorage.setItem(cooldownKey, 'sent');
                     
-                    // BUKA WHATSAPP
+                    // BUKA WA
                     const url = `https://wa.me/${noWA}?text=${encodeURIComponent(pesanTagihan)}`;
                     window.open(url, '_blank');
                     
-                    // LOG AKTIVITAS
+                    // LOG
                     await db.collection('aktivitas').add({
-                        aktivitas: `Kirim tagihan ${jumlahBulan} bulan via WA: ${namaPelanggan}`,
+                        aktivitas: `Kirim tagihan ${jumlahBulan} bulan: ${namaPelanggan}`,
                         user: getUserLogName(),
                         timestamp: new Date().toISOString(),
-                        company_id: globalCompanyId,
-                        type: 'tagihan_wa',
-                        details: {
-                            pelanggan_id: pelangganId,
-                            bulan: bulanList,
-                            jumlah_bulan: jumlahBulan,
-                            total_nominal: totalNominal,
-                            invoice_number: invoiceNumber,
-                            telepon: telepon
-                        }
+                        company_id: globalCompanyId
                     });
                     
-                    showToast('success', 'Berhasil', `WhatsApp terbuka, siap kirim tagihan`);
+                    showToast('success', 'Berhasil', 'WhatsApp terbuka');
                     
                 } catch (error) {
-                    console.error("❌ Error saat mengirim:", error);
-                    showToast('error', 'Gagal', 'Gagal menyimpan log: ' + error.message);
+                    console.error("Error:", error);
+                    showToast('error', 'Gagal', 'Gagal: ' + error.message);
                 }
             },
             
-            // CALLBACK JIKA BATAL
+            // JIKA BATAL
             function() {
-                console.log("Pengiriman tagihan dibatalkan");
+                console.log("Dibatalkan");
             }
         );
         
     } catch (error) {
-        console.error("❌ Error kirim tagihan WA:", error);
-        showToast('error', 'Gagal', 'Gagal mengirim tagihan: ' + error.message);
+        console.error("❌ Error kirim tagihan:", error);
+        showToast('error', 'Gagal', 'Gagal: ' + error.message);
     }
 }
 
@@ -8068,30 +8220,42 @@ function getDefaultTemplate(templateType) {
 // FUNGSI CEK STATUS COOLDOWN
 // ============================================
 
-function cekStatusCooldown(pelangganId, bulan) {
-    const cooldownKey = `wa_cooldown_${pelangganId}_${bulan}`;
-    const lastSentTime = localStorage.getItem(cooldownKey);
+function cekCooldownHarian(pelangganId) {
+    const today = moment().format('YYYY-MM-DD');
+    const cooldownKey = `wa_daily_${pelangganId}_${today}`;
     
-    if (!lastSentTime) {
-        return { bisaKirim: true, pesan: 'Bisa kirim sekarang' };
-    }
-    
-    const now = Date.now();
-    const timeDiff = now - parseInt(lastSentTime);
-    const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
-    
-    if (hoursDiff >= 24) {
-        localStorage.removeItem(cooldownKey); // Hapus jika sudah lewat 24 jam
-        return { bisaKirim: true, pesan: 'Bisa kirim sekarang' };
-    } else {
-        const remainingHours = 24 - hoursDiff;
-        return { 
-            bisaKirim: false, 
-            pesan: `Tunggu ${remainingHours} jam lagi`,
-            jamTersisa: remainingHours
+    if (localStorage.getItem(cooldownKey)) {
+        return {
+            bisaKirim: false,
+            pesan: `Sudah dikirim hari ini (${today})`
         };
     }
+    
+    return {
+        bisaKirim: true,
+        pesan: 'Bisa kirim sekarang'
+    };
 }
+
+// Jalankan saat app load
+function initCooldownCleanup() {
+    // Hapus cooldown kemarin
+    const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+    
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('wa_daily_') && key.includes(yesterday)) {
+            localStorage.removeItem(key);
+        }
+    }
+    
+    console.log("🧹 Cooldown harian dibersihkan");
+}
+
+// Panggil di DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initCooldownCleanup();
+});
 
 // ============================================
 // FUNGSI UNTUK TAMPILKAN TOMBOL DENGAN STATUS COOLDOWN
@@ -9495,7 +9659,7 @@ groupedData.sort((a, b) => {
                     <td>
                         ${isAllLunas 
                             ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Lunas</span>' 
-                            : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum</span>'}
+                            : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum Lunas</span>'}
                     </td>
                     <td>
                         <div class="btn-group">
@@ -13581,6 +13745,10 @@ if (logoutBtnSmall) {
 }
         
 
+function showComingSoon() {
+    showToast('info', 'Coming Soon', 'Fitur sedang dikembangkan');
+}
+
 
         // ==========================================
 // FUNGSI PLACEHOLDER SETTING (MENGATASI ERROR)
@@ -14516,7 +14684,7 @@ async function showAboutInfo() {
                     <h2 style="color: var(--primary);">X-BILL v2.1.0</h2>
                     <p>Billing Management System untuk ISP</p>
                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p>Developed by <strong>Your Team Name</strong></p>
+                    <p>Developed by <strong>X-Software</strong></p>
                     <p>&copy; 2024 X-BILL Systems.</p>
                 </div>
                 <div class="modal-footer">
@@ -14724,9 +14892,9 @@ async function getSettingHTML() {
                 </div>
                 ` : ''}
                 
-                <!-- CARD 3: KONTAK & NOTIFIKASI (HANYA UNTUK ADMIN) -->
+                <!-- CARD 3: KONTAK & NOTIFIKASI (HANYA UNTUK ADMIN <--showContactSettings--> 
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showContactSettings()">
+                <div class="setting-card" onclick="showComingSoon()"> 
                     <div class="setting-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                         <i class="fas fa-phone-alt"></i>
                     </div>
@@ -14752,9 +14920,9 @@ async function getSettingHTML() {
                 </div>
                 ` : ''}
                 
-                <!-- CARD 5: KEUANGAN & PAJAK (HANYA UNTUK ADMIN) -->
+                <!-- CARD 5: KEUANGAN & PAJAK (HANYA UNTUK ADMIN <--showFinancialSettings-->
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showFinancialSettings()">
+                <div class="setting-card" onclick="showComingSoon()">
                     <div class="setting-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
                         <i class="fas fa-coins"></i>
                     </div>
@@ -14792,9 +14960,9 @@ async function getSettingHTML() {
                     </div>
                 </div>
                 
-                <!-- CARD 8: BACKUP & RESTORE (HANYA UNTUK ADMIN) -->
+                <!-- CARD 8: BACKUP & RESTORE (HANYA UNTUK ADMIN <--showBackupSettings-->
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showBackupSettings()">
+                <div class="setting-card" onclick="showComingSoon()">
                     <div class="setting-icon" style="background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);">
                         <i class="fas fa-database"></i>
                     </div>
@@ -14806,9 +14974,9 @@ async function getSettingHTML() {
                 </div>
                 ` : ''}
                 
-                <!-- CARD 9: SYSTEM SETTINGS (HANYA UNTUK ADMIN) -->
+                <!-- CARD 9: SYSTEM SETTINGS (HANYA UNTUK ADMIN <--showSystemSettings-->
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showSystemSettings()">
+                <div class="setting-card" onclick="showComingSoon()">
                     <div class="setting-icon" style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
                         <i class="fas fa-sliders-h"></i>
                     </div>
@@ -14820,9 +14988,9 @@ async function getSettingHTML() {
                 </div>
                 ` : ''}
                 
-                <!-- CARD 10: API & INTEGRATION (HANYA UNTUK ADMIN) -->
+                <!-- CARD 10: API & INTEGRATION (HANYA UNTUK ADMIN <--showAPISettings-->
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showAPISettings()">
+                <div class="setting-card" onclick="showComingSoon()">
                     <div class="setting-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);">
                         <i class="fas fa-code"></i>
                     </div>
@@ -14834,9 +15002,9 @@ async function getSettingHTML() {
                 </div>
                 ` : ''}
                 
-                <!-- CARD 11: LOGS & AUDIT (HANYA UNTUK ADMIN) -->
+                <!-- CARD 11: LOGS & AUDIT (HANYA UNTUK ADMIN <--showLogsAudit-->
                 ${currentRole === 'admin' ? `
-                <div class="setting-card" onclick="showLogsAudit()">
+                <div class="setting-card" onclick="showComingSoon()">
                     <div class="setting-icon" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
@@ -15408,6 +15576,58 @@ function uploadUserPhoto(input) {
     }
 }
 
+
+// ============================================
+// FUNGSI BARU: updateNavbarTime() - BUAT DARI NOL
+// ============================================
+
+function updateNavbarTime() {
+    // 1. Cari elemen waktu di navbar
+    const timeElement = document.getElementById('currentTime');
+    
+    // 2. Jika tidak ada dengan ID, cari dengan class atau buat baru
+    if (!timeElement) {
+        // Coba cari elemen lain yang mungkin untuk waktu
+        const possibleElements = [
+            document.querySelector('.navbar-time'),
+            document.querySelector('.current-time'),
+            document.querySelector('.time-display')
+        ];
+        
+        const foundElement = possibleElements.find(el => el !== null);
+        if (foundElement) {
+            const now = moment();
+            foundElement.textContent = now.format('DD/MM/YYYY HH:mm');
+            return;
+        }
+        
+        // Jika tidak ada, coba tambahkan ke navbar
+        const navbar = document.querySelector('.navbar, .app-header');
+        if (navbar) {
+            const timeDiv = document.createElement('div');
+            timeDiv.id = 'currentTime';
+            timeDiv.className = 'navbar-time';
+            timeDiv.style.marginLeft = 'auto';
+            timeDiv.style.padding = '0 15px';
+            timeDiv.style.fontSize = '14px';
+            
+            const now = moment();
+            timeDiv.textContent = now.format('DD/MM/YYYY HH:mm');
+            
+            navbar.appendChild(timeDiv);
+            return;
+        }
+        
+        return;
+    }
+    
+    // 3. Update waktu
+    const now = moment();
+    timeElement.textContent = now.format('DD/MM/YYYY HH:mm');
+}
+
+
+
 // ============================================
 // FUNGSI TEMPLATE PESAN - FIX
 // ============================================
@@ -15480,6 +15700,20 @@ async function loadCompanyProfile() {
         localStorage.setItem('companyName', companyName);
         localStorage.setItem('companyAddress', companyAddress);
         
+        // ⭐⭐ TAMBAHKAN INI: AMBIL LOGO DARI companies COLLECTION
+        try {
+            const companyDoc = await db.collection('companies').doc(globalCompanyId).get();
+            if (companyDoc.exists) {
+                const companyData = companyDoc.data();
+                if (companyData.logo_url) {
+                    localStorage.setItem('companyLogo', companyData.logo_url);
+                    updateLogoInUI(companyData.logo_url, companyName);
+                }
+            }
+        } catch (logoError) {
+            console.log("Logo tidak ditemukan:", logoError);
+        }
+        
         const navElement = document.getElementById('companyNameNav');
         if (navElement) navElement.textContent = companyName;
         
@@ -15502,14 +15736,161 @@ async function loadCompanyProfile() {
     }
 }
 
-function updateNavbarTime() {
-    const timeElement = document.getElementById('currentTime');
-    if (timeElement) {
-        const now = moment();
-        timeElement.textContent = now.format('DD/MM/YYYY HH:mm');
+async function saveBrandingSettings() {
+    const companyName = document.getElementById('brandingCompanyName').value;
+    const companyAddress = document.getElementById('brandingCompanyAddress').value;
+    const companyPhone = document.getElementById('brandingCompanyPhone').value;
+    const companyEmail = document.getElementById('brandingCompanyEmail').value;
+    const companyWebsite = document.getElementById('brandingCompanyWebsite').value;
+    const primaryColor = document.getElementById('brandingPrimaryColor').value;
+    const logoFile = document.getElementById('brandingLogoUpload').files[0];
+    
+    if (!companyName.trim()) {
+        showToast('error', 'Error', 'Nama perusahaan wajib diisi');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        let logoUrl = '';
+        
+        // UPLOAD LOGO JIKA ADA
+        if (logoFile) {
+            const storageRef = firebase.storage().ref();
+            const logoRef = storageRef.child(`companies/${globalCompanyId}/logo_${Date.now()}.png`);
+            
+            await logoRef.put(logoFile);
+            logoUrl = await logoRef.getDownloadURL();
+        }
+        
+        const brandingData = {
+            companyName: companyName,
+            companyAddress: companyAddress,
+            companyPhone: companyPhone,
+            companyEmail: companyEmail,
+            companyWebsite: companyWebsite,
+            updated_at: new Date().toISOString()
+        };
+        
+        // SIMPAN LOGO KE COLLECTION companies
+        if (logoUrl) {
+            await db.collection('companies').doc(globalCompanyId).set({
+                logo_url: logoUrl,
+                updated_at: new Date().toISOString()
+            }, { merge: true });
+            
+            // UPDATE LOGO INSTANT DI UI
+            localStorage.setItem('companyLogo', logoUrl);
+            
+            // CARI DAN UPDATE ELEMEN LOGO DI POJOK KIRI ATAS
+            const logoElements = [
+                document.querySelector('.sidebar-logo'),
+                document.querySelector('.navbar-brand'),
+                document.querySelector('.app-logo'),
+                document.querySelector('.logo-container'),
+                document.querySelector('.company-logo')
+            ];
+            
+            logoElements.forEach(element => {
+                if (element) {
+                    element.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px; max-width: 150px;">`;
+                }
+            });
+            
+            // JIKA TIDAK ADA ELEMEN LOGO, BUAT MANUAL DI SIDEBAR
+            const hasLogoElement = logoElements.some(el => el !== null);
+            if (!hasLogoElement) {
+                const sidebarHeader = document.querySelector('.sidebar-header');
+                if (sidebarHeader) {
+                    const logoDiv = document.createElement('div');
+                    logoDiv.className = 'company-logo';
+                    logoDiv.style.padding = '15px';
+                    logoDiv.style.textAlign = 'center';
+                    logoDiv.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px;">`;
+                    sidebarHeader.prepend(logoDiv);
+                }
+            }
+        }
+        
+        await db.collection('company_settings').doc('profile').set(brandingData, { merge: true });
+        
+        hideLoading();
+        showToast('success', 'Berhasil', 'Branding berhasil diterapkan');
+        
+        // REFRESH PROFIL SETELAH SIMPAN
+        setTimeout(() => {
+            loadCompanyProfile();
+        }, 500);
+        
+        // TUTUP MODAL
+        setTimeout(() => {
+            const modal = document.getElementById('modalBrandingSettings');
+            if (modal) {
+                modal.classList.remove('show');
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }, 1000);
+        
+    } catch (error) {
+        hideLoading();
+        console.error("Error:", error);
+        showToast('error', 'Gagal', error.message);
     }
 }
 
+
+// ============================================
+// FUNGSI BARU: updateLogoInUI() - TAMBAHKAN DI BAWAH loadCompanyProfile()
+// ============================================
+
+function updateLogoInUI(logoUrl, companyName) {
+    console.log("🖼️ Update logo di UI:", logoUrl);
+    
+    // 1. CEK ELEMEN LOGO DI POJOK KIRI ATAS
+    const logoElements = [
+        document.querySelector('.sidebar-logo'),
+        document.querySelector('.navbar-brand'),
+        document.querySelector('.app-logo'),
+        document.querySelector('.logo-container')
+    ].filter(el => el !== null);
+    
+    // 2. JIKA TIDAK ADA ELEMEN LOGO, BUAT MANUAL DI SIDEBAR
+    if (logoElements.length === 0) {
+        console.log("⚠️ Elemen logo tidak ditemukan, coba cari sidebar...");
+        
+        // Cari sidebar header
+        const sidebarHeader = document.querySelector('.sidebar-header, .app-sidebar .header');
+        if (sidebarHeader) {
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'company-logo';
+            logoDiv.style.padding = '15px';
+            logoDiv.style.textAlign = 'center';
+            logoDiv.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px; max-width: 150px;">`;
+            sidebarHeader.prepend(logoDiv);
+            console.log("✅ Logo dibuat manual di sidebar");
+            return;
+        }
+        
+        // Cari navbar
+        const navbar = document.querySelector('.navbar, .app-header');
+        if (navbar) {
+            const logoDiv = document.createElement('div');
+            logoDiv.className = 'navbar-logo';
+            logoDiv.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="height: 30px;">`;
+            navbar.prepend(logoDiv);
+            console.log("✅ Logo dibuat manual di navbar");
+            return;
+        }
+    }
+    
+    // 3. UPDATE ELEMEN LOGO YANG ADA
+    logoElements.forEach(element => {
+        element.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px;">`;
+        console.log("✅ Logo diupdate di", element.className);
+    });
+}
 // UPDATE SETIAP MENIT (60.000 ms)
 setInterval(updateNavbarTime, 60000);
 
@@ -15540,6 +15921,30 @@ async function loadBrandingSettings() {
         }
     } catch (error) {
         console.error("Error load branding:", error);
+    }
+}
+
+async function loadCompanyProfile() {
+    try {
+        const companyRef = db.collection('companies').doc(globalCompanyId);
+        const companyDoc = await companyRef.get();
+        
+        if (companyDoc.exists) {
+            const data = companyDoc.data();
+            
+            // ⭐⭐ UPDATE LOGO DI NAVBAR ⭐⭐
+            const logoElement = document.getElementById('companyLogo');
+            if (logoElement && data.logo_url) {
+                logoElement.src = data.logo_url;
+                logoElement.style.display = 'block';
+            }
+            
+            return data;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error load company profile:", error);
+        return null;
     }
 }
 
@@ -15947,6 +16352,92 @@ async function loadTunggakanDynamicData(page = 1) {
 }
 
 
+async function renderDistribusiPelangganChart() {
+    try {
+        const ctx = document.getElementById('laporanChart2');
+        if (!ctx) return;
+        
+        // Hapus chart lama
+        if (window.distribusiChart) {
+            window.distribusiChart.destroy();
+        }
+        
+        // AMBIL DATA REAL DARI DATABASE
+        const snapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        if (snapshot.empty) {
+            // Tampilkan chart kosong
+            window.distribusiChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tidak Ada Data'],
+                    datasets: [{
+                        data: [100],
+                        backgroundColor: ['#e9ecef']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            return;
+        }
+        
+        // HITUNG DISTRIBUSI
+        let aktif = 0, tunggak = 0, nonaktif = 0;
+        
+        snapshot.forEach(doc => {
+            const status = doc.data().status || 'nonaktif';
+            if (status === 'aktif') aktif++;
+            else if (status === 'tunggak') tunggak++;
+            else nonaktif++;
+        });
+        
+        // BUAT CHART REAL
+        window.distribusiChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Aktif', 'Tunggak', 'Nonaktif'],
+                datasets: [{
+                    data: [aktif, tunggak, nonaktif],
+                    backgroundColor: ['#00b894', '#ff6b6b', '#fdcb6e'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = aktif + tunggak + nonaktif;
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log(`✅ Chart distribusi: ${aktif} aktif, ${tunggak} tunggak, ${nonaktif} nonaktif`);
+        
+    } catch (error) {
+        console.error("❌ Error render distribusi chart:", error);
+    }
+}
+
 // -------------------------------------------------------
 // 1. FUNGSI GENERATE LAPORAN (AMAN & LENGKAP)
 // -------------------------------------------------------
@@ -16059,16 +16550,19 @@ async function generateLaporan() {
         tableHTML += `</tbody>`;
         table.innerHTML = tableHTML;
 
-        // 6. UPDATE GRAFIK (LEWATKAN DATA SAJA, TANPA PARAMETER LABELS)
+        // 6. UPDATE GRAFIK
         updateLaporanCharts(laporanData);
 
         
+        console.log("✅ Laporan berhasil digenerate dengan chart distribusi real");
 
     } catch (error) {
         console.error("❌ Error generate laporan:", error);
         table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
 }
+
+
 
 // -------------------------------------------------------
 // 2. FUNGSI UPDATE GRAFIK (MANDIRI & AMAN)
@@ -16153,36 +16647,26 @@ function updateLaporanCharts(data) {
     }
 
     // 2. GRAFIK DISTRIBUSI (PIE CHART - METODE PEMBAYARAN)
-    const ctx2 = document.getElementById('laporanChart2');
-    if (ctx2) {
-        if (window.laporanChart2Instance) {
-            window.laporanChart2Instance.destroy();
+    // 2. GRAFIK DISTRIBUSI (PIE CHART - METODE PEMBAYARAN)
+const ctx2 = document.getElementById('laporanChart2');
+if (ctx2) {
+    const metodeCounts = {};
+    data.forEach(item => {
+        const metode = item.metode || 'Lainnya'; // "Tunai", "Transfer", dll
+        metodeCounts[metode] = (metodeCounts[metode] || 0) + 1;
+    });
+
+    window.laporanChart2Instance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(metodeCounts), // Contoh: ["Tunai", "Transfer"]
+            datasets: [{
+                data: Object.values(metodeCounts), // Contoh: [45, 55]
+                backgroundColor: ['#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#ff7675']
+            }]
         }
-
-        const metodeCounts = {};
-        data.forEach(item => {
-            const metode = item.metode || 'Lainnya';
-            metodeCounts[metode] = (metodeCounts[metode] || 0) + 1;
-        });
-
-        window.laporanChart2Instance = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(metodeCounts),
-                datasets: [{
-                    data: Object.values(metodeCounts),
-                    backgroundColor: ['#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#ff7675']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
-    }
-}
+    });
+}};
         
 // ============================================
 // INITIALIZATION & EVENT HANDLERS (FIXED VERSION)
