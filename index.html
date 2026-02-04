@@ -7,6 +7,7 @@
     
     <!-- CSS & JS Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -14,7 +15,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    
+    <!-- Tambahkan setelah library html2canvas -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* ========== RESET & VARIABLES ========== */
         * {
@@ -1095,6 +1097,31 @@
     background: rgba(255, 107, 107, 0.15) !important;
     transform: translateY(-2px);
 }
+
+/* Fix z-index untuk peta agar tidak menutupi navbar */
+.leaflet-pane {
+    z-index: 1 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 2 !important;
+}
+
+.leaflet-control {
+    z-index: 3 !important;
+}
+
+/* Pastikan modal tetap di atas peta */
+.modal-overlay {
+    z-index: 1000 !important;
+}
+
+.modal {
+    z-index: 1001 !important;
+}
+
+
     </style>
 </head>
 <body>
@@ -1744,10 +1771,7 @@ Terima kasih.
         </div>
         
         <div class="user-menu">
-            <div class="notification-bell" id="notificationBell" style="position: relative; cursor: pointer; padding: 8px;">
-                <i class="fas fa-bell"></i>
-                <span class="badge badge-danger" id="notificationCount" style="position: absolute; top: -5px; right: -5px; font-size: 10px; display: none;">0</span>
-            </div>
+           
             
             <div class="user-info" style="cursor: pointer;" id="userProfileBtn">
     <div class="user-avatar" id="userAvatar">A</div>
@@ -1862,13 +1886,25 @@ Terima kasih.
     
     <!-- ========== MODALS ========== -->
     
-   <!-- MODAL: TAMBAH/EDIT PELANGGAN (REVISED) -->
+  <!-- MODAL: TAMBAH/EDIT PELANGGAN (REVISED) -->
 <div class="modal-overlay hidden" id="modalPelanggan">
     <div class="modal">
         <div class="modal-header">
             <h3 class="modal-title">Data Pelanggan</h3>
             <button class="modal-close" onclick="forceCloseModal('modalPelanggan')">&times;</button>
         </div>
+        <div class="modal-body">
+            <form id="formPelanggan">
+                <!-- BARIS 0: SERVER/WILAYAH (BARU - INPUT TEXT) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Server (Wilayah)</label>
+                        <input type="text" class="form-control" id="pelangganServer" 
+                               placeholder="Contoh: Server Utama, Server Timur, dll">
+                    </div>
+                    
+                </div>
+            </div>
         <div class="modal-body">
             <form id="formPelanggan">
                 <!-- BARIS 1: NAMA & TELEPON -->
@@ -2022,56 +2058,7 @@ Terima kasih.
         </div>
     </div>
     
-    <!-- MODAL: KALKULATOR PRORATA -->
-    <div class="modal-overlay hidden" id="modalProrata">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-calculator"></i> Kalkulator Prorata</h3>
-                <button class="modal-close" onclick="hideModal('modalProrata')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="formProrata">
-                    <div class="form-group">
-                        <label>Biaya Bulanan (Rp)</label>
-                        <input type="number" class="form-control" id="prorataBiaya" value="150000">
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Tanggal Mulai</label>
-                            <input type="date" class="form-control" id="prorataMulai">
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal Akhir</label>
-                            <input type="date" class="form-control" id="prorataAkhir">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Jumlah Hari</label>
-                        <input type="number" class="form-control" id="prorataHari" readonly>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Hasil Perhitungan:</label>
-                        <div class="form-control" style="background: #f8f9fa; font-weight: bold; font-size: 18px;" id="prorataHasil">
-                            Rp 0
-                        </div>
-                    </div>
-                    
-                    <div class="alert" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                        <strong>Rumus:</strong> (Biaya Bulanan ÷ 30) × Jumlah Hari
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="hideModal('modalProrata')">Tutup</button>
-                <button class="btn btn-primary" onclick="hitungProrata()">
-                    <i class="fas fa-calculator"></i> Hitung Prorata
-                </button>
-            </div>
-        </div>
-    </div>
+   
     
     <!-- MODAL: GENERATE TAGIHAN ARREARS (YANG BENAR) -->
 <div class="modal-overlay hidden" id="modalGenerateTagihan">
@@ -2770,6 +2757,109 @@ let currentPageAktivitas = 1; // Variable untuk halaman aktivitas
 const itemsPerPage = 10;
 
 
+// ⭐⭐ TEMPATKAN DI AWAL SCRIPT (setelah deklarasi variabel) ⭐⭐
+let readsCounter = {
+    dashboard: 0,
+    aktivitas: 0, 
+    generate: 0,
+    pelanggan: 0,
+    tagihan: 0,
+    total: 0
+};
+
+function logRead(action, count = 1) {
+    // ⭐⭐ CEK JIKA FUNGSI SEDANG BERJALAN ⭐⭐
+    const guardKey = `_loading${action.charAt(0).toUpperCase() + action.slice(1)}`;
+    if (window[guardKey]) {
+        console.log(`⏸️ ${action} sedang berjalan, skip counting`);
+        return 0; // Tidak count jika sedang running
+    }
+    
+    readsCounter[action] = (readsCounter[action] || 0) + count;
+    readsCounter.total += count;
+    
+    console.log(`📊 READS [${action.toUpperCase()}]: +${count} (Total: ${readsCounter[action]})`);
+    
+    return readsCounter[action];
+}
+
+// ============================================
+// INIT FIREBASE AUTH LISTENER (TAMBAHKAN DI AWAL SCRIPT)
+// ============================================
+firebase.auth().onAuthStateChanged(async function(user) {
+    if (user) {
+        // USER SUDAH LOGIN / AUTO RE-LOGIN SETELAH F5
+        currentUser = user;
+        console.log("✅ Auth state restored:", user.email);
+        
+        // LANGSUNG LOAD DATA PERUSAHAAN SEBELUM UI
+        await loadCompanyDataBeforeUI();
+        
+        // BARU TAMPILKAN UI
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('appContainer').classList.remove('hidden');
+        
+    } else {
+        // USER BELUM LOGIN
+        document.getElementById('loginPage').classList.remove('hidden');
+        document.getElementById('appContainer').classList.add('hidden');
+    }
+});
+
+// ============================================
+// FUNGSI LOAD DATA PERUSAHAAN SEBELUM UI
+// ============================================
+async function loadCompanyDataBeforeUI() {
+    try {
+        // 1. AMBIL COMPANY ID DARI USER
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            globalCompanyId = userData.company_id;
+            
+            // 2. AMBIL DATA PERUSAHAAN
+            if (globalCompanyId) {
+                const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+                if (companyDoc.exists) {
+                    const data = companyDoc.data();
+                    
+                    // 3. UPDATE NAVBAR LANGSUNG (SEBELUM UI RENDER)
+                    const navbarBrand = document.querySelector('.navbar-brand');
+                    if (navbarBrand && data.companyName) {
+                        navbarBrand.innerHTML = '';
+                        
+                        if (data.companyLogo) {
+                            const img = document.createElement('img');
+                            img.src = data.companyLogo;
+                            img.style.height = '40px';
+                            img.style.objectFit = 'contain';
+                            navbarBrand.appendChild(img);
+                        } else {
+                            const icon = document.createElement('i');
+                            icon.className = 'fas fa-file-invoice-dollar';
+                            navbarBrand.appendChild(icon);
+                        }
+                        
+                        const nameSpan = document.createElement('span');
+                        nameSpan.id = 'companyNameNav';
+                        nameSpan.textContent = data.companyName;
+                        nameSpan.style.marginLeft = '10px';
+                        nameSpan.style.color = 'var(--primary)';
+                        nameSpan.style.fontSize = '20px';
+                        nameSpan.style.fontWeight = '700';
+                        navbarBrand.appendChild(nameSpan);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error load company before UI:", error);
+    }
+}
+
+
+
 
 // ============================================
 // SISTEM KEAMANAN LOGIN
@@ -2982,67 +3072,172 @@ async function ensureCompanyId() {
     }
 }
 
+
+// ============================================
+// LOGIN FORM HANDLER
+// ============================================
+document.getElementById('loginForm').onsubmit = async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    try {
+        // Reset login attempts jika berhasil
+        resetLoginAttempts();
+        
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+        // ⭐⭐ JANGAN PANGGIL handleLoginSuccess() DI SINI ⭐⭐
+        // onAuthStateChanged akan otomatis trigger
+        
+        showToast('success', 'Login berhasil', 'Tunggu Sebentar...');
+        
+    } catch (error) {
+        recordFailedLogin();
+        showToast('error', 'Login gagal', 'Username / Password salah...');
+    }
+};
+
+
+// ============================================
+// HANDLE LOGIN SUCCESS (DIPANGGIL DARI onAuthStateChanged)
+// ============================================
 async function handleLoginSuccess() {
     try {
-        console.log("✅ Login berhasil, menyiapkan aplikasi...");
+        console.log("✅ handleLoginSuccess() called, user:", currentUser.email);
         
-        // 1. Tampilkan UI
+        // ⭐⭐ 1. AMBIL COMPANY ID DARI USER DOCUMENT ⭐⭐
+        let companyId = null;
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                companyId = userDoc.data().company_id;
+                console.log("📦 Company ID from user doc:", companyId);
+            }
+        } catch (e) {
+            console.error("Failed to get user doc:", e);
+        }
+        
+        // 2. CREATE IF NOT EXISTS
+        if (!companyId) {
+            companyId = await ensureCompanyId();
+            console.log("🆕 New Company ID created:", companyId);
+        }
+        
+        globalCompanyId = companyId;
+
+// ⭐⭐ AUTO-LOAD/BUAT DATA PERUSAHAAN UNTUK SEMUA USER ⭐⭐
+try {
+    if (globalCompanyId) {
+        const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+        
+        if (companyDoc.exists) {
+            // 1. Data sudah ada -> simpan ke localStorage
+            const companyData = companyDoc.data();
+            localStorage.setItem(`companyProfile_${globalCompanyId}`, JSON.stringify(companyData));
+            console.log("💾 Company data saved to localStorage");
+        } else {
+            // 2. Data belum ada -> BUAT DEFAULT untuk perusahaan baru
+            const defaultCompanyData = {
+                companyName: "X-BILL ISP",
+                companyAddress: "Jl. Internet Cepat No. 1",
+                companyPhone: "-",
+                companyTagline: "Billing Management System",
+                company_id: globalCompanyId,
+                admin_email: currentUser.email,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            
+            // Simpan ke database
+            await db.collection('company_settings').doc(globalCompanyId).set(defaultCompanyData); // ⬅️ HAPUS/COMMENT
+            console.log("🏢 Default company data created");
+            
+            // Simpan ke localStorage
+            localStorage.setItem(`companyProfile_${globalCompanyId}`, JSON.stringify(defaultCompanyData));
+        }
+    }
+} catch (error) {
+    console.error("Error handling company data:", error);
+}
+
+        // ⭐⭐ 3. GET COMPANY DATA FROM DATABASE ⭐⭐
+        let companyName = 'X-BILL';
+        let companyLogo = '';
+        let companyTagline = 'Billing Management System';
+        
+        if (companyId) {
+            try {
+                const companyDoc = await db.collection('company_settings').doc(companyId).get();
+                if (companyDoc.exists) {
+                    const data = companyDoc.data();
+                    console.log("🏢 Company data from DB:", data);
+                    
+                    if (data.companyName) companyName = data.companyName;
+                    if (data.companyLogo) companyLogo = data.companyLogo;
+                    if (data.companyTagline) companyTagline = data.companyTagline;
+                }
+            } catch (dbError) {
+                console.error("Database error:", dbError);
+            }
+        }
+        
+        // ⭐⭐ 4. UPDATE NAVBAR FIRST ⭐⭐
+        const navbarBrand = document.querySelector('.navbar-brand');
+        if (navbarBrand) {
+            navbarBrand.innerHTML = '';
+            
+            if (companyLogo && companyLogo.startsWith('data:image')) {
+                const img = document.createElement('img');
+                img.src = companyLogo;
+                img.style.height = '40px';
+                img.style.maxHeight = '40px';
+                img.style.objectFit = 'contain';
+                navbarBrand.appendChild(img);
+                console.log("✅ Company logo added");
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-file-invoice-dollar';
+                navbarBrand.appendChild(icon);
+                console.log("✅ Default icon added");
+            }
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.id = 'companyNameNav';
+            nameSpan.textContent = companyName;
+            nameSpan.style.marginLeft = navbarBrand.children.length > 0 ? '10px' : '0';
+            nameSpan.style.color = 'var(--primary)';
+            nameSpan.style.fontSize = '20px';
+            nameSpan.style.fontWeight = '700';
+            navbarBrand.appendChild(nameSpan);
+            console.log("✅ Company name:", companyName);
+        }
+        
+        // ⭐⭐ 5. NOW SHOW UI ⭐⭐
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('appContainer').classList.remove('hidden');
         
-        // 2. AMBIL NAMA USER
-        let displayName = localStorage.getItem('userName') || 'Administrator';
-        
-        console.log("👤 Nama user:", displayName);
-        
-        // 3. UPDATE NAVBAR USER
+        // 6. UPDATE USER INFO
+        let displayName = currentUser.displayName || currentUser.email || 'Administrator';
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
-        const userRoleEl = document.getElementById('userRole');
         
-        if (userNameEl) {
-            userNameEl.innerText = displayName; // ⭐ Ganti textContent dengan innerText
-            // Paksa re-render untuk mobile
-            userNameEl.style.display = 'none';
-            userNameEl.offsetHeight; 
-            userNameEl.style.display = '';
-        }
-        
+        if (userNameEl) userNameEl.innerText = displayName;
         if (userAvatarEl) userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
-        if (userRoleEl) {
-            const roleMapping = {'admin': 'Admin'};
-            const userRole = currentUser?.role || localStorage.getItem('userRole') || 'admin';
-            userRoleEl.textContent = roleMapping[userRole] || userRole;
-        }
         
-        // 4. ⭐⭐ INI YANG PERLU DITAMBAH - LOAD PROFIL PERUSAHAAN ⭐⭐
-         console.log("🔄 Memuat profil perusahaan...");
-    await loadCompanyProfile();
-    
-    // ⭐⭐ TAMBAHKAN INI: CEK LOGO DARI LOCALSTORAGE
-    const savedLogo = localStorage.getItem('companyLogo');
-    if (savedLogo) {
-        setTimeout(() => {
-            updateLogoInUI(savedLogo, localStorage.getItem('companyName') || 'X-BILL');
-        }, 1000);
-    }
-
-      // Update waktu pertama kali
-    updateNavbarTime();
-    
-    // Update setiap 1 menit (60,000 ms)
-    setInterval(updateNavbarTime, 60000);
+        // 7. UPDATE DROPDOWN
+        const dropdownCompanyName = document.getElementById('dropdownCompanyName');
+        if (dropdownCompanyName) dropdownCompanyName.textContent = companyName;
         
-        // 5. Load data lainnya
+        const dropdownCompanyTagline = document.getElementById('dropdownCompanyTagline');
+        if (dropdownCompanyTagline) dropdownCompanyTagline.textContent = companyTagline;
+        
+        // 8. LOAD OTHER DATA
         await loadAllDataOnce();
         await loadPage('dashboard');
         
-        // 6. TOAST
-        showToast('success', 'Login Berhasil', `Selamat datang ${displayName}!`);
-        
-        setTimeout(() => {
-            initializeQuickActions();
-        }, 200);
+        // 9. TOAST
         
     } catch (error) {
         console.error("❌ Error handleLoginSuccess:", error);
@@ -3242,7 +3437,7 @@ function confirmDialog(message, callback) {
         // PAGE TEMPLATES
         // ============================================
         
-        async function getDashboardHTML() {
+       async function getDashboardHTML() {
     return `
         <div class="page dashboard-page">
             <div class="page-header">
@@ -3333,28 +3528,39 @@ function confirmDialog(message, callback) {
                 </div>
             </div>
             
+            <!-- GANTI SECTION AKTIVITAS TERBARU DENGAN PETA -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Aktivitas Terbaru</h3>
-                </div>
-                                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Waktu</th>
-                                        <th>Aktivitas</th>
-                                        <th>User</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="aktivitasTable">
-                                    <tr><td colspan="3" class="text-center">Memuat aktivitas...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- ⭐ TAMBAHKAN CONTAINER PAGINATION INI ⭐ -->
-                        <div id="aktivitasPagination"></div>
+                    <h3><i class="fas fa-map-marked-alt"></i> Peta Lokasi Pelanggan</h3>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline" onclick="refreshPelangganMap()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="focusOnAllMarkers()">
+                            <i class="fas fa-search"></i> Zoom All
+                        </button>
                     </div>
+                </div>
+                <div class="card-body">
+                    <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;">
+                        <div id="pelangganMap" style="height: 100%; width: 100%;"></div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Total titik: <span id="mapMarkerCount">0</span> pelanggan
+                            </small>
+                        </div>
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-map-pin" style="color: #4361ee;"></i> Aktif
+                                <i class="fas fa-map-pin" style="color: #ff6b6b; margin-left: 10px;"></i> Tunggak
+                                <i class="fas fa-map-pin" style="color: #6c757d; margin-left: 10px;"></i> Nonaktif
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -3585,7 +3791,7 @@ function toggleTunggakanFilter() {
 }
         
 
-       async function getPelangganHTML() {
+      async function getPelangganHTML() {
     return `
         <div class="page pelanggan-page">
             <div class="page-header">
@@ -3640,19 +3846,15 @@ function toggleTunggakanFilter() {
             <div class="filters-card">
                 <div class="filter-row">
                     <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" id="filterStatus" onchange="saveFilterState(); loadPelangganData()">
-
-                            <option value="">Semua Status</option>
-                            <option value="aktif">Aktif</option>
-                            <option value="nonaktif">Nonaktif</option>
-                            <option value="tunggak">Tunggak</option>
+                        <label>Server</label>
+                        <select class="form-control" id="filterServer" onchange="saveFilterState(); loadPelangganData()">
+                            <option value="">Semua Server</option>
+                            <!-- OPSI SERVER AKAN DIISI OLEH JS -->
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Paket</label>
                         <select class="form-control" id="filterPaket" onchange="saveFilterState(); loadPelangganData()">
-
                             <option value="">Semua Paket</option>
                             <!-- OPSI PAKET AKAN DIISI OLEH JS -->
                         </select>
@@ -3684,6 +3886,7 @@ function toggleTunggakanFilter() {
                             <thead>
                                 <tr>
                                     <th>#</th>
+                                    <th>Server</th>
                                     <th>Nama</th>
                                     <th>Telepon</th>
                                     <th>Alamat</th>
@@ -3694,7 +3897,7 @@ function toggleTunggakanFilter() {
                             </thead>
                             <tbody id="pelangganTable">
                                 <tr>
-                                    <td colspan="7" class="text-center">
+                                    <td colspan="8" class="text-center">
                                         <div class="spinner" style="width: 30px; height: 30px; margin: 0 auto;"></div>
                                         Memuat data...
                                     </td>
@@ -3764,7 +3967,7 @@ function toggleTunggakanFilter() {
     `;
 }
         
-        async function getTagihanHTML() {
+       async function getTagihanHTML() {
     return `
         <div class="page tagihan-page">
             <div class="page-header">
@@ -3785,7 +3988,15 @@ function toggleTunggakanFilter() {
                 <div class="card-header">
     <h3>Daftar Tagihan </h3>
     <div class="btn-group">
-        <!-- INPUT PENCARIAN (BARU) -->
+        <!-- FILTER SERVER (BARU) -->
+        <select id="filterServerTagihan" class="form-control" 
+                style="width: 150px; display: inline-block; height: 38px; padding: 5px 10px; margin-right: 10px;"
+                onchange="filterByServerTagihan(this.value)">
+            <option value="">Semua Server</option>
+            <!-- OPSI SERVER AKAN DIISI OLEH JS -->
+        </select>
+        
+        <!-- INPUT PENCARIAN -->
         <input type="text" id="searchTagihan" 
                class="form-control" 
                placeholder="Cari nama,alamat,dll..." 
@@ -3801,17 +4012,19 @@ function toggleTunggakanFilter() {
                         <table class="table">
                             <thead>
     <tr>
-        <th style="width: 25%;">Pelanggan</th> <!-- Melebar -->
-        <th style="width: 20%;">Alamat</th> <!-- KOLOM BARU -->
-        <th style="width: 10%;">Bulan</th>
-        <th style="width: 15%;">Total Tagihan</th>
-        <th style="width: 10%;">Status</th>
-        <th style="width: 20%;">Aksi</th>
+        <th style="width: 15%;">Server</th>
+        <th style="width: 20%;">Pelanggan</th>
+        <th style="width: 10%;">Lokasi</th>
+        <th style="width: 15%;">Alamat</th>
+        <th style="width: 8%;">Bulan</th>
+        <th style="width: 12%;">Total Tagihan</th>
+        <th style="width: 8%;">Status</th>
+        <th style="width: 12%;">Aksi</th>
     </tr>
 </thead>
                             <tbody id="tagihanTable">
                                 <tr>
-                                    <td colspan="4" class="text-center">Memuat data...</td>
+                                    <td colspan="8" class="text-center">Memuat data...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -4274,10 +4487,22 @@ async function executePayAllDirect(pelangganId, idsString, totalNominal, bulanSt
         strukContainer.style.color = '#000000';
         strukContainer.style.border = '1px solid #000';
         
+        let namaPerusahaanStruk = 'X-BILL ISP';
+let alamatPerusahaanStruk = 'Jl. Internet Cepat No. 1';
+if (globalCompanyId) {
+    const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+    if (companyDoc.exists) {
+        const data = companyDoc.data();
+        namaPerusahaanStruk = data.companyName || 'X-BILL ISP';
+        alamatPerusahaanStruk = data.companyAddress || 'Jl. Internet Cepat No. 1';
+    }
+}
+
         strukContainer.innerHTML = `
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
-                <h3 style="margin: 0; font-size: 18px; font-weight: bold;">X-BILL ISP</h3>
-                <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
+                <h3 style="margin: 0; font-size: 18px; font-weight: bold;">${namaPerusahaanStruk}</h3>
+                <p style="margin: 0; font-size: 10px;">${alamatPerusahaanStruk}</p>
             </div>
             
             <div style="margin-bottom: 10px;">
@@ -4415,6 +4640,12 @@ let halamanTunggakanSaatIni = 1;
 const jumlahDataPerHalamanTunggakan = 10;
 
 async function loadTunggakanData(filterKategori = 'semua') {
+     logRead('tunggakan');
+    
+    // ⭐⭐ GUARD BARU ⭐⭐
+    if (window._loadingTunggakan) return;
+    window._loadingTunggakan = true;
+
     console.log("📊 Loading Tunggakan Data untuk Company:", globalCompanyId);
     
     const table = document.getElementById('tunggakanTable');
@@ -5142,13 +5373,59 @@ async function importDataPelanggan() {
                         const pelangganData = {
                             nama: namaClean,
                             telepon: teleponClean,
-                            email: row[findKeySmart(row, 'email')] ? row[findKeySmart(row, 'email')].toString().trim() : `${teleponClean}@xbill.com`,
+                            email: row[findKeySmart(row, 'email')] ? row[findKeySmart(row, 'email')].toString().trim() : `${teleponClean}`,
                             alamat: row[findKeySmart(row, 'alamat')] ? row[findKeySmart(row, 'alamat')].toString().trim() : '',
                             paket: row[findKeySmart(row, 'paket')] ? row[findKeySmart(row, 'paket')].toString().trim() : 'Paket 10 Mbps',
                             harga: parseInt(row[findKeySmart(row, 'harga')]) || 150000,
-                            tanggal_pasang: row[findKeySmart(row, 'tanggalpasang')] || row[findKeySmart(row, 'tanggal_pasang')] ? 
-                                (row[findKeySmart(row, 'tanggalpasang')] || row[findKeySmart(row, 'tanggal_pasang')]).toString().trim() : 
-                                new Date().toISOString().split('T')[0],
+                                                       tanggal_pasang: function() {
+                                // Cari semua variasi nama kolom untuk tanggal pasang
+                                const possibleKeys = [
+                                    'tanggal_pasang', 'tanggalpasang', 'tgl_pasang', 'tglpasang',
+                                    'tanggal pasang', 'tanggal', 'tgl', 'date', 'install_date',
+                                    'tanggal_install', 'tanggalinstall', 'tgl_install', 'tglinstall'
+                                ];
+                                
+                                for (let key of possibleKeys) {
+                                    const foundKey = findKeySmart(row, key);
+                                    if (foundKey && row[foundKey]) {
+                                        const dateValue = row[foundKey].toString().trim();
+                                        if (dateValue) {
+                                            // Coba parse berbagai format tanggal
+                                            let parsedDate = null;
+                                            
+                                            // Format YYYY-MM-DD
+                                            if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                                parsedDate = dateValue;
+                                            }
+                                            // Format DD/MM/YYYY
+                                            else if (dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                                const parts = dateValue.split('/');
+                                                parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                            }
+                                            // Format DD-MM-YYYY
+                                            else if (dateValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                                                const parts = dateValue.split('-');
+                                                parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                            }
+                                            // Format timestamp atau lainnya
+                                            else {
+                                                const m = moment(dateValue);
+                                                if (m.isValid()) {
+                                                    parsedDate = m.format('YYYY-MM-DD');
+                                                }
+                                            }
+                                            
+                                            if (parsedDate) {
+                                                return parsedDate;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Default ke tanggal pasang yang ada di database lama jika memungkinkan,
+                                // atau tanggal yang logis (misal: 1 bulan lalu)
+                                return new Date().toISOString().split('T')[0];
+                            }(),
                             status: row[findKeySmart(row, 'status')] ? row[findKeySmart(row, 'status')].toString().trim() : 'aktif',
                             koordinat: row[findKeySmart(row, 'koordinat')] ? row[findKeySmart(row, 'koordinat')].toString().trim() : '',
                             catatan: row[findKeySmart(row, 'catatan')] ? row[findKeySmart(row, 'catatan')].toString().trim() : '',
@@ -5573,6 +5850,8 @@ function initializeQuickActions() {
 // ============================================
 
 async function renderDashboard() {
+        logRead('dashboard');
+        
     console.log("🔄 MEMULAI RENDER DASHBOARD dengan data TERISOLASI");
     
     // 1. TAMPILKAN LOADING
@@ -5714,8 +5993,9 @@ async function renderDashboard() {
         }
 
         // 8. UPDATE UI - LUNAS (FIX: STATUS & COUNT)
-        const totalP = pelangganSnapshot.size || 1;
-        const persen = Math.round((lunasCount / totalP) * 100);
+        const totalP = pelangganSnapshot.size || 0;
+        const persen = totalP > 0 ? Math.round((lunasCount / totalP) * 100) : 0;
+
         const textPersen = `${persen}%`;
         const textCount = `${lunasCount} dari ${totalP}`;
 
@@ -5769,12 +6049,15 @@ async function renderDashboard() {
             if (document.getElementById('statTunggakan')) document.getElementById('statTunggakan').textContent = 'Rp 0';
 
             showToast('error', 'Error Dashboard', 'Gagal memuat data dashboard.');
-        } finally {
-            // PASTIKAN LOADING DIHILANGKAN
-            const loadingEl = document.getElementById('loadingOverlay');
-            if (loadingEl) loadingEl.classList.add('hidden');
-        }
-    }
+        }  finally {
+    // HAPUS LOADING SEGERA (jangan tunggu semua selesai)
+    const loadingEl = document.getElementById('loadingOverlay');
+    if (loadingEl) {
+        setTimeout(() => {
+            loadingEl.classList.add('hidden');
+        }, 300); // Loading cuma 300ms
+        
+    }}}
 
 
 
@@ -6230,29 +6513,6 @@ function getPaginatedData(data, currentPage) {
 
 
 
-function changePage(pageType, pageNumber) {
-    switch(pageType) {
-        case 'pelanggan':
-            currentPagePelanggan = pageNumber;
-            loadPelangganData();
-            break;
-        case 'tagihan':
-            currentPageTagihan = pageNumber;
-            loadTagihanData();
-            break;
-        case 'tunggakan':
-            currentPageTunggakan = pageNumber;
-            loadTunggakanData();
-            break;
-        case 'paket':
-            currentPagePaket = pageNumber;
-            loadPaketData();
-            break;
-    }
-}
-
-
-
 // TAMBAHKAN fungsi untuk refresh chart saja
 function refreshTagihanChart() {
     console.log("🔄 Refreshing tagihan chart...");
@@ -6340,6 +6600,173 @@ function refreshDashboard() {
     showToast('info', 'Memperbarui', 'Dashboard sedang diperbarui...');
 }
 
+
+// ============================================
+// FUNGSI PETA PELANGGAN
+// ============================================
+
+let pelangganMap = null;
+let mapMarkers = [];
+
+// Fungsi inisialisasi peta
+function initPelangganMap() {
+    const mapElement = document.getElementById('pelangganMap');
+    if (!mapElement) {
+        console.log("Element peta belum tersedia");
+        return;
+    }
+    
+    // Hapus peta lama jika ada
+    if (pelangganMap) {
+        pelangganMap.remove();
+        mapMarkers = [];
+    }
+    
+    // Buat peta baru (pusat Indonesia)
+    pelangganMap = L.map('pelangganMap').setView([-2.5489, 118.0149], 5);
+    
+    // Tambahkan tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(pelangganMap);
+    
+    console.log("✅ Peta diinisialisasi");
+}
+
+// Fungsi memuat data pelanggan ke peta
+async function loadPelangganMap() {
+    if (!pelangganMap) {
+        initPelangganMap();
+    }
+    
+    try {
+        // Hapus marker lama
+        mapMarkers.forEach(marker => marker.remove());
+        mapMarkers = [];
+        
+        // Ambil data pelanggan dari Firestore
+        const snapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        let markerCount = 0;
+        
+        snapshot.forEach(doc => {
+            const pelanggan = doc.data();
+            
+            // Cek jika ada koordinat
+            if (pelanggan.koordinat && pelanggan.koordinat.trim() !== '') {
+                try {
+                    const coords = pelanggan.koordinat.split(',').map(coord => parseFloat(coord.trim()));
+                    
+                    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                        // Tentukan warna berdasarkan status
+                        let markerColor = '#6c757d'; // Default: nonaktif (abu)
+                        if (pelanggan.status === 'aktif') markerColor = '#4361ee'; // Biru
+                        if (pelanggan.status === 'tunggak') markerColor = '#ff6b6b'; // Merah
+                        
+                        // Buat custom icon
+                        const customIcon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="
+                                background: ${markerColor};
+                                width: 24px;
+                                height: 24px;
+                                border-radius: 50%;
+                                border: 3px solid white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-size: 12px;
+                                font-weight: bold;
+                            ">${pelanggan.nama ? pelanggan.nama.charAt(0).toUpperCase() : 'P'}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        });
+                        
+                        // Buat marker
+                        const marker = L.marker([coords[0], coords[1]], { icon: customIcon })
+                            .addTo(pelangganMap)
+                            .bindPopup(`
+                                <div style="min-width: 200px;">
+                                    <h4 style="margin: 0 0 5px 0;">${pelanggan.nama || 'Tanpa Nama'}</h4>
+                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
+                                        <i class="fas fa-phone"></i> ${pelanggan.telepon || '-'}
+                                    </p>
+                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
+                                        <i class="fas fa-wifi"></i> ${pelanggan.paket || '-'}
+                                    </p>
+                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
+                                        <i class="fas fa-tag"></i> ${formatRupiah(pelanggan.harga || 0)}
+                                    </p>
+                                    <p style="margin: 0; font-size: 11px;">
+                                        <span class="badge ${pelanggan.status === 'aktif' ? 'badge-success' : pelanggan.status === 'tunggak' ? 'badge-danger' : 'badge-secondary'}">
+                                            ${pelanggan.status || 'nonaktif'}
+                                        </span>
+                                    </p>
+                                    <hr style="margin: 8px 0;">
+                                    <p style="font-size: 11px; color: #666; margin: 0;">
+                                        <i class="fas fa-map-marker-alt"></i> ${pelanggan.alamat || 'Alamat tidak tersedia'}
+                                    </p>
+                                </div>
+                            `);
+                        
+                        mapMarkers.push(marker);
+                        markerCount++;
+                    }
+                } catch (error) {
+                    console.warn(`Koordinat invalid: ${pelanggan.koordinat}`, error);
+                }
+            }
+        });
+        
+        // Update counter
+        const counterElement = document.getElementById('mapMarkerCount');
+        if (counterElement) {
+            counterElement.textContent = markerCount;
+        }
+        
+        // Auto zoom ke semua marker jika ada
+        if (mapMarkers.length > 0) {
+            const group = new L.featureGroup(mapMarkers);
+            pelangganMap.fitBounds(group.getBounds().pad(0.1));
+        }
+        
+        console.log(`✅ ${markerCount} marker ditambahkan ke peta`);
+        
+    } catch (error) {
+        console.error("❌ Error memuat peta:", error);
+    }
+}
+
+// Fungsi refresh peta
+function refreshPelangganMap() {
+    loadPelangganMap();
+    showToast('info', 'Peta', 'Memperbarui peta...');
+}
+
+// Fungsi zoom ke semua marker
+function focusOnAllMarkers() {
+    if (mapMarkers.length > 0) {
+        const group = new L.featureGroup(mapMarkers);
+        pelangganMap.fitBounds(group.getBounds().pad(0.05));
+        showToast('success', 'Peta', 'Zoom ke semua lokasi');
+    } else {
+        showToast('warning', 'Peta', 'Tidak ada marker untuk di-zoom');
+    }
+}
+
+// Panggil saat dashboard dimuat
+async function onDashboardLoaded() {
+    // Tunggu sedikit untuk memastikan DOM siap
+    setTimeout(() => {
+        initPelangganMap();
+        loadPelangganMap();
+    }, 500);
+}
         // ============================================
 // FUNGSI TAMBAHAN (FIX TOMBOL & LOKASI)
 // ============================================
@@ -6549,6 +6976,10 @@ function showModal(modalId) {
 
         
         async function loadAktivitas() {
+            logRead('aktivitas');
+
+             
+
     try {
         console.log("📋 Loading aktivitas (Limit 10 Halaman)...");
 
@@ -6577,7 +7008,7 @@ function showModal(modalId) {
 
         // 3. POTONG DATA MAKSIMAL 100 BARIS (LOGIKA SLIDING WINDOW)
         // Kita hanya simpan 100 data terakhir. Sisanya dibuang.
-        const maxDataLimit = 100; 
+        const maxDataLimit = 50; 
         if (allData.length > maxDataLimit) {
             console.warn(`⚠️ Data melebihi limit (${allData.length}), memotong menjadi ${maxDataLimit} data terbaru.`);
             allData = allData.slice(0, maxDataLimit); // Ambil 100 pertama (yang terbaru)
@@ -6706,9 +7137,20 @@ function showModal(modalId) {
         }
         
        async function loadPelangganData() {
+        logRead('pelanggan');
+    
+    // ⭐⭐ GUARD: Cegah double execution (TAMBAHAN BARU) ⭐⭐
+    if (window._loadingPelanggan) {
+        console.log('⏸️ loadPelangganData sedang berjalan, skip...');
+        return;
+    }
+    window._loadingPelanggan = true;
+
     const table = document.getElementById('pelangganTable');
     if (!table) {
         console.warn("⚠️ Tabel pelanggan tidak ditemukan!");
+                window._loadingPelanggan = false; // ⭐ RESET GUARD
+
         return;
     }
 
@@ -6746,7 +7188,7 @@ function showModal(modalId) {
             paket: doc.data().paket || '-',
             harga: doc.data().harga || 0,
             status: doc.data().status || 'nonaktif',
-            email: doc.data().email || `${doc.data().telepon || ''}@xbill.com`,
+            email: doc.data().email || ``,
             tanggal_pasang: doc.data().tanggal_pasang || '',
             koordinat: doc.data().koordinat || '',
             catatan: doc.data().catatan || '',
@@ -6794,10 +7236,74 @@ function showModal(modalId) {
         const pageData = filteredData.slice(startIndex, endIndex);
         
         // 6. RENDER TABEL
-        renderPelangganTable(pageData, totalItems);
-        
-        // 7. RENDER PAGINATION
-        renderPelangganPagination(totalItems);
+        if (filteredData.length === 0) {
+    table.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center" style="padding: 40px;">
+                <i class="fas fa-search" style="font-size: 48px; color: #e9ecef;"></i>
+                <h4 style="margin-top:15px; color: var(--gray);">Tidak Ditemukan</h4>
+                <p>Tidak ada pelanggan yang cocok dengan filter.</p>
+            </td>
+        </tr>`;
+    
+    // HAPUS PAGINATION
+    const paginationContainer = document.getElementById('pelangganPagination');
+    if (paginationContainer) paginationContainer.innerHTML = '';
+    
+    window._loadingPelanggan = false;
+    return;
+}
+
+// RENDER DATA LANGSUNG
+table.innerHTML = pageData.map((p, index) => `
+    <tr>
+        <td>${startIndex + index + 1}</td>
+        <td>${p.nama || '-'}</td>
+        <td>${p.telepon || '-'}</td>
+        <td>${p.alamat || '-'}</td>
+        <td>${p.paket || '-'}</td>
+        <td><span class="badge ${p.status === 'aktif' ? 'badge-success' : p.status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">${p.status || 'nonaktif'}</span></td>
+        <td>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline" onclick="editPelanggan('${p.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="viewPelanggan('${p.id}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deletePelanggan('${p.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+`).join('');
+
+// RENDER PAGINATION
+const paginationContainer = document.getElementById('pelangganPagination');
+if (paginationContainer && filteredData.length > 0) {
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    let paginationHTML = '<div class="pagination">';
+    
+    if (currentPagePelanggan > 1) {
+        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan - 1})">&laquo;</a>`;
+    }
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPagePelanggan) {
+            paginationHTML += `<span class="page-link active">${i}</span>`;
+        } else {
+            paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${i})">${i}</a>`;
+        }
+    }
+    
+    if (currentPagePelanggan < totalPages) {
+        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan + 1})">&raquo;</a>`;
+    }
+    
+    paginationHTML += '</div>';
+    paginationContainer.innerHTML = paginationHTML;
+}
         
         // 8. LOAD DROPDOWN PAKET UNTUK FILTER (JIKA SUDAH ADA)
         const paketSelect = document.getElementById('filterPaket');
@@ -6808,6 +7314,9 @@ function showModal(modalId) {
     } catch (error) {
         console.error("❌ Error Load Pelanggan:", error);
         table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+    } finally {
+        // ⭐⭐ RESET GUARD: TAMBAHAN BARU ⭐⭐
+        window._loadingPelanggan = false;
     }
 }
 
@@ -7718,11 +8227,24 @@ async function viewTagihanDetails(pelangganId) {
                                     strukContainer.style.color = '#000000'; 
                                     strukContainer.style.border = '1px solid #000';
                                     
-                                    strukContainer.innerHTML = `
-                                        <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                                            <h2 style="margin: 0; font-size: 16px; font-weight: bold;">${namaPerusahaan}</h2>
-                                            <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
-                                        </div>
+let strukCompanyName = 'X-BILL ISP';
+let strukCompanyAddress = 'Jl. Internet Cepat No. 1';
+if (globalCompanyId) {
+    const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+    if (companyDoc.exists) {
+        const data = companyDoc.data();
+        strukCompanyName = data.companyName || 'X-BILL ISP';
+        strukCompanyAddress = data.companyAddress || 'Jl. Internet Cepat No. 1';
+    }
+}
+
+// GANTI STRUK TEMPLATE:
+strukContainer.innerHTML = `
+    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: bold;">${strukCompanyName}</h3>
+        <p style="margin: 0; font-size: 10px;">${strukCompanyAddress}</p>
+    </div>
                                         
                                         <div style="margin-bottom: 10px;">
                                             <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
@@ -8884,8 +9406,19 @@ async function bukaNotaDanKonfirmasi(tagihanId, pelangganId, namaPelanggan, nomi
         // ----------------------------------------
 
         // --- AMBIL DATA DARI VARIABEL GLOBAL (SINKRON DASHBOARD) ---
-        let namaPerusahaan = window.globalCompanyName || 'X-BILL ISP';
-        let alamatPerusahaan = window.globalCompanyAddress || 'Jl. Merdeka No. 45, Jakarta';
+       // --- AMBIL DATA DARI VARIABEL GLOBAL (SINKRON DASHBOARD) ---
+let namaPerusahaan = 'X-BILL ISP';
+let alamatPerusahaan = 'Jl. Merdeka No. 45, Jakarta';
+if (globalCompanyId) {
+    const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+    if (companyDoc.exists) {
+        const data = companyDoc.data();
+        namaPerusahaan = data.companyName || 'X-BILL ISP';
+        alamatPerusahaan = data.companyAddress || 'Jl. Merdeka No. 45, Jakarta';
+    }
+}
+
         // -----------------------------------------------------------------
 
         // Buat Tampilan Nota (Overlay)
@@ -9435,6 +9968,9 @@ function handleBayarClick(btnElement) {
 
 
 async function loadTagihanData() {
+    logRead('tagihan');
+    
+
     const table = document.getElementById('tagihanTable');
     if (!table) return;
     
@@ -9607,72 +10143,82 @@ groupedData.sort((a, b) => {
         const pageData = groupedData.slice(startIndex, endIndex);
 
         // 5. RENDER TABEL
-        table.innerHTML = pageData.map((item) => {
-            const listBelumLunas = item.list_tagihan.filter(t => t.status !== 'lunas');
-            const jumlahBulanBelumLunas = listBelumLunas.length;
-            
-            const isAllLunas = jumlahBulanBelumLunas === 0;
-            
-            let displayBulan = `<strong>${jumlahBulanBelumLunas} Bulan</strong>`;
-            let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
+table.innerHTML = pageData.map((item) => {
+    const listBelumLunas = item.list_tagihan.filter(t => t.status !== 'lunas');
+    const jumlahBulanBelumLunas = listBelumLunas.length;
+    
+    const isAllLunas = jumlahBulanBelumLunas === 0;
+    
+    let displayBulan = `<strong>${jumlahBulanBelumLunas} Bulan</strong>`;
+    let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
 
-            if (isAllLunas) {
-                displayBulan = `<span style="color: var(--gray);">-</span>`;
-                displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
-            }
+    if (isAllLunas) {
+        displayBulan = `<span style="color: var(--gray);">-</span>`;
+        displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
+    }
 
-            let tombolBayar = '';
-            if (!isAllLunas) {
-                const tagihanPertama = listBelumLunas[0]; 
-                const idTagihan = tagihanPertama.id;
+    let tombolBayar = '';
+    if (!isAllLunas) {
+        const tagihanPertama = listBelumLunas[0]; 
+        const idTagihan = tagihanPertama.id;
+        
+        tombolBayar = `
+            <button class="btn btn-sm btn-success" 
+                data-id="${idTagihan}"
+                data-pid="${item.pelanggan_id}"
+                data-nama="${item.pelanggan_nama}"
+                data-nominal="${tagihanPertama.jumlah}"
+                data-bulan="${tagihanPertama.bulan}"
+                onclick="handleBayarClick(this)"
+                title="Bayar Tagihan">
+                <i class="fas fa-money-bill-wave"></i> Bayar
+            </button>
+        `;
+    }
+
+    return `
+        <tr>
+            <td>
+                <strong>Server A</strong><br>
+                <small class="text-muted">Wilayah Utara</small>
+            </td>
+            <td>
+                <strong>${item.pelanggan_nama}</strong><br>
+                <small class="text-muted">${item.pelanggan_telepon}</small>
+                ${item.company_id !== globalCompanyId ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Data tidak valid</small>' : ''}
+            </td>
+            <td>
+               <small class="text-muted">-6.2088, 106.8456</small><br>
+    <button class="btn btn-sm btn-outline btn-sm" onclick="openGoogleMaps('-6.2088, 106.8456')" title="Buka di Google Maps">
+        <i class="fas fa-external-link-alt"></i> Maps
+    </button>
                 
-                tombolBayar = `
-                    <button class="btn btn-sm btn-success" 
-                        data-id="${idTagihan}"
-                        data-pid="${item.pelanggan_id}"
-                        data-nama="${item.pelanggan_nama}"
-                        data-nominal="${tagihanPertama.jumlah}"
-                        data-bulan="${tagihanPertama.bulan}"
-                        onclick="handleBayarClick(this)"
-                        title="Bayar Tagihan">
-                        <i class="fas fa-money-bill-wave"></i> Bayar
+            </td>
+            <td>
+                <small style="color: #666;">${item.pelanggan_alamat}</small>    
+            </td>
+            <td>
+                <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
+                    ${displayBulan}
+                </span>
+            </td>
+            <td>${displayNominal}</td>
+            <td>
+                ${isAllLunas 
+                    ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Lunas</span>' 
+                    : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum Lunas</span>'}
+            </td>
+            <td>
+                <div class="btn-group">
+                    ${tombolBayar}
+                    <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')" title="Detail">
+                        <i class="fas fa-list"></i> Detail
                     </button>
-                `;
-            }
-
-            return `
-                <tr>
-                    <td>
-                        <strong>${item.pelanggan_nama}</strong><br>
-                        <small class="text-muted">${item.pelanggan_telepon}</small>
-                        ${item.company_id !== globalCompanyId ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Data tidak valid</small>' : ''}
-                    </td>
-                    <td>
-                        <small style="color: #666;">${item.pelanggan_alamat}</small>
-                    </td>
-                    <td>
-                        <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
-                            ${displayBulan}
-                        </span>
-                    </td>
-                    <td>${displayNominal}</td>
-                    <td>
-                        ${isAllLunas 
-                            ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Lunas</span>' 
-                            : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum Lunas</span>'}
-                    </td>
-                    <td>
-                        <div class="btn-group">
-                            ${tombolBayar}
-                            <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')" title="Detail">
-                                <i class="fas fa-list"></i> Detail
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
+                </div>
+            </td>
+        </tr>
+    `;
+}).join('');
         // 6. RENDER PAGINATION
         renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
         
@@ -9682,7 +10228,41 @@ groupedData.sort((a, b) => {
     }
 }
 
+// Fungsi untuk membuka Google Maps
+function openGoogleMaps(coordinates) {
+    if (!coordinates || coordinates.trim() === '') {
+        showToast('warning', 'Peta', 'Koordinat tidak tersedia');
+        return;
+    }
+    
+    try {
+        // Bersihkan koordinat
+        const cleanCoords = coordinates.trim().replace(/\s+/g, '');
+        
+        // Validasi format koordinat
+        if (!cleanCoords.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/)) {
+            showToast('error', 'Error', 'Format koordinat tidak valid');
+            return;
+        }
+        
+        // Buka Google Maps
+        const url = `https://www.google.com/maps?q=${cleanCoords}`;
+        window.open(url, '_blank');
+        
+        showToast('info', 'Peta', 'Membuka Google Maps...');
+        
+    } catch (error) {
+        console.error("Error open Google Maps:", error);
+        showToast('error', 'Error', 'Gagal membuka peta');
+    }
+}
 
+// Fungsi untuk view di map internal (jika ada)
+function viewOnMap(coordinates) {
+    // Jika ada peta internal, bisa digunakan
+    // Untuk sekarang buka Google Maps
+    openGoogleMaps(coordinates);
+}
 
 
 // FUNGSI applyTagihanFilters YANG HARUS ADA
@@ -9783,23 +10363,61 @@ async function executePayAllAndPrint(pelangganId, idsString, totalNominal, bulan
 
         await batch.commit();
 
+        // ⭐⭐ AMBIL DATA PERUSAHAAN ⭐⭐
+        let namaPerusahaan = 'X-BILL ISP';
+        let alamatPerusahaan = 'Jl. Internet Cepat No. 1';
+        
+        try {
+            if (globalCompanyId) {
+                // Cek localStorage
+                const savedProfile = localStorage.getItem(`companyProfile_${globalCompanyId}`);
+                if (savedProfile) {
+                    const profile = JSON.parse(savedProfile);
+                    if (profile.companyName) {
+                        namaPerusahaan = profile.companyName;
+                    }
+                    if (profile.companyAddress) {
+                        alamatPerusahaan = profile.companyAddress;
+                    }
+                }
+                
+                // Jika tidak ada di localStorage, cek database
+                if (namaPerusahaan === 'X-BILL ISP') {
+                    const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
+
+                    if (companyDoc.exists) {
+                        const data = companyDoc.data();
+                        if (data.companyName) {
+                            namaPerusahaan = data.companyName;
+                        }
+                        if (data.companyAddress) {
+                            alamatPerusahaan = data.companyAddress;
+                        }
+                    }
+                }
+            }
+        } catch (companyError) {
+            console.log('Gagal ambil data perusahaan:', companyError);
+        }
+
         // 2. GENERATE HTML STRUK (HIDDEN)
-        // Kita buat elemen HTML sementara yang berisi tampilan struk
         const strukContainer = document.createElement('div');
         strukContainer.style.position = 'absolute';
         strukContainer.style.left = '-9999px';
         strukContainer.style.top = '0';
-        strukContainer.style.width = '300px'; // Lebar standar kertas 58mm/80mm
+        strukContainer.style.width = '300px';
         strukContainer.style.background = 'white';
         strukContainer.style.padding = '10px';
         strukContainer.style.fontFamily = 'monospace';
         strukContainer.style.fontSize = '12px';
         
-        // Isi HTML Struk
+
+       
+        // Isi HTML Struk - ⭐⭐ PAKAI NAMA PERUSAHAAN YANG SUDAH DIAMBIL ⭐⭐
         strukContainer.innerHTML = `
             <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
-                <h3 style="margin: 0; font-size: 16px;">X-BILL ISP</h3>
-                <p style="margin: 0; font-size: 10px;">Jl. Internet Cepat No. 1</p>
+                <h3 style="margin: 0; font-size: 16px;">${namaPerusahaan}</h3>
+                <p style="margin: 0; font-size: 10px;">${alamatPerusahaan}</p>
             </div>
             
             <div style="margin-bottom: 10px;">
@@ -9844,37 +10462,22 @@ async function executePayAllAndPrint(pelangganId, idsString, totalNominal, bulan
         
         document.body.appendChild(strukContainer);
 
-        // 3. CONVERT HTML JADI GAMBAR (CANVAS) MENGGUNAKAN HTML2CANVAS
-        // Tunggu sebentar agar DOM siap
+        // 3. CONVERT HTML JADI GAMBAR
         await new Promise(r => setTimeout(r, 500));
 
         const canvas = await html2canvas(strukContainer, {
-            scale: 2, // Skala 2x biar gambarnya tajam tidak pecah
+            scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff"
         });
 
-        // Convert Canvas ke BLOB (PNG)
+        // Convert Canvas ke BLOB
         canvas.toBlob(async function(blob) {
-            // Hapus elemen HTML sementara
             document.body.removeChild(strukContainer);
 
-            // 4. KIRIM KE WHATSAPP
-            // WA tidak bisa kirim file langsung dari Web JS, jadi kita pakai trik upload ke imgbb/gambar
-            // TAPI untuk simplifikasi, kita pakai API hosting gambar gratis & langsung buka WA
-            
-            // CONTOH: Upload ke imagekit.io atau hosting lain yang support base64/blob
-            // Karena keterbatasan API Key, kita akan coba trik "Data URI" di browser modern
-            // Namun, cara PALING AMPUH untuk Web App tanpa backend:
-            // Kita convert ke File, lalu user buka WA manual ATAU pakai API hosting.
-            
-            // SOLUSI PALING STABIL: Kita buka file gambar di tab baru, user tinggal "Share" ke WA.
             const imgUrl = URL.createObjectURL(blob);
-            
-            // BUKA GAMBAR DI TAB BARU
             const imageWindow = window.open(imgUrl, '_blank');
             
-            // Tampilkan instruksi
             setTimeout(() => {
                  if(imageWindow) {
                      imageWindow.document.write('<p style="text-align:center; padding:20px;">Klik tombol Share / Bagikan di browser ini, lalu pilih <b>WhatsApp</b>.</p><img src="'+imgUrl+'" style="width:100%; max-width:300px; display:block; margin:0 auto;">');
@@ -9885,7 +10488,6 @@ async function executePayAllAndPrint(pelangganId, idsString, totalNominal, bulan
             forceCloseModal('modalDetailTagihan');
             showToast('info', 'Gambar Siap', 'Struk Gambar dibuat. Silakan Share gambar tersebut ke WA.');
 
-            // Refresh Data
             if (currentPage === 'tagihan') await loadTagihanData();
             if (currentPage === 'dashboard') await renderDashboard();
 
@@ -10209,17 +10811,17 @@ async function loadPage(page) {
                 break;
                 
             case 'pelanggan':
-                // Jika Staff coba buka halaman ini (seharusnya sudah di-redirect di atas), cek lagi
-                if (currentRole === 'staff_billing') {
-                    showToast('error', 'Akses Ditolak', 'Menu ini hanya untuk Admin.');
-                    loadPage('tagihan'); // Redirect paksa
-                    return;
-                }
-                pageHTML = await getPelangganHTML();
-                mainContent.innerHTML = pageHTML;
-                await loadPaketData();
-                await loadPelangganData();
-                break;
+    case 'pelanggan':
+    pageHTML = await getPelangganHTML();
+    mainContent.innerHTML = pageHTML;
+    
+    // TAMBAH INI ↓↓↓
+    setTimeout(async () => {
+        await loadPaketData(); 
+        await loadPelangganData();
+    }, 0);
+    
+    break;
                 
             case 'paket':
                 if (currentRole === 'staff_billing') {
@@ -10249,6 +10851,12 @@ async function loadPage(page) {
             case 'laporan':
     pageHTML = await getLaporanHTML();
     mainContent.innerHTML = pageHTML;
+
+    // Inisialisasi peta setelah dashboard dimuat
+        setTimeout(() => {
+            initPelangganMap();
+            loadPelangganMap();
+        }, 300);
     
     // --- KODE RAHASIA: AUTO KLIK GENERATE LAPORAN ---
     setTimeout(() => {
@@ -10800,7 +11408,7 @@ async function generateTagihanPertama(pelangganId, pelangganData, tglPasang) {
             pelanggan_id: pelangganId,
             pelanggan_nama: pelangganData.nama,
             pelanggan_telepon: pelangganData.telepon,
-            pelanggan_email: pelangganData.email || pelangganData.telepon + '@xbill.com',
+            pelanggan_email: pelangganData.email ,
             bulan: bulanPemakaian, // Bulan pemakaian (saat pasang)
             jumlah: jumlah,
             status: 'belum',
@@ -11423,178 +12031,162 @@ async function executeDelete(id) {
 
 
 
-// ============================================
-// GENERATE TAGIHAN (LOGIKA: PASANG BULAN INI = TAGIHAN BULAN DEPAN)
-// ============================================
-
 async function generateTagihanBulk() {
-    console.log("🎯 MEMULAI GENERATE TAGIHAN (HEMAT MODE)...");
+
+    logRead('generate');
+    console.log("🚀 GENERATE TAGIHAN (FIX TANGGAL)...");
     
     try {
-        // 1. AMBIL TOMBOL
-        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary') || 
-                           document.getElementById('btnGenerateTagihan');
+        const bulanGenerateInput = document.getElementById('generateBulan').value; 
+        // Kita pakai fixed tanggal 10 sesuai contoh user
+        const tglJatuhTempoFix = 10; 
         
-        if (!generateBtn) return; // Error handling simple
-        
-        const originalText = generateBtn.innerHTML;
-        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hemat Processing...';
-        generateBtn.disabled = true;
-        
-        // 2. VALIDASI INPUT
-        const bulanGenerateInput = document.getElementById('generateBulan').value;
         if (!bulanGenerateInput) {
             showToast('error', 'Error', 'Pilih bulan generate');
-            resetGenerateButton();
             return;
         }
-
-        // 3. VALIDASI COMPANY ID
-        if (!globalCompanyId) {
-            globalCompanyId = await ensureCompanyId();
-            if (!globalCompanyId) {
-                showToast('error', 'Error', 'Company ID tidak ditemukan');
-                resetGenerateButton();
-                return;
-            }
-        }
-
-        // ==========================================
-        // ✅ OPTIMASI 1: AMBIL DATA PELANGGAN & PAKET SEKALIGUS (HEMAT WAKTU)
-        // ==========================================
-        // Kita ambil data paket SEKALIGUS dengan pelanggan, jadi di dalam loop nanti 
-        // kita TIDAK PERLU query ulang harga paket (Hemat Banyak Read)
-        const [pelangganSnapshot, paketSnapshot] = await Promise.all([
-            db.collection('pelanggan')
-                .where('company_id', '==', globalCompanyId)
-                .where('status', '==', 'aktif')
-                .get(),
-            db.collection('paket')
-                .where('company_id', '==', globalCompanyId)
-                .get()
-        ]);
+        
+        // 1. LOADING UI
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        const originalText = generateBtn.innerHTML;
+        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        generateBtn.disabled = true;
+        
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM'); 
+        
+        // 2. AMBIL SEMUA PELANGGAN AKTIF
+        const pelangganSnapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', '==', 'aktif')
+            .get();
         
         if (pelangganSnapshot.empty) {
-            showToast('info', 'Kosong', 'Tidak ada pelanggan aktif');
-            resetGenerateButton();
+            showToast('warning', 'Data Kosong', 'Tidak ada pelanggan aktif');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = originalText;
             return;
         }
         
-        // ==========================================
-        // ✅ OPTIMASI 2: SIMPAN HARGA PAKET DI MEMORY (HEMAT READ)
-        // ==========================================
-        const paketHargaMap = {};
-        paketSnapshot.forEach(doc => {
-            const p = doc.data();
-            paketHargaMap[p.nama] = p.harga;
-        });
-        // Sekarang kita punya "Database Mini" harga paket di browser. Tidak perlu Read DB lagi.
-
-        // ==========================================
-        // ✅ OPTIMASI 3: LOAD TAGIHAN YANG SUDAH ADA SEKALIGUS (HEMAT READ)
-        // ==========================================
-        const tagihanSnapshot = await db.collection('tagihan')
+        // 3. AMBIL SEMUA TAGIHAN YANG SUDAH ADA
+        const allExistingTags = await db.collection('tagihan')
             .where('company_id', '==', globalCompanyId)
             .get();
         
-        const existingMap = new Map();
-        tagihanSnapshot.forEach(doc => {
-            const t = doc.data();
-            const key = t.pelanggan_id + '_' + (t.bulan || '');
-            existingMap.set(key, true);
+        const existingTagMap = new Map();
+        allExistingTags.forEach(doc => {
+            const data = doc.data();
+            const key = `${data.pelanggan_id}_${data.bulan}`;
+            existingTagMap.set(key, true);
         });
-
-        // ==========================================
-        // ✅ OPTIMASI 4: BATCH WRITE (HEMAT WRITE)
-        // ==========================================
-        const batch = db.batch(); // Siapkan batch (wadah besar)
-        const jatuhTempoFix = parseInt(document.getElementById('generateJatuhTempo').value) || 10;
         
-        let count = 0;
-        const limitDate = moment(bulanGenerateInput, 'YYYY-MM').endOf('month');
+        let totalTagihanDibuat = 0;
+        const batch = db.batch();
         const now = new Date().toISOString();
-
-        // LOOPING
+        
+        // 4. PROSES PER PELANGGAN
         for (const doc of pelangganSnapshot.docs) {
-            const p = doc.data();
-            const pid = doc.id;
+            const pelanggan = doc.data();
+            const pelangganId = doc.id;
             
-            // Parse Tanggal
-            let tglPasang = moment(p.tanggal_pasang);
-            if (!tglPasang.isValid()) continue;
+            let tanggalPasang = moment(pelanggan.tanggal_pasang, ['YYYY-MM-DD', 'DD-MM-YYYY']);
+            if (!tanggalPasang.isValid()) tanggalPasang = moment('2020-01-01');
             
-            let bulanSaatIni = tglPasang.clone().add(1, 'months').startOf('month');
+            // ⭐ LOGIKA: START LOOP = BULAN PASANG + 1
+            let bulanSaatIni = tanggalPasang.clone().add(1, 'month').startOf('month');
             
-            if (bulanSaatIni.isAfter(limitDate, 'month')) continue;
-
-            // Generate per bulan
-            while (bulanSaatIni.isSameOrBefore(limitDate, 'month')) {
+            const maxLoop = 24; 
+            let loopCount = 0;
+            
+            // Loop sampai bulan input
+            while (bulanSaatIni.isSameOrBefore(bulanGenerate, 'month') && loopCount < maxLoop) {
+                
+                // Format Key: MM-YYYY
                 const bulanKey = bulanSaatIni.format('MM-YYYY');
-                const uniqueKey = pid + '_' + bulanKey;
                 
-                // Cek duplikat dari Map (Cepat, tidak perlu query DB)
-                if (existingMap.has(uniqueKey)) {
-                    bulanSaatIni.add(1, 'months');
-                    continue;
+                const existingKey = `${pelangganId}_${bulanKey}`;
+                
+                if (!existingTagMap.has(existingKey)) {
+                    let jumlahTagihan = Number(pelanggan.harga) || 0;
+                    let isProrata = false;
+                    let catatan = 'Tagihan normal';
+                    
+                    // Cek Prorata
+                    const bulanPertama = tanggalPasang.clone().add(1, 'month').startOf('month');
+                    if (bulanSaatIni.isSame(bulanPertama, 'month')) {
+                        isProrata = true;
+                        const daysInMonth = bulanSaatIni.daysInMonth();
+                        const sisaHari = daysInMonth - tanggalPasang.date() + 1;
+                        jumlahTagihan = Math.round((jumlahTagihan / daysInMonth) * sisaHari);
+                        catatan = `Prorata ${sisaHari} hari`;
+                    }
+                    
+                    // ⭐ FIX KRUSIAL: BANGUN TANGGAL DARI YEAR, MONTH, DATE (AGAR TIDAK SALAH)
+                    // Kita clone bulanSaatIni, lalu set tanggalnya ke 10.
+                    const jatuhTempoDate = bulanSaatIni.clone().date(tglJatuhTempoFix);
+                    
+                    // Format ke string DD-MM-YYYY
+                    const jatuhTempoString = jatuhTempoDate.format('DD-MM-YYYY');
+                    
+                    const tagihanId = `INV_${bulanKey.replace('-', '')}_${pelangganId}_${Date.now()}`;
+                    const tagihanRef = db.collection('tagihan').doc(tagihanId);
+                    
+                    batch.set(tagihanRef, {
+                        id: tagihanId,
+                        pelanggan_id: pelangganId,
+                        pelanggan_nama: pelanggan.nama || '',
+                        pelanggan_telepon: pelanggan.telepon || '',
+                        bulan: bulanKey, // 02-2026
+                        jumlah: jumlahTagihan,
+                        tanggal_jatuh_tempo: jatuhTempoString, // Hasil: 10 Feb 2026
+                        status: 'belum',
+                        company_id: globalCompanyId,
+                        created_at: now,
+                        updated_at: now,
+                        metadata: {
+                            is_prorata: isProrata,
+                            catatan: catatan,
+                            bulan_generate: bulanGenerateInput
+                        }
+                    });
+                    
+                    totalTagihanDibuat++;
+                    console.log(`   ✅ ${pelanggan.nama} - ${bulanKey} (JT: ${jatuhTempoString})`);
                 }
                 
-                // Buat ID
-                const tagihanId = `INV_${Date.now()}_${count}`;
-                
-                // HITUNG HARGA
-                // ✅ PAKAI MAP PAKET (HEMAT: Tidak Read 'paket' collection lagi)
-                let jumlahTagihan = paketHargaMap[p.paket] || 0;
-
-                // Logic Prorata (Sama seperti asli)
-                if (bulanSaatIni.isSame(tglPasang.clone().add(1, 'month'), 'month')) {
-                    const bulanPemakaian = bulanSaatIni.clone().subtract(1, 'month');
-                    const akhirBulanPemakaian = bulanPemakaian.clone().endOf('month');
-                    const hariEfektif = akhirBulanPemakaian.diff(tglPasang, 'days') + 1;
-                    const hargaPerHari = (jumlahTagihan / 30);
-                    jumlahTagihan = Math.round(hargaPerHari * hariEfektif);
-                }
-
-                const jatuhTempo = bulanSaatIni.clone().date(jatuhTempoFix);
-                
-                // ✅ MASUKKAN KE BATCH (JANGAN .set() SATU-SATU)
-                const tagihanRef = db.collection('tagihan').doc(tagihanId);
-                batch.set(tagihanRef, {
-                    id: tagihanId,
-                    pelanggan_id: pid,
-                    pelanggan_nama: p.nama || '',
-                    pelanggan_telepon: p.telepon || '',
-                    pelanggan_alamat: p.alamat || '',
-                    paket: p.paket || '',
-                    bulan: bulanKey,
-                    jumlah: jumlahTagihan,
-                    tanggal_jatuh_tempo: jatuhTempo.format('DD-MM-YYYY'),
-                    status: 'belum',
-                    company_id: globalCompanyId,
-                    created_at: now,
-                    updated_at: now,
-                    catatan: jumlahTagihan !== p.harga ? `Tagihan prorata` : ''
-                });
-
-                count++;
-                bulanSaatIni.add(1, 'months');
+                bulanSaatIni.add(1, 'month');
+                loopCount++;
             }
         }
-
-        // KOMIT BATCH SEKALIGUS (HEMAT: 1 Request untuk ratusan tagihan)
-        if (count > 0) {
-            console.log(`📤 Mengirim ${count} tagihan dalam 1x Hemat Batch...`);
+        
+        // 5. SIMPAN
+        if (totalTagihanDibuat > 0) {
             await batch.commit();
-            console.log("✅ Berhasil! Hemat biaya request.");
+            console.log(`💾 BERHASIL: ${totalTagihanDibuat} tagihan disimpan.`);
+            showToast('success', 'Berhasil', `${totalTagihanDibuat} tagihan baru dibuat.`);
+            
+            await db.collection('aktivitas').add({
+                aktivitas: `Generate: ${totalTagihanDibuat} tagihan (${bulanGenerate.format('MMMM YYYY')})`,
+                user: currentUser?.email || "Admin",
+                timestamp: now,
+                company_id: globalCompanyId
+            });
+            
+        } else {
+            showToast('info', 'Info', 'Semua tagihan sudah ada.');
         }
-
+        
         forceCloseModal('modalGenerateTagihan');
         await loadTagihanData();
         
     } catch (error) {
-        console.error("❌ Error generateTagihanBulk:", error);
+        console.error("❌ Error generate:", error);
         showToast('error', 'Gagal', error.message);
     } finally {
-        resetGenerateButton();
+        const generateBtn = document.querySelector('#modalGenerateTagihan .btn-primary');
+        if (generateBtn) {
+            generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
+            generateBtn.disabled = false;
+        }
     }
 }
 
@@ -11658,7 +12250,7 @@ async function cekTagihanSudahAda(pelangganId, bulanKey) {
         }
         
         // AMBIL DARI DATABASE
-        const companyRef = db.collection('companies').doc(globalCompanyId);
+        const companyRef = db.collection('company_settings').doc(globalCompanyId);
         const companyDoc = await companyRef.get();
         
         let companyData = {
@@ -12124,6 +12716,12 @@ function printInvoiceDetail(tagihanId) {
                 if (currentPage === 'dashboard') {
                     await renderDashboard();
                 }
+                    if (currentPage === 'dashboard') {
+                      loadPelangganMap();
+                 }
+
+
+
                 
             } catch (error) {
                 console.error("Error confirming payment:", error);
@@ -12444,7 +13042,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function refreshDashboard() {
             renderDashboard();
-            showToast('success', 'Berhasil', 'Dashboard diperbarui');
+           
         }
         
         function exportPelanggan() {
@@ -12454,12 +13052,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function generateSingleTagihan(pelangganId) {
-            showToast('info', 'Info', 'Membuat tagihan untuk pelanggan...');
+           
             // Implementation would be similar to bulk generate but for single customer
         }
         
         function sendReminderSingle(pelangganId) {
-            showToast('info', 'Info', 'Mengirim reminder ke pelanggan...');
         }
         
         function printPelanggan() {
@@ -13066,17 +13663,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                         throw new Error("Akun tidak terdaftar di sistem");
                     }
                     
-                } catch (firebaseError) {
-                    let errorMessage = "Login gagal";
+                } catch (error) {
                     
-                    if (firebaseError.code === 'auth/invalid-credential' || 
-                        firebaseError.code === 'auth/wrong-password') {
-                        errorMessage = "Email atau password salah";
-                    } else if (firebaseError.code === 'auth/user-not-found') {
-                        errorMessage = "Akun tidak ditemukan";
-                    }
-                    
-                    throw new Error(errorMessage);
                 }
             }
         }
@@ -13106,17 +13694,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                     throw new Error("Akun tidak terdaftar di sistem");
                 }
                 
-            } catch (firebaseError) {
-                let errorMessage = "Login gagal";
+            } catch (error) {
                 
-                if (firebaseError.code === 'auth/invalid-credential' || 
-                    firebaseError.code === 'auth/wrong-password') {
-                    errorMessage = "Username atau password salah";
-                } else if (firebaseError.code === 'auth/user-not-found') {
-                    errorMessage = "Akun tidak ditemukan";
-                }
-                
-                throw new Error(errorMessage);
             }
         }
 
@@ -13176,7 +13755,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                         updated_at: new Date().toISOString()
                     });
                     
-                    await db.collection('companies').doc(newCompanyId).set({
+                    await db.collection('company_settings').doc(newCompanyId).set({
                         id: newCompanyId,
                         admin_email: currentUser.email,
                         admin_name: currentUser.name,
@@ -13199,7 +13778,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                     created_at: new Date().toISOString()
                 });
 
-                await db.collection('companies').doc(newCompanyId).set({
+                await db.collection('company_settings').doc(newCompanyId).set({
                     id: newCompanyId,
                     admin_email: currentUser.email,
                     admin_name: currentUser.name,
@@ -13757,23 +14336,61 @@ function showComingSoon() {
 // ============================================
 // 1. PROFIL PERUSAHAAN
 // ============================================
-async function showCompanyProfile() {
-    try {
-        // Load data terbaru dari Firebase sebelum buka modal
-        await loadCompanyProfile();
-        
-        // Tampilkan modal
-        const modal = document.getElementById('modalCompanyProfile');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            showToast('info', 'Profil Perusahaan', 'Memuat data profil...');
-        }
-    } catch (error) {
-        console.error("Error show company profile:", error);
-        showToast('error', 'Error', 'Gagal memuat profil perusahaan');
-    }
+function showCompanyProfile() {
+    // ⭐⭐ RESET FORM - KOSONGKAN SEMUA ⭐⭐
+    const form = document.getElementById('formCompanyProfile');
+    if (form) form.reset();
+    
+    // ⭐⭐ KOSONGKAN MANUAL SEMUA FIELD ⭐⭐
+    document.getElementById('companyName').value = '';
+    document.getElementById('companyTagline').value = '';
+    document.getElementById('companyAddress').value = '';
+    document.getElementById('companyPhone').value = '';
+    document.getElementById('companyEmail').value = '';
+    document.getElementById('companyWebsite').value = '';
+    document.getElementById('companyNPWP').value = '';
+    document.getElementById('companyDirector').value = '';
+    document.getElementById('companyType').value = 'isp';
+    document.getElementById('invoicePrefix').value = 'INV';
+    document.getElementById('invoiceFooter').value = '';
+    document.getElementById('invoiceTerms').value = '';
+    
+    // ⭐⭐ AMBIL DATA HANYA UNTUK COMPANY INI ⭐⭐
+    db.collection('company_settings').doc(globalCompanyId).get()
+        .then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                
+                // ⭐⭐ PASTIKAN INI DATA COMPANY YANG SEDANG LOGIN ⭐⭐
+                if (data.company_id !== globalCompanyId) {
+                    console.error("❌ DATA BUKAN UNTUK COMPANY INI!");
+                    return; // JANGAN ISI FORM DENGAN DATA COMPANY LAIN
+                }
+                
+                // ISI FORM DENGAN DATA COMPANY INI
+                if (data.companyName) document.getElementById('companyName').value = data.companyName;
+                if (data.companyTagline) document.getElementById('companyTagline').value = data.companyTagline;
+                if (data.companyAddress) document.getElementById('companyAddress').value = data.companyAddress;
+                if (data.companyPhone) document.getElementById('companyPhone').value = data.companyPhone;
+                if (data.companyEmail) document.getElementById('companyEmail').value = data.companyEmail;
+                if (data.companyWebsite) document.getElementById('companyWebsite').value = data.companyWebsite;
+                if (data.companyNPWP) document.getElementById('companyNPWP').value = data.companyNPWP;
+                if (data.companyDirector) document.getElementById('companyDirector').value = data.companyDirector;
+                if (data.companyType) document.getElementById('companyType').value = data.companyType;
+                if (data.invoicePrefix) document.getElementById('invoicePrefix').value = data.invoicePrefix;
+                if (data.invoiceFooter) document.getElementById('invoiceFooter').value = data.invoiceFooter;
+                if (data.invoiceTerms) document.getElementById('invoiceTerms').value = data.invoiceTerms;
+            }
+            // JIKA TIDAK ADA DATA: FORM TETAP KOSONG (CORRECT)
+        })
+        .catch(error => {
+            console.error("Error load company data:", error);
+        });
+    
+    // TAMPILKAN MODAL
+    document.getElementById('modalCompanyProfile').classList.remove('hidden');
+    document.getElementById('modalCompanyProfile').classList.add('show');
+    document.body.style.overflow = 'hidden';
 }
 
 // ============================================
@@ -14496,64 +15113,20 @@ async function initCompanyId() {
 }
 
 // ============================================
-// PANGGIL initCompanyId() SETELAH LOGIN
+// FIREBASE AUTH LISTENER - YANG RENDER UI
 // ============================================
-
-// Di dalam firebase.auth().onAuthStateChanged:
 firebase.auth().onAuthStateChanged(async function(user) {
+    console.log("🔥 onAuthStateChanged triggered, user:", user ? user.email : "null");
+    
     if (user) {
-        console.log("✅ Auth State Changed: User login", user.email);
+        currentUser = user;
+        console.log("✅ User authenticated, starting UI render...");
         
-        // AMBIL DATA USER DARI FIRESTORE UNTUK MENDAPAT ROLE YANG BENAR
-        try {
-            const userDocRef = db.collection('users').doc(user.uid);
-            const userDoc = await userDocRef.get();
-
-            let userRole = 'admin'; // Default
-
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                userRole = userData.role || 'admin';
-                console.log("✅ Role dari Database:", userRole);
-                
-                // Ambil Company ID juga
-                globalCompanyId = userData.company_id;
-            } else {
-                console.warn("⚠️ Data user Firestore kosong, gunakan default.");
-            }
-
-            // SIMPAN KE GLOBAL & LOCALSTORAGE
-            currentUser = {
-                uid: user.uid,
-                name: user.displayName || user.email.split('@')[0],
-                email: user.email,
-                role: userRole // Menggunakan role dari database
-            };
-
-            localStorage.setItem('xbill_user', JSON.stringify(currentUser));
-            localStorage.setItem('userRole', userRole);
-            localStorage.setItem('userName', currentUser.name);
-
-            // SHOW APP
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-
-            // Update UI Navbar
-            if (document.getElementById('userName')) document.getElementById('userName').textContent = currentUser.name;
-            if (document.getElementById('userRole')) document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Administrator' : currentUser.role.toUpperCase();
-
-            // Load Dashboard
-            await loadPage('dashboard');
-            
-        } catch (error) {
-            console.error("Error saat load user data onAuthChanged:", error);
-            // Fallback ke admin jika error
-            currentUser.role = 'admin';
-        }
+        // ⭐⭐ PANGGIL handleLoginSuccess() HANYA DI SINI ⭐⭐
+        await handleLoginSuccess();
         
     } else {
-        // User Logout
-        console.log("User logout");
+        console.log("❌ No user, show login page");
         document.getElementById('loginPage').classList.remove('hidden');
         document.getElementById('appContainer').classList.add('hidden');
     }
@@ -14851,9 +15424,20 @@ function bukaModalTambahKaryawan() {
 
 
 async function getSettingHTML() {
-    const currentRole = currentUser ? currentUser.role : 'admin';
+    let currentRole = 'karyawan';
+    
+    try {
+        if (currentUser && currentUser.uid) {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                currentRole = userDoc.data().role || 'karyawan';
+            }
+        }
+    } catch (error) {
+        console.error("Error ambil role:", error);
+    }
+    
     console.log("⚙️ Load Page: Setting. Role:", currentRole);
-
     // Template HTML Setting
     let settingsHTML = `
         <div class="page setting-page">
@@ -15087,125 +15671,214 @@ async function getSettingHTML() {
 // ============================================
 
 // 1. SIMPAN PROFIL PERUSAHAAN
+// ============================================
+// FUNGSI SAVE PROFIL PERUSAHAAN (PERBAIKAN)
+// ============================================
 async function saveCompanyProfile() {
     try {
-        const formData = {
-            companyName: document.getElementById('companyName').value,
-            companyTagline: document.getElementById('companyTagline').value,
-            companyAddress: document.getElementById('companyAddress').value,
-            companyPhone: document.getElementById('companyPhone').value,
-            companyEmail: document.getElementById('companyEmail').value,
-            companyWebsite: document.getElementById('companyWebsite').value,
-            companyNPWP: document.getElementById('companyNPWP').value,
-            companyDirector: document.getElementById('companyDirector').value,
-            companyType: document.getElementById('companyType').value,
-            invoicePrefix: document.getElementById('invoicePrefix').value,
-            invoiceFooter: document.getElementById('invoiceFooter').value,
-            invoiceTerms: document.getElementById('invoiceTerms').value,
-            updated_at: new Date().toISOString()
-        };
-
-        // Validasi
-        if (!formData.companyName || !formData.companyAddress || !formData.companyPhone) {
-            showToast('error', 'Validasi Gagal', 'Harap isi field yang wajib diisi (*)');
+        showLoading();
+        
+        // 1. VALIDASI INPUT
+        const companyName = document.getElementById('companyName').value.trim();
+        const companyAddress = document.getElementById('companyAddress').value.trim();
+        const companyPhone = document.getElementById('companyPhone').value.trim();
+        
+        if (!companyName || !companyAddress || !companyPhone) {
+            hideLoading();
+            showToast('error', 'Error', 'Nama, alamat, dan telepon wajib diisi');
             return;
         }
-
-        showLoading();
-
-        // Simpan ke Firebase
-        await db.collection('company_settings').doc('profile').set(formData, { merge: true });
-
-        // Update UI
-        const navEl = document.getElementById('companyNameNav');
-        if (navEl) {
-            navEl.innerText = formData.companyName; // ⭐ Ganti textContent dengan innerText
-            // Paksa re-render untuk mobile
-            navEl.style.display = 'none';
-            navEl.offsetHeight;
-            navEl.style.display = '';
+        
+        // 2. AMBIL COMPANY ID
+        const companyId = await ensureCompanyId();
+        if (!companyId) {
+            hideLoading();
+            showToast('error', 'Error', 'Company ID tidak valid');
+            return;
         }
         
-        const dropdownNameEl = document.getElementById('dropdownCompanyName');
-        if (dropdownNameEl) dropdownNameEl.textContent = formData.companyName;
+        // 3. DATA UNTUK DISIMPAN
+        const companyData = {
+            // DATA UTAMA
+            companyName: document.getElementById('companyName').value,
+            companyTagline: document.getElementById('companyTagline').value.trim(),
+            companyAddress: document.getElementById('companyAddress').value,
+            companyPhone: companyPhone,
+            companyEmail: document.getElementById('companyEmail').value.trim(),
+            companyWebsite: document.getElementById('companyWebsite').value.trim(),
+            companyNPWP: document.getElementById('companyNPWP').value.trim(),
+            companyDirector: document.getElementById('companyDirector').value.trim(),
+            companyType: document.getElementById('companyType').value,
+            
+            // INVOICE SETTINGS
+            invoicePrefix: document.getElementById('invoicePrefix').value.trim(),
+            invoiceFooter: document.getElementById('invoiceFooter').value.trim(),
+            invoiceTerms: document.getElementById('invoiceTerms').value.trim(),
+            
+            // METADATA
+            company_id: companyId,
+            updated_at: new Date().toISOString(),
+            updated_by: getUserLogName()
+        };
         
-        const dropdownTaglineEl = document.getElementById('dropdownCompanyTagline');
-        if (dropdownTaglineEl) dropdownTaglineEl.textContent = formData.companyTagline || 'Billing Management System';
+        // 4. SIMPAN KE LOCALSTORAGE (UNTUK CEPAT LOAD)
+localStorage.setItem(`companyProfile_${companyId}`, JSON.stringify(companyData));
 
+// 2. HAPUS key terpisah yang lama (jika ada)
+localStorage.removeItem('companyName');
+localStorage.removeItem('companyAddress');
+localStorage.removeItem(`company_profile_${companyId}`);
+
+
+        
+        // 5. SIMPAN KE DATABASE (Firestore) DENGAN COMPANY_ID FILTER
+        await db.collection('company_settings').doc(companyId).set(companyData, { merge: true });
+        
+        // 6. UPDATE UI NAVBAR
+        const navbarBrand = document.querySelector('.navbar-brand');
+        if (navbarBrand) {
+            navbarBrand.innerHTML = '';
+            
+            // Cek logo di settings
+            const savedSettings = localStorage.getItem(`companySettings_${companyId}`);
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    if (settings.companyLogo && settings.companyLogo.startsWith('data:image')) {
+                        const img = document.createElement('img');
+                        img.src = settings.companyLogo;
+                        img.style.height = '40px';
+                        img.style.maxHeight = '40px';
+                        img.style.objectFit = 'contain';
+                        navbarBrand.appendChild(img);
+                    }
+                } catch(e) {}
+            }
+            
+            // Tambah nama perusahaan
+            const span = document.createElement('span');
+            span.id = 'companyNameNav';
+            span.textContent = companyName;
+            span.style.marginLeft = navbarBrand.children.length > 0 ? '10px' : '0';
+            span.style.color = 'var(--primary)';
+            span.style.fontSize = '20px';
+            span.style.fontWeight = '700';
+            navbarBrand.appendChild(span);
+        }
+        
+        // 7. UPDATE DROPDOWN COMPANY NAME
+        const dropdownCompanyName = document.getElementById('dropdownCompanyName');
+        if (dropdownCompanyName) dropdownCompanyName.textContent = companyName;
+        
+        const dropdownCompanyTagline = document.getElementById('dropdownCompanyTagline');
+        if (dropdownCompanyTagline) dropdownCompanyTagline.textContent = companyData.companyTagline || 'Billing Management System';
+        
+        // 8. LOG AKTIVITAS DENGAN COMPANY_ID FILTER
+        await db.collection('aktivitas').add({
+            aktivitas: 'Update profil perusahaan',
+            user: getUserLogName(),
+            timestamp: new Date().toISOString(),
+            company_id: companyId
+        });
+        
         hideLoading();
-        showToast('success', 'Berhasil', 'Profil perusahaan berhasil disimpan');
         hideModal('modalCompanyProfile');
-
+        showToast('success', 'Berhasil', 'Profil perusahaan berhasil disimpan');
+        
     } catch (error) {
         hideLoading();
-        console.error("Error save company profile:", error);
+        console.error('Error saveCompanyProfile:', error);
         showToast('error', 'Gagal', 'Gagal menyimpan profil: ' + error.message);
     }
 }
 
-// 2. SIMPAN BRANDING & LOGO (PERBAIKAN)
+// ============================================
+// FUNGSI SAVE BRANDING (FIX FINAL - VALIDASI BENAR)
+// ============================================
 async function saveBranding() {
     try {
-        const formData = {
+        showLoading();
+        
+        // 1. AMBIL COMPANY ID
+        const companyId = await ensureCompanyId();
+        if (!companyId) {
+            hideLoading();
+            showToast('error', 'Error', 'Company ID tidak valid');
+            return;
+        }
+        
+        // 2. AMBIL LOGO DENGAN VALIDASI PROMISE YANG BENAR
+        const logoPreview = document.getElementById('logoPreview');
+        let companyLogo = '';
+        
+        if (logoPreview) {
+            const img = logoPreview.querySelector('img');
+            if (img && img.src) {
+                // ⭐⭐ VALIDASI DENGAN PROMISE YANG BENAR ⭐⭐
+                const isValid = await new Promise((resolve) => {
+                    const testImg = new Image();
+                    testImg.onload = () => {
+                        console.log('Logo valid:', testImg.width, 'x', testImg.height);
+                        resolve(true);
+                    };
+                    testImg.onerror = () => {
+                        console.log('Logo invalid');
+                        resolve(false);
+                    };
+                    testImg.src = img.src;
+                    // ⭐⭐ TIDAK ADA TIMEOUT - TUNGGU SAMPAI onload/onerror ⭐⭐
+                });
+                
+                if (!isValid) {
+                    hideLoading();
+                    showToast('error', 'Logo Invalid', 'File corrupt/format salah. Upload PNG/JPG.');
+                    return; // ⭐⭐ STOP JIKA INVALID ⭐⭐
+                }
+                
+                companyLogo = img.src;
+            }
+        }
+        
+        // 3. SIMPAN KE DATABASE (kode sisanya sama)
+        const brandingData = {
+            companyLogo: companyLogo,
             primaryColor: document.getElementById('primaryColor').value,
             secondaryColor: document.getElementById('secondaryColor').value,
             dashboardTheme: document.querySelector('input[name="dashboardTheme"]:checked').value,
             mainFont: document.getElementById('mainFont').value,
             fontSize: document.getElementById('fontSize').value,
+            company_id: companyId,
             updated_at: new Date().toISOString()
         };
-
-        // --- BAGIAN BARU: PROSES LOGO ---
-        const logoInput = document.getElementById('logoUpload');
         
-        if (logoInput.files && logoInput.files[0]) {
-            const file = logoInput.files[0];
-            
-            // Validasi tipe file
-            if (!file.type.match('image.*')) {
-                showToast('error', 'Format Salah', 'File harus berupa gambar (JPG/PNG).');
-                return;
-            }
-
-            // Validasi ukuran (Max 2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('error', 'File Terlalu Besar', 'Maksimal ukuran logo 2MB.');
-                return;
-            }
-
-            showLoading();
-            showToast('info', 'Sedang Memproses', 'Mengupload logo...');
-
-            // Ubah file gambar jadi string Base64 menggunakan FileReader
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                // Hasil konversi base64 ada di e.target.result
-                // Simpan ke formData
-                formData.logo = e.target.result; 
+        await db.collection('company_settings').doc(companyId).set(brandingData, { merge: true });
+        localStorage.setItem(`companySettings_${companyId}`, JSON.stringify(brandingData));
+        
+        // 4. UPDATE UI (kode sisanya sama)
+        if (companyLogo) {
+            const navbarBrand = document.querySelector('.navbar-brand');
+            if (navbarBrand) {
+                const oldImg = navbarBrand.querySelector('img');
+                if (oldImg) oldImg.remove();
+                const defaultIcon = navbarBrand.querySelector('i.fa-file-invoice-dollar');
+                if (defaultIcon) defaultIcon.remove();
                 
-                // Lanjutkan simpan ke Firebase setelah logo selesai diproses
-                simpanKeFirebase(formData);
-            };
-            
-            reader.onerror = function() {
-                hideLoading();
-                showToast('error', 'Gagal', 'Gagal membaca file gambar.');
-            };
-
-            // Mulai membaca file
-            reader.readAsDataURL(file);
-
-        } else {
-            // Jika tidak ada file logo baru dipilih, hanya simpan setting warna/font
-            showLoading();
-            simpanKeFirebase(formData);
+                const newImg = document.createElement('img');
+                newImg.src = companyLogo;
+                newImg.style.height = '40px';
+                newImg.style.objectFit = 'contain';
+                navbarBrand.prepend(newImg);
+            }
         }
-
+        
+        hideLoading();
+        hideModal('modalBranding');
+        showToast('success', 'Berhasil', 'Branding disimpan');
+        
     } catch (error) {
         hideLoading();
-        console.error("Error save branding:", error);
-        showToast('error', 'Gagal', 'Gagal menyimpan branding: ' + error.message);
+        console.error('Error:', error);
+        showToast('error', 'Gagal', error.message);
     }
 }
 
@@ -15266,17 +15939,40 @@ function applyBrandingStyles(settings) {
     }
 }
 
-// 3. PREVIEW LOGO
+// PERBAIKI FUNGSI previewLogo()
 function previewLogo(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         
         reader.onload = function(e) {
+            console.log('✅ FileReader onload success');
+            console.log('Data URL length:', e.target.result.length);
+            console.log('Data URL starts with:', e.target.result.substring(0, 50));
+            
             const preview = document.getElementById('logoPreview');
+            console.log('Logo preview element:', preview);
+            
             preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;border-radius:10px;object-fit:cover;">`;
+            
+            console.log('✅ Preview updated');
         };
         
+        reader.onerror = function(e) {
+            console.error('❌ FileReader error:', e);
+            console.error('Error code:', reader.error.code);
+        };
+        
+        reader.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percentLoaded = Math.round((e.loaded / e.total) * 100);
+                console.log(`📥 Loading: ${percentLoaded}%`);
+            }
+        };
+        
+        console.log('📁 Reading file:', input.files[0].name, input.files[0].size, 'bytes');
         reader.readAsDataURL(input.files[0]);
+    } else {
+        console.log('⚠️ No file selected');
     }
 }
 
@@ -15685,54 +16381,61 @@ async function saveMessageTemplates() {
 }
 
 // 12. LOAD DATA SETTING SAAT MODAL DIBUKA
-async function loadCompanyProfile() {
+function saveCompanyProfile() {
     try {
-        const doc = await db.collection('company_settings').doc('profile').get();
+        const companyName = document.getElementById('companyName').value;
+        const companyAddress = document.getElementById('companyAddress').value;
         
-        if (!doc.exists) return;
-        
-        const data = doc.data();
-        const companyName = data.companyName;
-        const companyAddress = data.companyAddress || 'Jl. Internet Cepat No. 1';
-        
-        if (!companyName) return;
-        
-        localStorage.setItem('companyName', companyName);
-        localStorage.setItem('companyAddress', companyAddress);
-        
-        // ⭐⭐ TAMBAHKAN INI: AMBIL LOGO DARI companies COLLECTION
-        try {
-            const companyDoc = await db.collection('companies').doc(globalCompanyId).get();
-            if (companyDoc.exists) {
-                const companyData = companyDoc.data();
-                if (companyData.logo_url) {
-                    localStorage.setItem('companyLogo', companyData.logo_url);
-                    updateLogoInUI(companyData.logo_url, companyName);
-                }
-            }
-        } catch (logoError) {
-            console.log("Logo tidak ditemukan:", logoError);
+        if (!companyName || !companyAddress) {
+            showToast('error', 'Error', 'Nama dan alamat wajib diisi');
+            return;
         }
-        
-        const navElement = document.getElementById('companyNameNav');
-        if (navElement) navElement.textContent = companyName;
-        
-        const dropdownElement = document.getElementById('dropdownCompanyName');
-        if (dropdownElement) dropdownElement.textContent = companyName;
-        
-        document.querySelectorAll('.company-name').forEach(element => {
-            element.textContent = companyName;
-        });
-        
-        document.querySelectorAll('[data-company-name]').forEach(element => {
-            element.textContent = companyName;
-        });
-        
-        window.namaPerusahaan = companyName;
-        window.alamatPerusahaan = companyAddress;
-        
+
+        // ⭐⭐ GUNAKAN DATA YANG DIAMBIL DARI FORM ⭐⭐
+        const profileData = {
+            companyName: companyName,
+            companyTagline: document.getElementById('companyTagline').value || '',
+            companyAddress: companyAddress,
+            companyPhone: document.getElementById('companyPhone').value || '',
+            companyEmail: document.getElementById('companyEmail').value || '',
+            companyWebsite: document.getElementById('companyWebsite').value || '',
+            companyNPWP: document.getElementById('companyNPWP').value || '',
+            companyDirector: document.getElementById('companyDirector').value || '',
+            companyType: document.getElementById('companyType').value || 'isp',
+            invoicePrefix: document.getElementById('invoicePrefix').value || 'INV',
+            invoiceFooter: document.getElementById('invoiceFooter').value || '',
+            invoiceTerms: document.getElementById('invoiceTerms').value || '',
+            company_id: globalCompanyId, // ⭐⭐ TANDAI MILIK COMPANY INI ⭐⭐
+            updated_at: new Date().toISOString()
+        };
+
+        // Simpan ke Firebase
+        db.collection('company_settings').doc(globalCompanyId).set(profileData)
+            .then(() => {
+                showToast('success', 'Berhasil', 'Profil perusahaan disimpan');
+                hideModal('modalCompanyProfile');
+                
+                // Update UI langsung
+                const navElement = document.getElementById('companyNameNav');
+                if (navElement) navElement.textContent = companyName;
+                
+                const dropdownElement = document.getElementById('dropdownCompanyName');
+                if (dropdownElement) dropdownElement.textContent = companyName;
+                
+                // Simpan ke localStorage dengan key spesifik
+                localStorage.setItem(`companyProfile_${globalCompanyId}`, JSON.stringify(profileData));
+                
+                // Load ulang profil
+                loadCompanyProfile();
+            })
+            .catch(error => {
+                console.error("Error save company profile:", error);
+                showToast('error', 'Gagal', 'Gagal menyimpan profil: ' + error.message);
+            });
+
     } catch (error) {
-        console.error(error);
+        console.error("Error save company profile:", error);
+        showToast('error', 'Error', 'Terjadi kesalahan: ' + error.message);
     }
 }
 
@@ -15854,42 +16557,105 @@ function updateLogoInUI(logoUrl, companyName) {
         document.querySelector('.navbar-brand'),
         document.querySelector('.app-logo'),
         document.querySelector('.logo-container')
-    ].filter(el => el !== null);
+    ];
     
-    // 2. JIKA TIDAK ADA ELEMEN LOGO, BUAT MANUAL DI SIDEBAR
-    if (logoElements.length === 0) {
-        console.log("⚠️ Elemen logo tidak ditemukan, coba cari sidebar...");
-        
-        // Cari sidebar header
-        const sidebarHeader = document.querySelector('.sidebar-header, .app-sidebar .header');
-        if (sidebarHeader) {
-            const logoDiv = document.createElement('div');
-            logoDiv.className = 'company-logo';
-            logoDiv.style.padding = '15px';
-            logoDiv.style.textAlign = 'center';
-            logoDiv.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px; max-width: 150px;">`;
-            sidebarHeader.prepend(logoDiv);
-            console.log("✅ Logo dibuat manual di sidebar");
-            return;
+    // 2. CEK JIKA ADA LOGO (DARI MANA SAJA)
+    let logoContainer = null;
+    for (let el of logoElements) {
+        if (el) {
+            logoContainer = el;
+            break;
         }
-        
-        // Cari navbar
+    }
+    
+    // 3. JIKA TIDAK ADA CONTAINER, BUAT DI NAVBAR
+    if (!logoContainer) {
         const navbar = document.querySelector('.navbar, .app-header');
         if (navbar) {
-            const logoDiv = document.createElement('div');
-            logoDiv.className = 'navbar-logo';
-            logoDiv.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="height: 30px;">`;
-            navbar.prepend(logoDiv);
-            console.log("✅ Logo dibuat manual di navbar");
+            logoContainer = document.createElement('div');
+            logoContainer.className = 'navbar-brand';
+            navbar.prepend(logoContainer);
+        } else {
+            console.warn("⚠️ Tidak ditemukan container untuk logo");
             return;
         }
     }
     
-    // 3. UPDATE ELEMEN LOGO YANG ADA
-    logoElements.forEach(element => {
-        element.innerHTML = `<img src="${logoUrl}" alt="${companyName}" style="max-height: 40px;">`;
-        console.log("✅ Logo diupdate di", element.className);
-    });
+    // 4. HAPUS LOGO LAMA & TEKS LAMA
+    const oldElements = logoContainer.querySelectorAll('i, img, span, .company-name');
+    oldElements.forEach(el => el.remove());
+    
+    // 5. JIKA ADA LOGO URL, BUAT ELEMENT IMG
+    if (logoUrl && logoUrl.startsWith('data:image')) {
+        const logoImg = document.createElement('img');
+        logoImg.src = logoUrl;
+        logoImg.alt = companyName || 'Company Logo';
+        logoImg.style.maxHeight = '40px';
+        logoImg.style.width = 'auto';
+        logoImg.style.objectFit = 'contain';
+        
+        // ⭐⭐ PERBAIKAN: TAMBAH CACHE BUSTING ⭐⭐
+        logoImg.src = logoUrl + "?t=" + Date.now();
+        
+        logoContainer.appendChild(logoImg);
+        console.log("✅ Logo image ditambahkan");
+    } else if (logoUrl) {
+        // Jika URL external
+        const logoImg = document.createElement('img');
+        logoImg.src = logoUrl;
+        logoImg.alt = companyName || 'Company Logo';
+        logoImg.style.maxHeight = '40px';
+        logoImg.style.width = 'auto';
+        logoImg.style.objectFit = 'contain';
+        logoContainer.appendChild(logoImg);
+        console.log("✅ Logo external ditambahkan");
+    }
+    
+    // ⭐⭐ PERBAIKAN PENTING: TAMBAH NAMA PERUSAHAAN ⭐⭐
+    if (companyName && companyName !== 'X-BILL') {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'company-name';
+        nameSpan.textContent = companyName;
+        nameSpan.style.color = 'var(--primary)';
+        nameSpan.style.fontSize = '20px';
+        nameSpan.style.fontWeight = '700';
+        nameSpan.style.marginLeft = '10px';
+        nameSpan.style.whiteSpace = 'nowrap';
+        nameSpan.style.overflow = 'hidden';
+        nameSpan.style.textOverflow = 'ellipsis';
+        nameSpan.style.maxWidth = '200px';
+        
+        logoContainer.appendChild(nameSpan);
+        console.log("✅ Nama perusahaan ditambahkan:", companyName);
+    }
+    
+    // 6. UPDATE JUGA DI DROPDOWN SETTING
+    const dropdownCompanyName = document.getElementById('dropdownCompanyName');
+    const dropdownCompanyTagline = document.getElementById('dropdownCompanyTagline');
+    const companyNameNav = document.getElementById('companyNameNav');
+    
+    if (dropdownCompanyName && companyName) {
+        dropdownCompanyName.textContent = companyName;
+    }
+    
+    if (dropdownCompanyTagline) {
+        // Ambil tagline dari localStorage jika ada
+        const savedProfile = localStorage.getItem(`companyProfile_${globalCompanyId}`);
+        if (savedProfile) {
+            try {
+                const profile = JSON.parse(savedProfile);
+                dropdownCompanyTagline.textContent = profile.companyTagline || 'Billing Management System';
+            } catch(e) {
+                dropdownCompanyTagline.textContent = 'Billing Management System';
+            }
+        }
+    }
+    
+    if (companyNameNav && companyName) {
+        companyNameNav.textContent = companyName;
+    }
+    
+    console.log("✅ Logo diupdate di navbar-brand");
 }
 // UPDATE SETIAP MENIT (60.000 ms)
 setInterval(updateNavbarTime, 60000);
@@ -15926,27 +16692,54 @@ async function loadBrandingSettings() {
 
 async function loadCompanyProfile() {
     try {
-        const companyRef = db.collection('companies').doc(globalCompanyId);
-        const companyDoc = await companyRef.get();
+        // AMBIL DATA DARI company_settings
+        const doc = await db.collection('company_settings').doc(globalCompanyId).get();
         
-        if (companyDoc.exists) {
-            const data = companyDoc.data();
-            
-            // ⭐⭐ UPDATE LOGO DI NAVBAR ⭐⭐
-            const logoElement = document.getElementById('companyLogo');
-            if (logoElement && data.logo_url) {
-                logoElement.src = data.logo_url;
-                logoElement.style.display = 'block';
-            }
-            
-            return data;
+        if (!doc.exists) return;
+        
+        const data = doc.data();
+        
+        // ⭐⭐ VALIDASI: Pastikan data untuk company ini ⭐⭐
+        if (data.company_id && data.company_id !== globalCompanyId) {
+            console.error("🚫 Data perusahaan bukan milik company ini!");
+            return;
         }
-        return null;
+        
+        // Update nama perusahaan
+        if (data.companyName) {
+            const navElement = document.getElementById('companyNameNav');
+            if (navElement) navElement.textContent = data.companyName;
+        }
+        
+        // ⭐⭐ UPDATE LOGO DI NAVBAR ⭐⭐
+        if (data.companyLogo) {
+            const navbarBrand = document.querySelector('.navbar-brand');
+            if (navbarBrand) {
+                // HAPUS SEMUA LOGO/ICON LAMA
+                const oldElements = navbarBrand.querySelectorAll('i, img');
+                oldElements.forEach(el => el.remove());
+                
+                // TAMBAH LOGO BARU
+                const logoImg = document.createElement('img');
+                logoImg.src = data.companyLogo;
+                logoImg.alt = 'Logo';
+                logoImg.style.width = '24px';
+                logoImg.style.height = '24px';
+                logoImg.style.marginRight = '10px';
+                logoImg.style.borderRadius = '4px';
+                
+                navbarBrand.prepend(logoImg);
+            }
+        }
+        
+       
+        
     } catch (error) {
         console.error("Error load company profile:", error);
-        return null;
     }
 }
+
+
 
 // ============================================
 // EVENT LISTENER UNTUK MODAL SETTING
@@ -16668,6 +17461,8 @@ if (ctx2) {
     });
 }};
         
+
+
 // ============================================
 // INITIALIZATION & EVENT HANDLERS (FIXED VERSION)
 // ============================================
@@ -17110,6 +17905,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+});
+
+let backPressCount = 0;
+let backPressTimer = null;
+
+function handleBackButton() {
+    backPressCount++;
+    
+    if (backPressCount === 1) {
+        // Kirim pesan toast ke Kodular
+        if (window.AppInventor) {
+            window.AppInventor.setWebViewString("TOAST: Tekan back lagi untuk keluar");
+        }
+        
+        // Reset counter setelah 2 detik
+        backPressTimer = setTimeout(() => {
+            backPressCount = 0;
+        }, 2000);
+        
+        // Navigasi back jika bukan di dashboard
+        if (window.currentPage && window.currentPage !== 'dashboard') {
+            window.history.back();
+        }
+        
+        return true;
+        
+    } else if (backPressCount === 2) {
+        // Exit app
+        clearTimeout(backPressTimer);
+        
+        if (window.AppInventor) {
+            window.AppInventor.setWebViewString("EXIT_APP");
+        }
+        
+        return true;
+    }
+    
+    return true;
+}
+
+// Auto refresh saat app aktif kembali
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        console.log("🔄 App aktif kembali");
+        // Refresh data
+        if (window.currentPage === 'dashboard' && typeof renderDashboard === 'function') {
+            setTimeout(renderDashboard, 500);
+        }
+    }
 });
     </script>
 </body>
