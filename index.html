@@ -1,3 +1,5 @@
+UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,6 +10,8 @@
     <!-- CSS & JS Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -298,20 +302,23 @@
             display: flex;
             flex-direction: column;
             background: #f5f7fb;
+            padding-top: 80px;
         }
         
         /* ========== TOP NAVBAR ========== */
         .top-navbar {
-            background: white;
-            padding: 15px 25px;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+    background: white;
+    padding: 15px 25px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;    /* ⬅️ GANTI INI */
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
         
         .navbar-brand {
             display: flex;
@@ -380,7 +387,7 @@
             justify-content: space-around;
             padding: 10px 0;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-            z-index: 100;
+            z-index: 1000;
         }
         
         .nav-item {
@@ -1098,19 +1105,7 @@
     transform: translateY(-2px);
 }
 
-/* Fix z-index untuk peta agar tidak menutupi navbar */
-.leaflet-pane {
-    z-index: 1 !important;
-}
 
-.leaflet-top,
-.leaflet-bottom {
-    z-index: 2 !important;
-}
-
-.leaflet-control {
-    z-index: 3 !important;
-}
 
 /* Pastikan modal tetap di atas peta */
 .modal-overlay {
@@ -1119,6 +1114,71 @@
 
 .modal {
     z-index: 1001 !important;
+}
+
+/* Animasi untuk modal kustom */
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Tambah di bagian style */
+.leaflet-marker-draggable {
+    cursor: move !important;
+}
+
+.custom-marker {
+    cursor: move !important;
+}
+
+.leaflet-dragging .custom-marker {
+    transform: scale(1.2);
+    transition: transform 0.2s;
+}
+
+.leaflet-pane {
+    z-index: 200 !important;
+}
+
+.leaflet-marker-pane,
+.leaflet-shadow-pane,
+.leaflet-popup-pane {
+    z-index: 300 !important;
+}
+
+
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.pelanggan-baru {
+    border-left: 5px solid red;
+    background: #ffecec;
 }
 
 
@@ -1956,7 +2016,9 @@ Terima kasih.
                 <!-- BARIS 4: ALAMAT (FULL WIDTH) -->
                 <div class="form-group">
                     <label class="form-label">Alamat *</label>
-                    <textarea class="form-control" id="pelangganAlamat" rows="2" placeholder="Alamat Lengkap" required></textarea>
+                    <textarea class="form-control" id="pelangganAlamat" rows="2" 
+                              placeholder="Alamat Lengkap" required
+                              style="text-transform: uppercase;"></textarea> <!-- ✅ TAMBAH INI -->
                 </div>
 
                 <!-- BARIS 5: KOORDINAT (FULL WIDTH + TOMBOL RAPI) -->
@@ -2710,6 +2772,30 @@ Terima kasih,
 </div>
 
 
+<!-- TAMBAHKAN DI BAWAH MODAL LAIN -->
+<!-- PASTIKAN ADA DI FILE ANDA -->
+<div class="modal-overlay hidden" id="modalTambahServerKecil">
+    <div class="modal" style="max-width: 400px; background: white; border-radius: 15px; padding: 0; overflow: hidden;">
+        <div class="modal-header" style="background: #4361ee; color: white; padding: 20px;">
+            <h3 class="modal-title" style="margin: 0;"><i class="fas fa-plus-circle"></i> Tambah Server</h3>
+            <button class="modal-close" onclick="hideModal('modalTambahServerKecil')" style="color: white; background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <div class="form-group">
+                <label>Nama Server *</label>
+                <input type="text" class="form-control" id="inputServerBaru" 
+                       placeholder="Contoh: Server Utama" style="padding: 12px;">
+            </div>
+        </div>
+        <div class="modal-footer" style="padding: 15px 20px; background: #f8f9fa; border-top: 1px solid #ddd;">
+            <button class="btn btn-outline" onclick="hideModal('modalTambahServerKecil')" style="padding: 10px 20px;">Batal</button>
+            <button class="btn btn-primary" onclick="simpanServerModal()" style="padding: 10px 20px;">
+                <i class="fas fa-save"></i> Simpan
+            </button>
+        </div>
+    </div>
+</div>
+
     
     <!-- ========== ALL JAVASCRIPT ========== -->
     <script>
@@ -2743,6 +2829,8 @@ Terima kasih,
         let tagihanData = [];
         let globalDataPelanggan = {};
         let globalCompanyId = null; // Variabel global untuk menyimpan ID Perusahaan saat ini
+        let mapAlreadyLoaded = false;
+
 
         
 
@@ -2766,6 +2854,20 @@ let readsCounter = {
     tagihan: 0,
     total: 0
 };
+
+// ============================================
+// VARIABEL GLOBAL UNTUK MAP (WAJIB)
+// ============================================
+window.pelangganMap = null;
+window.mapMarkers = [];
+window.isMapInitialized = false;
+
+
+
+
+// ⭐⭐ TAMBAHKAN INI UNTUK KONTROL REFRESH ⭐⭐
+window.mapLoading = false;
+window.lastMapLoadTime = 0;
 
 function logRead(action, count = 1) {
     // ⭐⭐ CEK JIKA FUNGSI SEDANG BERJALAN ⭐⭐
@@ -3337,9 +3439,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function changePage(pageType, pageNumber) {
     switch(pageType) {
         case 'pelanggan':
-            currentPagePelanggan = pageNumber;
-            loadPelangganData();
-            break;
+    currentPagePelanggan = pageNumber;
+    window.lastServerFilter = document.getElementById('filterServer')?.value || '';
+    loadPelangganData(window.lastServerFilter);
+    break;
+
+
         case 'tagihan':
             currentPageTagihan = pageNumber;
             loadTagihanData();
@@ -3542,7 +3647,8 @@ function confirmDialog(message, callback) {
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;">
+                    <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;margin-top: 80px;">
+                        <!-- JIKA MAP SUDAH ADA, PAKAI YANG SUDAH -->
                         <div id="pelangganMap" style="height: 100%; width: 100%;"></div>
                     </div>
                     <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -3565,6 +3671,61 @@ function confirmDialog(message, callback) {
         </div>
     `;
 }
+
+
+// ⭐⭐ FUNGSI BARU: Render map section terpisah ⭐⭐
+async function renderMapSection() {
+    const mapSection = document.getElementById('mapSection');
+    if (!mapSection) return;
+    
+    // Render HTML map (hanya sekali)
+    if (!mapSection.hasAttribute('data-rendered')) {
+        mapSection.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-map-marked-alt"></i> Peta Lokasi Pelanggan</h3>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline" onclick="refreshPelangganMap()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="focusOnAllMarkers()">
+                            <i class="fas fa-search"></i> Zoom All
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;margin-top: 80px;">
+                        <div id="pelangganMap" style="height: 100%; width: 100%;"></div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Total titik: <span id="mapMarkerCount">0</span> pelanggan
+                            </small>
+                        </div>
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-map-pin" style="color: #4361ee;"></i> Aktif
+                                <i class="fas fa-map-pin" style="color: #ff6b6b; margin-left: 10px;"></i> Tunggak
+                                <i class="fas fa-map-pin" style="color: #6c757d; margin-left: 10px;"></i> Nonaktif
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        mapSection.setAttribute('data-rendered', 'true');
+    }
+    
+    // Init map
+    setTimeout(() => {
+        initPelangganMap();
+        setTimeout(() => loadPelangganMap(), 500);
+    }, 300);
+}
+
+
 
 // TAMBAHKAN FUNGSI-FUNGSI UNTUK HANDLE KLIK CARD:
 
@@ -3846,19 +4007,20 @@ function toggleTunggakanFilter() {
             <div class="filters-card">
                 <div class="filter-row">
                     <div class="form-group">
-                        <label>Server</label>
-                        <select class="form-control" id="filterServer" onchange="saveFilterState(); loadPelangganData()">
-                            <option value="">Semua Server</option>
-                            <!-- OPSI SERVER AKAN DIISI OLEH JS -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Paket</label>
-                        <select class="form-control" id="filterPaket" onchange="saveFilterState(); loadPelangganData()">
-                            <option value="">Semua Paket</option>
-                            <!-- OPSI PAKET AKAN DIISI OLEH JS -->
-                        </select>
-                    </div>
+    <label>Server</label>
+    <div style="display: flex; gap: 5px; align-items: center;">
+        <select class="form-control" id="filterServer" 
+                 onchange="handleServerChange(this.value)" 
+        style="flex: 1;">
+    <option value="">Semua Server</option>
+    
+    <option value="+tambah" style="color: #4361ee; font-weight: bold; background: #f0f9ff;">
+        + Tambah Server Baru
+    </option>
+</select>
+    </div>
+</div>
+                    
                     <div class="form-group">
                         <label>Cari</label>
                         <input type="text" class="form-control" id="searchPelanggan" 
@@ -3890,6 +4052,7 @@ function toggleTunggakanFilter() {
                                     <th>Nama</th>
                                     <th>Telepon</th>
                                     <th>Alamat</th>
+                                    <th>Lokasi</th>
                                     <th>Paket</th>
                                     <th>Status</th>
                                     <th>Aksi</th>
@@ -5012,6 +5175,24 @@ if (item.list_tagihan.length > 0) {
     }
 }
 
+function bayarTagihanDariMap(pelangganId) {
+    console.log("🔥🔥🔥 FUNGSI DIPANGGIL! pelangganId:", pelangganId);
+    
+    // Coba buka modal langsung tanpa cari tagihan
+    const modal = document.getElementById('modalBayarTagihan');
+    if (modal) {
+        console.log("✅ Modal ditemukan, membuka...");
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        showToast('success', 'Test', 'Modal terbuka!');
+    } else {
+        console.error("❌ Modal tidak ditemukan!");
+    }
+}
+
+
+
 
 // ============================================
 // FUNGSI GANTI HALAMAN
@@ -5279,8 +5460,10 @@ function downloadTemplatePelanggan() {
     }
 }
 
+
 // IMPORT DATA DARI EXCEL/CSV
 // IMPORT DATA DARI EXCEL/CSV - VERSI PERBAIKAN (HANYA TAMBAH DATA BARU)
+// IMPORT DATA PELANGGAN (FIX: UPDATE JIKA SUDAH ADA, JANGAN HAPUS)
 async function importDataPelanggan() {
     const fileInput = document.getElementById('fileImportPelanggan');
     
@@ -5309,27 +5492,17 @@ async function importDataPelanggan() {
                     .where('company_id', '==', globalCompanyId)
                     .get();
                 
-                // Simpan Nomor HP yang sudah ada di database ke Set
-                const existingPhones = new Set();
+                // Simpan data pelanggan yang sudah ada ke Map agar pencarian cepat (O(1))
+                const existingMap = {}; // Struktur: { 'email': docId, 'nomor_telp': docId }
                 
                 existingSnapshot.forEach(doc => {
                     const t = doc.data();
-                    if (t.telepon) {
-                        const phoneClean = t.telepon.toString().trim();
-                        existingPhones.add(phoneClean);
-                    }
+                    if (t.email) existingMap[t.email.toLowerCase()] = doc.id;
+                    if (t.telepon) existingMap[t.telepon] = doc.id;
                 });
 
-                // 2. FUNGSI BANTUAN MENCARI KEY (CASE INSENSITIVE)
-                function findKeySmart(row, search) {
-                    return Object.keys(row).find(key => {
-                        const keyString = key.toString();
-                        const keyClean = keyString.trim().toLowerCase(); 
-                        return keyClean === search.toLowerCase();
-                    });
-                }
-
                 let insertCount = 0;
+                let updateCount = 0; // <--- VARIABEL BARU
                 let skipCount = 0;
                 const batch = db.batch();
                 const now = new Date().toISOString();
@@ -5338,7 +5511,15 @@ async function importDataPelanggan() {
                     try {
                         const row = jsonData[i];
                         
-                        // Gunakan findKeySmart untuk semua pencarian key
+                        // FUNGSI BANTUAN MENCARI KEY (CASE INSENSITIVE)
+                        function findKeySmart(row, search) {
+                            return Object.keys(row).find(key => {
+                                const keyString = key.toString();
+                                const keyClean = keyString.trim().toLowerCase(); 
+                                return keyClean === search.toLowerCase();
+                            });
+                        }
+
                         const keyNama = findKeySmart(row, 'nama');
                         const keyTelepon = findKeySmart(row, 'telepon');
 
@@ -5357,87 +5538,156 @@ async function importDataPelanggan() {
 
                         const namaClean = namaRaw.toString().trim();
                         const teleponClean = teleponRaw.toString().trim();
+                        const emailClean = row[findKeySmart(row, 'email')] ? row[findKeySmart(row, 'email')].toString().trim() : `${teleponClean}`;
 
-                        // LOGIKA UTAMA: Hanya tambah jika BELUM ADA di database
-                        if (existingPhones.has(teleponClean)) {
-                            // SUDAH ADA -> SKIP (tidak ditambahkan, tidak diupdate)
-                            console.log(`⏭️ SKIP (SUDAH ADA): ${namaClean} - ${teleponClean}`);
-                            skipCount++;
-                            continue;
-                        }
-
-                        // BELUM ADA -> TAMBAH BARU
-                        console.log(`✅ INSERT (BARU): ${namaClean} - ${teleponClean}`);
+                        // ==========================================
+                        // PERUBAHAN LOGIKA DISINI: CEK DAN UPDATE
+                        // ==========================================
                         
-                        // Buat data pelanggan baru
-                        const pelangganData = {
-                            nama: namaClean,
-                            telepon: teleponClean,
-                            email: row[findKeySmart(row, 'email')] ? row[findKeySmart(row, 'email')].toString().trim() : `${teleponClean}`,
-                            alamat: row[findKeySmart(row, 'alamat')] ? row[findKeySmart(row, 'alamat')].toString().trim() : '',
-                            paket: row[findKeySmart(row, 'paket')] ? row[findKeySmart(row, 'paket')].toString().trim() : 'Paket 10 Mbps',
-                            harga: parseInt(row[findKeySmart(row, 'harga')]) || 150000,
-                                                       tanggal_pasang: function() {
-                                // Cari semua variasi nama kolom untuk tanggal pasang
-                                const possibleKeys = [
-                                    'tanggal_pasang', 'tanggalpasang', 'tgl_pasang', 'tglpasang',
-                                    'tanggal pasang', 'tanggal', 'tgl', 'date', 'install_date',
-                                    'tanggal_install', 'tanggalinstall', 'tgl_install', 'tglinstall'
-                                ];
-                                
-                                for (let key of possibleKeys) {
-                                    const foundKey = findKeySmart(row, key);
-                                    if (foundKey && row[foundKey]) {
-                                        const dateValue = row[foundKey].toString().trim();
-                                        if (dateValue) {
-                                            // Coba parse berbagai format tanggal
-                                            let parsedDate = null;
-                                            
-                                            // Format YYYY-MM-DD
-                                            if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                                parsedDate = dateValue;
-                                            }
-                                            // Format DD/MM/YYYY
-                                            else if (dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                                                const parts = dateValue.split('/');
-                                                parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                                            }
-                                            // Format DD-MM-YYYY
-                                            else if (dateValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                                                const parts = dateValue.split('-');
-                                                parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                                            }
-                                            // Format timestamp atau lainnya
-                                            else {
-                                                const m = moment(dateValue);
-                                                if (m.isValid()) {
-                                                    parsedDate = m.format('YYYY-MM-DD');
+                        // Cek apakah Email atau Telepon sudah terdaftar
+                        let existingDocId = null;
+let isUpdate = false;
+
+if (existingMap[emailClean.toLowerCase()]) {
+    existingDocId = existingMap[emailClean.toLowerCase()];
+} else if (existingMap[teleponClean]) {
+    existingDocId = existingMap[teleponClean];
+}
+
+// 🔥 VALIDASI DOC MASIH ADA
+
+
+if (existingDocId) {
+    isUpdate = true;
+}
+
+
+
+                        if (isUpdate && existingDocId) {
+                            // >>>>> LOGIKA UPDATE (Jika data sudah ada) <<<<<
+                            console.log(`♻️ UPDATE (DATA SUDAH ADA): ${namaClean} - ${teleponClean}`);
+                            
+                            const pelangganData = {
+                                nama: namaClean,
+                                telepon: teleponClean,
+                                email: emailClean,
+                                alamat: row[findKeySmart(row, 'alamat')] ? row[findKeySmart(row, 'alamat')].toString().trim() : '',
+                                paket: row[findKeySmart(row, 'paket')] ? row[findKeySmart(row, 'paket')].toString().trim() : 'Paket 10 Mbps',
+                                harga: parseInt(row[findKeySmart(row, 'harga')]) || 150000,
+                                tanggal_pasang: function() {
+                                    const possibleKeys = ['tanggal_pasang', 'tanggalpasang', 'tgl_pasang', 'tglpasang', 'tanggal', 'tgl', 'date', 'install_date', 'tanggal_install', 'tanggalinstall', 'tgl_install', 'tglinstall'];
+                                    for (let key of possibleKeys) {
+                                        const foundKey = findKeySmart(row, key);
+                                        if (foundKey && row[foundKey]) {
+                                            const dateValue = row[foundKey].toString().trim();
+                                            if (dateValue) {
+                                                let parsedDate = null;
+                                                
+                                                // Coba format berbagai
+                                                if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                                    parsedDate = dateValue;
+                                                } else if (dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                                    const parts = dateValue.split('/');
+                                                    parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                                } else if (dateValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                                                    const parts = dateValue.split('-');
+                                                    parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                                } else {
+                                                    const m = moment(dateValue);
+                                                    if (m.isValid()) {
+                                                        parsedDate = m.format('YYYY-MM-DD');
+                                                    }
                                                 }
-                                            }
-                                            
-                                            if (parsedDate) {
-                                                return parsedDate;
+                                                
+                                                if (parsedDate) {
+                                                    return parsedDate;
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                
-                                // Default ke tanggal pasang yang ada di database lama jika memungkinkan,
-                                // atau tanggal yang logis (misal: 1 bulan lalu)
-                                return new Date().toISOString().split('T')[0];
-                            }(),
-                            status: row[findKeySmart(row, 'status')] ? row[findKeySmart(row, 'status')].toString().trim() : 'aktif',
-                            koordinat: row[findKeySmart(row, 'koordinat')] ? row[findKeySmart(row, 'koordinat')].toString().trim() : '',
-                            catatan: row[findKeySmart(row, 'catatan')] ? row[findKeySmart(row, 'catatan')].toString().trim() : '',
-                            company_id: globalCompanyId,
-                            created_at: now,
-                            updated_at: now
-                        };
+                                    
+                                    // Default ke tanggal pasang yang ada di database lama jika memungkinkan,
+                                    // atau tanggal yang logis (misal: 1 bulan lalu)
+                                    return new Date().toISOString().split('T')[0];
+                                }(),
+                                status: row[findKeySmart(row, 'status')] ? row[findKeySmart(row, 'status')].toString().trim() : 'aktif',
+                                koordinat: row[findKeySmart(row, 'koordinat')] ? row[findKeySmart(row, 'koordinat')].toString().trim() : '',
+                                catatan: row[findKeySmart(row, 'catatan')] ? row[findKeySmart(row, 'catatan')].toString().trim() : '',
+                                company_id: globalCompanyId,
+                                updated_at: now,
 
-                        const newId = `CUST_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}`;
-                        const docRef = db.collection('pelanggan').doc(newId);
-                        batch.set(docRef, pelangganData);
-                        insertCount++;
+                                __isNewImport: true,
+                                __importTime: Date.now()
+
+                                
+
+                            };
+
+                            // Lakukan UPDATE pada dokumen yang sudah ada
+                            batch.update(db.collection('pelanggan').doc(existingDocId), pelangganData);
+                            updateCount++; // <--- Tambah COUNTER UPDATE
+
+                        } else {
+                            // >>>>> LOGIKA INSERT (Jika data baru) <<<<<
+                            console.log(`✅ INSERT (BARU): ${namaClean} - ${teleponClean}`);
+                            
+                            // Buat data pelanggan baru
+                            const pelangganData = {
+                                nama: namaClean,
+                                telepon: teleponClean,
+                                email: emailClean,
+                                alamat: row[findKeySmart(row, 'alamat')] ? row[findKeySmart(row, 'alamat')].toString().trim() : '',
+                                paket: row[findKeySmart(row, 'paket')] ? row[findKeySmart(row, 'paket')].toString().trim() : 'Paket 10 Mbps',
+                                harga: parseInt(row[findKeySmart(row, 'harga')]) || 150000,
+                                tanggal_pasang: function() {
+                                    const possibleKeys = ['tanggal_pasang', 'tanggalpasang', 'tgl_pasang', 'tglpasang', 'tanggal', 'tgl', 'date', 'install_date', 'tanggal_install', 'tanggalinstall', 'tgl_install', 'tglinstall'];
+                                    for (let key of possibleKeys) {
+                                        const foundKey = findKeySmart(row, key);
+                                        if (foundKey && row[foundKey]) {
+                                            const dateValue = row[foundKey].toString().trim();
+                                            if (dateValue) {
+                                                let parsedDate = null;
+                                                
+                                                // Coba format berbagai
+                                                if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                                    parsedDate = dateValue;
+                                                } else if (dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                                                    const parts = dateValue.split('/');
+                                                    parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                                } else if (dateValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                                                    const parts = dateValue.split('-');
+                                                    parsedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                                                } else {
+                                                    const m = moment(dateValue);
+                                                    if (m.isValid()) {
+                                                        parsedDate = m.format('YYYY-MM-DD');
+                                                    }
+                                                }
+                                                
+                                                if (parsedDate) {
+                                                    return parsedDate;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Default ke tanggal pasang yang ada di database lama jika memungkinkan,
+                                    // atau tanggal yang logis (misal: 1 bulan lalu)
+                                    return new Date().toISOString().split('T')[0];
+                                }(),
+                                status: row[findKeySmart(row, 'status')] ? row[findKeySmart(row, 'status')].toString().trim() : 'aktif',
+                                koordinat: row[findKeySmart(row, 'koordinat')] ? row[findKeySmart(row, 'koordinat')].toString().trim() : '',
+                                catatan: row[findKeySmart(row, 'catatan')] ? row[findKeySmart(row, 'catatan')].toString().trim() : '',
+                                company_id: globalCompanyId,
+                                created_at: now,
+                                updated_at: now
+                            };
+
+                            const newId = `CUST_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}`;
+                            const docRef = db.collection('pelanggan').doc(newId);
+                            batch.set(docRef, pelangganData);
+                            insertCount++;
+                        }
 
                     } catch (errRow) {
                         console.error("Error baris " + i, errRow);
@@ -5445,13 +5695,13 @@ async function importDataPelanggan() {
                     }
                 }
 
-                // 3. EKSEKUSI SIMPAN KE DATABASE (hanya jika ada data baru)
-                if (insertCount > 0) {
+                // 3. EKSEKUSI SIMPAN KE DATABASE
+                if (insertCount > 0 || updateCount > 0) {
                     await batch.commit();
                     
-                    // LOG AKTIVITAS
+                    // Log aktivitas
                     await db.collection('aktivitas').add({
-                        aktivitas: `Import Pelanggan: ${insertCount} data baru ditambahkan`,
+                        aktivitas: `Import Pelanggan: ${insertCount} baru, ${updateCount} diperbarui.`,
                         user: getUserLogName(),
                         timestamp: now,
                         company_id: globalCompanyId
@@ -5460,19 +5710,20 @@ async function importDataPelanggan() {
 
                 hideLoading();
 
-                // 4. REFRESH TABEL AGAR DATA BARU MUNCUL
-                await loadPelangganData();
-
-                // 5. NOTIFIKASI
-                if (insertCount === 0) {
-                    showToast('info', 'Tidak Ada Data Baru', 
-                        `Semua data sudah ada di database (${skipCount} data dilewati)`);
+                // 4. NOTIFIKASI HASIL
+                if (insertCount === 0 && updateCount === 0) {
+                    showToast('info', 'Tidak Ada Perubahan', `Semua data (${skipCount} baris) sudah ada dan sama.`);
                 } else {
-                    showToast('success', 'Import Berhasil', 
-                        `${insertCount} data baru ditambahkan. ${skipCount} data dilewati (sudah ada).`);
+                    // Tampilkan pesan sukses yang jelas
+                    let pesan = `Import Selesai.<br>`;
+                    if (insertCount > 0) pesan += `<strong>${insertCount} data baru</strong> ditambahkan.<br>`;
+                    if (updateCount > 0) pesan += `<strong>${updateCount} data lama</strong> diperbarui.`;
+                    
+                    showToast('success', 'Berhasil', pesan);
                 }
                 
-                fileInput.value = '';
+                // 5. REFRESH TABEL AGAR DATA BARU MUNCUL
+                await loadPelangganData();
 
             } catch (parseError) {
                 hideLoading();
@@ -5536,7 +5787,7 @@ async function exportDataPelanggan() {
         // Header
         const headers = ['No'];
         if (includeIDValue) headers.push('ID');
-        headers.push('Nama', 'Telepon', 'Email', 'Alamat', 'Paket', 'Harga', 'Status', 'Tanggal Pasang');
+        headers.push('server', 'Nama', 'Telepon', 'Alamat', 'lokasi', 'Paket', 'Harga', 'Status', 'Tanggal Pasang');
         if (includeKoordinatValue) headers.push('Koordinat');
         if (includeCatatanValue) headers.push('Catatan');
         headers.push('Created At');
@@ -5551,10 +5802,11 @@ async function exportDataPelanggan() {
             
             if (includeIDValue) row.push(doc.id);
             row.push(
+                pelanggan.server || '',
                 pelanggan.nama || '',
                 pelanggan.telepon || '',
-                pelanggan.email || '',
                 pelanggan.alamat || '',
+                pelanggan.koordinat || '',
                 pelanggan.paket || '',
                 pelanggan.harga || 0,
                 pelanggan.status || '',
@@ -5641,7 +5893,7 @@ async function quickExportPelanggan(format = 'excel') {
         
         // Format data sederhana
         const data = [
-            ['No', 'Nama', 'Telepon', 'Email', 'Alamat', 'Paket', 'Harga', 'Status', 'Tanggal Pasang']
+            ['No', 'server', 'Nama', 'Telepon',  'Alamat', 'lokasi', 'Paket', 'Harga', 'Status', 'Tanggal Pasang']
         ];
         
         let index = 1;
@@ -5649,10 +5901,11 @@ async function quickExportPelanggan(format = 'excel') {
             const pelanggan = doc.data();
             data.push([
                 index++,
+                pelanggan.server || '',
                 pelanggan.nama || '',
                 pelanggan.telepon || '',
-                pelanggan.email || '',
                 pelanggan.alamat || '',
+                pelanggan.koordinat || '',
                 pelanggan.paket || '',
                 pelanggan.harga || 0,
                 pelanggan.status || '',
@@ -5854,6 +6107,10 @@ async function renderDashboard() {
         
     console.log("🔄 MEMULAI RENDER DASHBOARD dengan data TERISOLASI");
     
+       // ⭐⭐ TAMBAHKAN INI: SIMPAN STATE MAP SEBELUM RENDER ⭐⭐
+    const mapWasInitialized = window.pelangganMap && window.isMapInitialized;
+    const oldMap = window.pelangganMap;
+
     // 1. TAMPILKAN LOADING
     const loadingEl = document.getElementById('loadingOverlay');
     if (loadingEl) loadingEl.classList.remove('hidden');
@@ -6035,9 +6292,48 @@ async function renderDashboard() {
             console.log("📈 Rendering chart...");
             renderDashboardCharts(aktifCount, nonaktifCount, tunggakPelangganCount);
 
-            // 11. LOAD AKTIVITAS
+                        // 11. LOAD AKTIVITAS
             console.log("📋 Loading aktivitas...");
             await loadAktivitas();
+
+            
+
+       // ⭐⭐ CEK JIKA HALAMAN DASHBOARD PUNYA MAP ⭐⭐
+const mapContainer = document.getElementById('pelangganMap');
+if (mapContainer) {
+    // PASTIKAN CONTAINER TAMPIL
+    mapContainer.style.display = 'block';
+    mapContainer.style.height = '400px';
+    
+    // ⭐⭐ JIKA MAP SUDAH ADA SEBELUMNYA, RESTORE ⭐⭐
+    if (mapWasInitialized && oldMap) {
+        console.log("🔁 Restore map yang sudah ada...");
+        window.pelangganMap = oldMap;
+        window.isMapInitialized = true;
+        
+        // Refresh ukuran dan data
+        setTimeout(() => {
+            try {
+                window.pelangganMap.invalidateSize();
+                loadPelangganMap();
+            } catch (e) {
+                console.log("⚠️ Map corrupt, init ulang");
+                initPelangganMap();
+                setTimeout(() => loadPelangganMap(), 500);
+            }
+        }, 300);
+    } 
+    // ⭐⭐ JIKA MAP BELUM PERNAH ADA, BUAT BARU ⭐⭐
+    else {
+        console.log("🆕 Buat map baru...");
+        setTimeout(() => {
+            initPelangganMap();
+            setTimeout(() => loadPelangganMap(), 500);
+        }, 500);
+    }
+}
+
+
 
         } catch (error) {
             console.error("❌ ERROR FATAL dalam renderDashboard:", error);
@@ -6595,6 +6891,8 @@ function refreshDashboard() {
 
 // FUNGSI REFRESH DASHBOARD (untuk tombol refresh)
 function refreshDashboard() {
+    window.__mapLoaded = false;
+
     console.log("🔄 Manual refresh dashboard");
     renderDashboard();
     showToast('info', 'Memperbarui', 'Dashboard sedang diperbarui...');
@@ -6605,40 +6903,139 @@ function refreshDashboard() {
 // FUNGSI PETA PELANGGAN
 // ============================================
 
-let pelangganMap = null;
-let mapMarkers = [];
-
-// Fungsi inisialisasi peta
 function initPelangganMap() {
-    const mapElement = document.getElementById('pelangganMap');
-    if (!mapElement) {
-        console.log("Element peta belum tersedia");
-        return;
+    console.log("🗺️ Cek inisialisasi peta...");
+    
+    // 1. CEK JIKA SEDANG LOADING (Mencegah double load)
+    if (window.mapLoading) {
+        console.log("⏳ Peta sedang loading, skip init");
+        return null;
     }
-    
-    // Hapus peta lama jika ada
-    if (pelangganMap) {
-        pelangganMap.remove();
-        mapMarkers = [];
+
+    // 2. CEK JIKA CONTAINER ADA
+    const mapContainer = document.getElementById('pelangganMap');
+    if (!mapContainer) {
+        console.warn("⚠️ Container #pelangganMap tidak ditemukan");
+        return null;
     }
+
+    // 3. PASTIKAN TAMPILAN CONTAINER (Fix Masalah Peta Putih/Hilang)
+    mapContainer.style.display = 'block';
+    mapContainer.style.visibility = 'visible';
+    mapContainer.style.height = '400px';
+    mapContainer.style.width = '100%';
+
+    console.log("🔄 Memulai inisialisasi peta...");
+    window.mapLoading = true;
     
-    // Buat peta baru (pusat Indonesia)
-    pelangganMap = L.map('pelangganMap').setView([-2.5489, 118.0149], 5);
-    
-    // Tambahkan tile layer (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-    }).addTo(pelangganMap);
-    
-    console.log("✅ Peta diinisialisasi");
+    try {
+        
+        
+
+        // 5. BUAT PETA BARU
+        if (!window.pelangganMap) {
+    window.pelangganMap = L.map('pelangganMap').setView([-2.5489, 118.0149], 5);
+} else {
+    console.warn('⛔ MAP SUDAH ADA, TIDAK BUAT ULANG');
 }
+
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(window.pelangganMap);
+        
+        window.isMapInitialized = true;
+        console.log("✅ Peta berhasil diinisialisasi");
+
+        // 6. INVALIDATE SIZE (Agar Peta Menyesuaikan Diri dengan Container)
+        setTimeout(() => {
+            if (window.pelangganMap) {
+                window.pelangganMap.invalidateSize();
+            }
+        }, 200);
+
+    } catch (error) {
+        console.error("❌ Gagal inisialisasi peta:", error);
+        window.pelangganMap = null;
+        window.isMapInitialized = false;
+    }
+    
+    window.mapLoading = false;
+    return window.pelangganMap;
+}
+
+
+
+function bukaDetailTagihanPelanggan(pelangganId) {
+    console.log("📍 Klik dari map - pelangganId:", pelangganId);
+    
+    // 1. Tampilkan loading
+    showToast('info', 'Loading', 'Membuka data tagihan...');
+    
+    // 2. Navigasi ke halaman tagihan
+    loadPage('tagihan');
+    
+    // 3. Tunggu halaman load, lalu filter berdasarkan pelanggan
+    setTimeout(() => {
+        // Ambil nama pelanggan untuk filter
+        db.collection('pelanggan').doc(pelangganId).get().then(pelangganDoc => {
+            if (pelangganDoc.exists) {
+                const namaPelanggan = pelangganDoc.data().nama;
+                
+                // Cari input search
+                const searchInput = document.getElementById('searchTagihan');
+                if (searchInput) {
+                    // Isi dengan nama pelanggan
+                    searchInput.value = namaPelanggan;
+                    
+                    // Trigger search (gunakan fungsi yang sudah ada)
+                    if (typeof filterTagihanSearch === 'function') {
+                        filterTagihanSearch(namaPelanggan);
+                        showToast('success', 'Berhasil', `Menampilkan tagihan ${namaPelanggan}`);
+                    }
+                }
+            }
+        });
+    }, 2000); // Tunggu 2 detik biar halaman selesai load
+}
+
+
+
+
 
 // Fungsi memuat data pelanggan ke peta
 async function loadPelangganMap() {
-    if (!pelangganMap) {
-        initPelangganMap();
+
+    if (window.__mapLoaded === true) {
+    console.warn('⛔ MAP SUDAH LOADED, SKIP');
+    return;
+}
+window.__mapLoaded = false;
+
+
+
+    console.log("📍 Memuat data pelanggan ke peta...");
+    
+    // ⭐⭐ TAMBAHKAN 5 BARIS INI DI AWAL FUNGSI ⭐⭐
+    const mapContainer = document.getElementById('pelangganMap');
+    if (!mapContainer) {
+        console.error("❌ Element #pelangganMap tidak ditemukan");
+        return;
     }
+    
+    // TAMPILKAN CONTAINER JIKA TERHIDDEN
+    if (mapContainer.style.display === 'none') {
+        mapContainer.style.display = 'block';
+    }
+    
+    if (typeof map !== 'undefined' && map !== null) {
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 200);
+}
+
+
     
     try {
         // Hapus marker lama
@@ -6687,35 +7084,165 @@ async function loadPelangganMap() {
                             iconAnchor: [15, 15]
                         });
                         
-                        // Buat marker
-                        const marker = L.marker([coords[0], coords[1]], { icon: customIcon })
-                            .addTo(pelangganMap)
-                            .bindPopup(`
-                                <div style="min-width: 200px;">
-                                    <h4 style="margin: 0 0 5px 0;">${pelanggan.nama || 'Tanpa Nama'}</h4>
-                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
-                                        <i class="fas fa-phone"></i> ${pelanggan.telepon || '-'}
-                                    </p>
-                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
-                                        <i class="fas fa-wifi"></i> ${pelanggan.paket || '-'}
-                                    </p>
-                                    <p style="margin: 0 0 3px 0; font-size: 12px;">
-                                        <i class="fas fa-tag"></i> ${formatRupiah(pelanggan.harga || 0)}
-                                    </p>
-                                    <p style="margin: 0; font-size: 11px;">
-                                        <span class="badge ${pelanggan.status === 'aktif' ? 'badge-success' : pelanggan.status === 'tunggak' ? 'badge-danger' : 'badge-secondary'}">
-                                            ${pelanggan.status || 'nonaktif'}
-                                        </span>
-                                    </p>
-                                    <hr style="margin: 8px 0;">
-                                    <p style="font-size: 11px; color: #666; margin: 0;">
-                                        <i class="fas fa-map-marker-alt"></i> ${pelanggan.alamat || 'Alamat tidak tersedia'}
-                                    </p>
-                                </div>
-                            `);
-                        
-                        mapMarkers.push(marker);
-                        markerCount++;
+                        // 1. BUAT MARKER
+const marker = L.marker([coords[0], coords[1]], {
+    icon: customIcon,
+    draggable: true
+}).addTo(window.pelangganMap || null);
+
+// 2. SIMPAN DATA
+marker._pelangganId = doc.id;
+marker._originalLatLng = L.latLng(coords[0], coords[1]); // Simpan sebagai LatLng object
+
+// 3. POPUP INFO BIASA
+// GANTI ID MENJADI CLASS
+marker.bindPopup(`
+    <div style="min-width: 250px;">
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">${pelanggan.nama}</h4>
+        <p style="margin: 0 0 5px 0;"><i class="fas fa-map-marker-alt"></i> ${pelanggan.alamat || '-'}</p>
+        <p style="margin: 0 0 5px 0;"><i class="fas fa-phone"></i> ${pelanggan.telepon || '-'}</p>
+        <p style="margin: 0 0 5px 0;">
+            <i class="fas fa-wifi"></i> ${pelanggan.paket || '-'} 
+            <span style="float: right; background: ${pelanggan.status === 'aktif' ? '#28a745' : pelanggan.status === 'tunggak' ? '#dc3545' : '#6c757d'}; 
+            color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">
+                ${pelanggan.status || 'nonaktif'}
+            </span>
+        </p>
+        <hr style="margin: 10px 0;">
+        <button class="btn-bayar-tagihan"
+        onclick="bukaDetailTagihanPelanggan('${doc.id}')"
+        style="width:100%;padding:8px;background:#4361ee;color:#fff;border:none;border-radius:4px;">
+    <i class="fas fa-money-bill-wave"></i> Bayar Tagihan
+</button>
+
+
+    </div>
+`);
+
+// EVENT HANDLER YANG BENAR
+marker.on('popupopen', function() {
+    const currentMarker = this;
+    
+    setTimeout(() => {
+        const btn = document.querySelector('.btn-bayar-tagihan');
+        if (btn) {
+            // HAPUS EVENT LAMA
+            btn.removeEventListener('click', handleBayarClick);
+            
+            // TAMBAH EVENT BARU
+            btn.addEventListener('click', async function() {
+                const pelangganId = this.getAttribute('data-pelanggan-id');
+                const namaPelanggan = this.getAttribute('data-nama');
+                
+                // CARI TAGIHAN BELUM LUNAS
+                const tagihanSnapshot = await db.collection('tagihan')
+                    .where('pelanggan_id', '==', pelangganId)
+                    .where('company_id', '==', globalCompanyId)
+                    .where('status', 'in', ['belum', 'telat'])
+                    .limit(1)
+                    .get();
+                
+                if (!tagihanSnapshot.empty) {
+                    const doc = tagihanSnapshot.docs[0];
+                    const tagihan = doc.data();
+                    
+                    // ISI MODAL BAYAR
+                    document.getElementById('tagihanId').value = doc.id;
+                    document.getElementById('bayarInvoice').value = tagihan.invoice_number || `INV-${Date.now()}`;
+                    document.getElementById('bayarPelanggan').value = namaPelanggan;
+                    document.getElementById('bayarJumlah').value = formatRupiah(tagihan.jumlah);
+                    document.getElementById('totalBayar').value = tagihan.jumlah;
+                    document.getElementById('metodeBayar').value = 'tunai';
+                    document.getElementById('tanggalBayar').value = new Date().toISOString().split('T')[0];
+                    
+                    // BUKA MODAL
+                    document.getElementById('modalBayarTagihan').classList.remove('hidden');
+                    document.getElementById('modalBayarTagihan').classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                    
+                    // TUTUP POPUP
+                    currentMarker.closePopup();
+                } else {
+                   
+                }
+            });
+        }
+    }, 100);
+});
+
+// 4. EVENT DRAGEND YANG BENAR
+marker.on('dragend', function(e) {
+    const marker = e.target;
+    const newPos = marker.getLatLng();
+    
+    // Buat popup konfirmasi dengan event handler yang benar
+    const popupContent = L.DomUtil.create('div', 'confirm-popup');
+    popupContent.innerHTML = `
+        <div style="padding: 10px;">
+            <h4 style="margin: 0 0 10px 0;">Pindah Lokasi?</h4>
+            <p>Pindah lokasi ${pelanggan.nama}?</p>
+            <p><small>Koordinat baru:<br>${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}</small></p>
+            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                <button class="btn-cancel" style="flex:1; padding: 8px; background: #dc3545; color: white; border: none; border-radius: 4px;">
+                    Batal
+                </button>
+                <button class="btn-save" style="flex:1; padding: 8px; background: #28a745; color: white; border: none; border-radius: 4px;">
+                    Simpan
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Event listener untuk tombol - CARA YANG BENAR
+    L.DomEvent.on(popupContent.querySelector('.btn-cancel'), 'click', function() {
+        // Kembalikan ke posisi awal
+        marker.setLatLng(marker._originalLatLng);
+        window.pelangganMap.closePopup();
+
+    });
+    
+    // Di dalam event dragend marker, bagian btn-save:
+L.DomEvent.on(popupContent.querySelector('.btn-save'), 'click', async function() {
+    try {
+        // 1. Update di database
+        await db.collection('pelanggan').doc(marker._pelangganId).update({
+            koordinat: `${newPos.lat}, ${newPos.lng}`,
+            updated_at: new Date().toISOString()
+        });
+        
+        // 2. Update posisi marker
+        marker._originalLatLng = newPos;
+        
+        // 3. Tutup popup
+        window.pelangganMap.closePopup();
+
+        
+        showToast('success', 'Berhasil', 'Koordinat diperbarui');
+        
+        // ⭐⭐ LANGSUNG UPDATE DI HALAMAN PELANGGAN (jika sedang aktif) ⭐⭐
+        if (currentPage === 'pelanggan') {
+            // Panggil fungsi updateRowTable (akan dibuat di STEP 2)
+            if (typeof updatePelangganTableRow === 'function') {
+                updatePelangganTableRow(marker._pelangganId, `${newPos.lat}, ${newPos.lng}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error("Error:", error);
+        showToast('error', 'Gagal', error.message);
+    }
+});
+    
+    // Buka popup
+    L.popup()
+        .setLatLng(newPos)
+        .setContent(popupContent)
+        .openOn(window.pelangganMap);
+
+});
+
+// 5. SIMPAN KE ARRAY
+mapMarkers.push(marker);
                     }
                 } catch (error) {
                     console.warn(`Koordinat invalid: ${pelanggan.koordinat}`, error);
@@ -6732,20 +7259,177 @@ async function loadPelangganMap() {
         // Auto zoom ke semua marker jika ada
         if (mapMarkers.length > 0) {
             const group = new L.featureGroup(mapMarkers);
-            pelangganMap.fitBounds(group.getBounds().pad(0.1));
+            window.pelangganMap.fitBounds(group.getBounds().pad(0.1));
+
         }
         
         console.log(`✅ ${markerCount} marker ditambahkan ke peta`);
+
+        
         
     } catch (error) {
         console.error("❌ Error memuat peta:", error);
     }
 }
 
+function updatePelangganTableRow(pelangganId, newKoordinat) {
+    console.log("🔄 updatePelangganTableRow dipanggil:", pelangganId, newKoordinat);
+    
+    // 1. Cari tabel pelanggan
+    const table = document.getElementById('pelangganTable');
+    if (!table) {
+        console.warn("⚠️ Tabel pelanggan tidak ditemukan");
+        return;
+    }
+    
+    // 2. Cari semua baris
+    const rows = table.getElementsByTagName('tr');
+    let found = false;
+    
+    for (let row of rows) {
+        // Cek jika row punya data-id sama dengan pelangganId
+        const rowId = row.getAttribute('data-id');
+        if (rowId === pelangganId) {
+            console.log("✅ Found row with data-id:", pelangganId);
+            
+            // 3. Update kolom koordinat (kolom ke-6, index 5)
+            const cells = row.getElementsByTagName('td');
+            if (cells.length > 5) {
+                // Format tampilan koordinat
+                const koordinatDisplay = `
+                    <small class="text-muted">${newKoordinat}</small><br>
+                    <button class="btn btn-sm btn-outline btn-sm" 
+                            onclick="openGoogleMaps('${newKoordinat}')" 
+                            title="Buka di Google Maps">
+                        <i class="fas fa-external-link-alt"></i> Maps
+                    </button>
+                `;
+                cells[5].innerHTML = koordinatDisplay;
+                console.log("✅ Kolom koordinat di-update");
+            }
+            
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found) {
+        console.warn("⚠️ Row dengan data-id", pelangganId, "tidak ditemukan di tabel");
+    }
+}
+
+// Fungsi batalkan perpindahan
+function cancelMoveMarker(pelangganId, originalLat, originalLng) {
+    // Cari marker berdasarkan pelangganId
+    const marker = mapMarkers.find(m => m._pelangganId === pelangganId);
+    if (marker) {
+        // Kembalikan ke posisi semula
+        marker.setLatLng([originalLat, originalLng]);
+        // Tutup popup konfirmasi
+        pelangganMap.closePopup();
+        showToast('info', 'Dibatalkan', 'Marker dikembalikan ke posisi semula');
+    }
+}
+
+// Fungsi simpan lokasi baru
+async function saveNewLocation(pelangganId, newLat, newLng) {
+    try {
+        // Update di database
+        await db.collection('pelanggan').doc(pelangganId).update({
+            koordinat: `${newLat}, ${newLng}`,
+            updated_at: new Date().toISOString()
+        });
+        
+        // Tutup popup
+        pelangganMap.closePopup();
+        showToast('success', 'Berhasil', 'Lokasi pelanggan diperbarui');
+        
+        // Log aktivitas
+        await db.collection('aktivitas').add({
+            aktivitas: `Update koordinat pelanggan ${pelangganId}`,
+            user: getUserLogName(),
+            timestamp: new Date().toISOString(),
+            company_id: globalCompanyId
+        });
+        
+    } catch (error) {
+        console.error("Error save location:", error);
+        showToast('error', 'Gagal', 'Gagal menyimpan lokasi baru');
+    }
+}
+
+// Fungsi tutup modal drag
+function closeDragModal(modalId, marker, oldCoords) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+    // Kembalikan marker ke posisi lama
+    if (marker && oldCoords) {
+        marker.setLatLng(oldCoords);
+    }
+}
+
+// Fungsi simpan koordinat
+async function savePelangganKoordinat(pelangganId, newKoordinat, pelangganNama, modalId) {
+    const modal = document.getElementById(modalId);
+    const btn = modal.querySelector('.btn-success');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+    
+    try {
+        await db.collection('pelanggan').doc(pelangganId).update({
+            koordinat: newKoordinat,
+            updated_at: new Date().toISOString()
+        });
+        
+        modal.remove();
+        document.body.style.overflow = 'auto';
+        
+        showToast('success', 'Berhasil', `Lokasi ${pelangganNama} diperbarui`);
+        
+        // Log aktivitas
+        await db.collection('aktivitas').add({
+            aktivitas: `Update lokasi pelanggan: ${pelangganNama} → ${newKoordinat}`,
+            user: 'dovand@gmail.com',
+            timestamp: new Date().toISOString(),
+            company_id: globalCompanyId
+        });
+        
+    } catch (error) {
+        console.error('❌ Gagal update:', error);
+        showToast('error', 'Gagal', 'Tidak bisa menyimpan');
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 // Fungsi refresh peta
 function refreshPelangganMap() {
-    loadPelangganMap();
-    showToast('info', 'Peta', 'Memperbarui peta...');
+    console.log("🔄 Refresh map manual...");
+    
+    // ⭐⭐ PASTIKAN CONTAINER MAP VISIBLE ⭐⭐
+    const mapContainer = document.getElementById('pelangganMap');
+    if (mapContainer) {
+        mapContainer.style.display = 'block';
+        mapContainer.style.visibility = 'visible';
+        mapContainer.style.opacity = '1';
+    }
+    
+    // ⭐⭐ FORCE RE-INIT MAP JIKA TIDAK ADA ⭐⭐
+    if (!window.pelangganMap) {
+        window.isMapInitialized = false;
+        window.mapMarkers = [];
+    }
+    
+    // ⭐⭐ LOAD MAP LAGI ⭐⭐
+    setTimeout(() => {
+        loadPelangganMap();
+    }, 300);
 }
 
 // Fungsi zoom ke semua marker
@@ -6753,7 +7437,6 @@ function focusOnAllMarkers() {
     if (mapMarkers.length > 0) {
         const group = new L.featureGroup(mapMarkers);
         pelangganMap.fitBounds(group.getBounds().pad(0.05));
-        showToast('success', 'Peta', 'Zoom ke semua lokasi');
     } else {
         showToast('warning', 'Peta', 'Tidak ada marker untuk di-zoom');
     }
@@ -7136,10 +7819,12 @@ function showModal(modalId) {
             }
         }
         
-       async function loadPelangganData() {
-        logRead('pelanggan');
-    
-    // ⭐⭐ GUARD: Cegah double execution (TAMBAHAN BARU) ⭐⭐
+   async function loadPelangganData(serverFilter = '') {
+    logRead('pelanggan');
+    console.log('🚀 loadPelangganData DIPANGGIL dengan serverFilter:', serverFilter);
+    console.log('📍 1. Masuk fungsi loadPelangganData');
+
+    // ⭐⭐ GUARD: Cegah double execution
     if (window._loadingPelanggan) {
         console.log('⏸️ loadPelangganData sedang berjalan, skip...');
         return;
@@ -7149,15 +7834,16 @@ function showModal(modalId) {
     const table = document.getElementById('pelangganTable');
     if (!table) {
         console.warn("⚠️ Tabel pelanggan tidak ditemukan!");
-                window._loadingPelanggan = false; // ⭐ RESET GUARD
-
+        window._loadingPelanggan = false;
         return;
     }
 
     // Tampilkan Loading
-    table.innerHTML = `<tr><td colspan="7" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data...</td></tr>`;
+    table.innerHTML = `<tr><td colspan="9" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data...</td></tr>`;
 
     try {
+        console.log('📍 2. Masuk try block'); // ⭐ TAMBAHAN INI
+
         // 1. AMBIL DATA DARI FIREBASE
         const snapshot = await db.collection('pelanggan')
             .where('company_id', '==', globalCompanyId)
@@ -7166,7 +7852,7 @@ function showModal(modalId) {
         if (snapshot.empty) {
             table.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 40px;">
+                    <td colspan="9" class="text-center" style="padding: 40px;">
                         <i class="fas fa-inbox" style="font-size: 48px; color: #e9ecef;"></i>
                         <h4 style="margin-top:15px; color: var(--gray);">Database Kosong</h4>
                         <p>Belum ada data pelanggan untuk perusahaan Anda.</p>
@@ -7175,34 +7861,40 @@ function showModal(modalId) {
                         </button>
                     </td>
                 </tr>`;
-            pelangganData = []; 
-            return;
+            window.pelangganData = pelangganData;
+window.filteredPelangganData = [...pelangganData]; // 🔥 WAJIB
+renderPelangganTable(window.filteredPelangganData);
+
+            
         }
         
         // 2. SIMPAN DATA KE ARRAY GLOBAL (PENTING!)
-        pelangganData = snapshot.docs.map(doc => ({
+        window.pelangganData = snapshot.docs.map(doc => ({
             id: doc.id,
+            server: doc.data().server || '',
             nama: doc.data().nama || 'Tidak ada nama',
             telepon: doc.data().telepon || '-',
             alamat: doc.data().alamat || '-',
+            lokasi: doc.data().lokasi || '-',
             paket: doc.data().paket || '-',
             harga: doc.data().harga || 0,
             status: doc.data().status || 'nonaktif',
-            email: doc.data().email || ``,
+            email: doc.data().email || '',
             tanggal_pasang: doc.data().tanggal_pasang || '',
             koordinat: doc.data().koordinat || '',
             catatan: doc.data().catatan || '',
             company_id: doc.data().company_id || 'TIDAK ADA'
         }));
         
+        console.log(`📊 Data pelanggan diambil: ${window.pelangganData.length} record.`);
+
         // 3. AMBIL NILAI FILTER DARI UI
-        // Saat pertama load, value akan kosong, sehingga SEMUA data muncul otomatis
         const statusFilter = document.getElementById('filterStatus')?.value || '';
         const paketFilter = document.getElementById('filterPaket')?.value || '';
         const searchFilter = document.getElementById('searchPelanggan')?.value || '';
 
-        let filteredData = [...pelangganData];
-        
+        let filteredData = [...(window.pelangganData || [])];
+
         // LOGIKA PENCARIAN & FILTER
         if (statusFilter) {
             filteredData = filteredData.filter(p => p.status === statusFilter);
@@ -7221,104 +7913,256 @@ function showModal(modalId) {
                 (p.email && p.email.toLowerCase().includes(keyword))
             );
         }
-        
+
+        // FILTER BY SERVER (BARU!)
+        const uiServerFilter = document.getElementById('filterServer')?.value || '';
+
+        const activeServerFilter = serverFilter && serverFilter.trim() !== '' 
+            ? serverFilter
+            : uiServerFilter;
+
+        if (activeServerFilter && activeServerFilter.trim() !== '') {
+            console.log('🔍 [INTERNAL] Filter server aktif:', activeServerFilter);
+            console.log('   Data sebelum filter:', filteredData.length);
+            
+            filteredData = filteredData.filter(p => 
+                p.server && p.server === activeServerFilter
+            );
+            
+            console.log('   Data setelah filter:', filteredData.length);
+        }
+
+        // ⭐⭐ PERBAIKAN KRUSIAL: UPDATE GLOBAL VARIABLE AGAR TIDAK HILANG ⭐⭐
+        window.filteredPelangganData = filteredData; 
+
         // 5. PAGINATION
         const itemsPerPage = 10;
-        const totalItems = filteredData.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        
-        if (currentPagePelanggan > totalPages) {
-            currentPagePelanggan = Math.max(1, totalPages);
-        }
-        
+        const totalData = filteredData.length;
+        const totalPages = Math.ceil(totalData / itemsPerPage);
+
+        if (currentPagePelanggan > totalPages) currentPagePelanggan = 1;
+
         const startIndex = (currentPagePelanggan - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const pageData = filteredData.slice(startIndex, endIndex);
-        
+
         // 6. RENDER TABEL
         if (filteredData.length === 0) {
-    table.innerHTML = `
-        <tr>
-            <td colspan="7" class="text-center" style="padding: 40px;">
-                <i class="fas fa-search" style="font-size: 48px; color: #e9ecef;"></i>
-                <h4 style="margin-top:15px; color: var(--gray);">Tidak Ditemukan</h4>
-                <p>Tidak ada pelanggan yang cocok dengan filter.</p>
-            </td>
-        </tr>`;
-    
-    // HAPUS PAGINATION
-    const paginationContainer = document.getElementById('pelangganPagination');
-    if (paginationContainer) paginationContainer.innerHTML = '';
-    
-    window._loadingPelanggan = false;
-    return;
-}
-
-// RENDER DATA LANGSUNG
-table.innerHTML = pageData.map((p, index) => `
-    <tr>
-        <td>${startIndex + index + 1}</td>
-        <td>${p.nama || '-'}</td>
-        <td>${p.telepon || '-'}</td>
-        <td>${p.alamat || '-'}</td>
-        <td>${p.paket || '-'}</td>
-        <td><span class="badge ${p.status === 'aktif' ? 'badge-success' : p.status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">${p.status || 'nonaktif'}</span></td>
-        <td>
-            <div class="btn-group">
-                <button class="btn btn-sm btn-outline" onclick="editPelanggan('${p.id}')">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-outline" onclick="viewPelanggan('${p.id}')">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deletePelanggan('${p.id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </td>
-    </tr>
-`).join('');
-
-// RENDER PAGINATION
-const paginationContainer = document.getElementById('pelangganPagination');
-if (paginationContainer && filteredData.length > 0) {
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    let paginationHTML = '<div class="pagination">';
-    
-    if (currentPagePelanggan > 1) {
-        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan - 1})">&laquo;</a>`;
-    }
-    
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === currentPagePelanggan) {
-            paginationHTML += `<span class="page-link active">${i}</span>`;
-        } else {
-            paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${i})">${i}</a>`;
+            table.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center" style="padding: 40px;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #e9ecef;"></i>
+                        <h4 style="margin-top:15px; color: var(--gray);">Tidak Ditemukan</h4>
+                        <p>Tidak ada pelanggan yang cocok dengan filter.</p>
+                    </td>
+                </tr>`;
+            
+            // HAPUS PAGINATION
+            const paginationContainer = document.getElementById('pelangganPagination');
+            if (paginationContainer) paginationContainer.innerHTML = '';
+            
+            window._loadingPelanggan = false;
+            return;
         }
-    }
-    
-    if (currentPagePelanggan < totalPages) {
-        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan + 1})">&raquo;</a>`;
-    }
-    
-    paginationHTML += '</div>';
-    paginationContainer.innerHTML = paginationHTML;
-}
-        
-        // 8. LOAD DROPDOWN PAKET UNTUK FILTER (JIKA SUDAH ADA)
-        const paketSelect = document.getElementById('filterPaket');
-        if (paketSelect && paketSelect.options.length <= 1) {
-             loadPaketSelectOptions();
+
+        // RENDER DATA LANGSUNG
+        table.innerHTML = pageData.map((p, index) => {
+            const startIndex = ((currentPagePelanggan - 1) * itemsPerPage);
+            
+            return `
+                <tr data-id="${p.id}">
+                    <td>${startIndex + index + 1}</td>
+                    <td>${p.server || ''}</td>
+                    <td>${p.nama || '-'}</td>
+                    <td>${p.telepon || '-'}</td>
+                    <td>${p.alamat || '-'}</td>
+                     <td>
+                ${p.koordinat ? 
+                    `<small class="text-muted">${p.koordinat}</small><br>
+                     <button class="btn btn-sm btn-outline btn-sm" 
+                             onclick="openGoogleMaps('${p.koordinat}')" 
+                             title="Buka di Google Maps">
+                         <i class="fas fa-external-link-alt"></i> Maps
+                     </button>`
+                : '-'
+            }
+</td>
+
+                    <td>${p.paket || '-'}</td>
+                    <td><span class="badge ${p.status === 'aktif' ? 'badge-success' : p.status === 'tunggak' ? 'badge-danger' : 'badge-warning'}">${p.status || 'nonaktif'}</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline" onclick="editPelanggan('${p.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="viewPelanggan('${p.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deletePelanggan('${p.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+        `}).join('');
+
+        // 1. UPDATE DROPDOWN SERVER DENGAN DATA REAL
+        const serverSelect = document.getElementById('filterServer');
+        if (serverSelect) {
+
+            // 🔒 SIMPAN PILIHAN USER SEBELUM DROPDOWN DIRESET
+            const selectedValue = serverSelect.value;
+
+            const uniqueServers = [...new Set(
+                (window.pelangganData || [])
+                    .map(p => p.server)
+                    .filter(s => s && s.trim() !== '')
+            )];
+
+            // RESET DROPDOWN
+            serverSelect.innerHTML = '';
+
+            // OPTION DEFAULT
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Semua Server';
+            serverSelect.appendChild(defaultOption);
+
+            // OPTION SERVER
+            uniqueServers.forEach(server => {
+                const option = document.createElement('option');
+                option.value = server;
+                option.textContent = server;
+                serverSelect.appendChild(option);
+            });
+
+            // OPTION TAMBAH SERVER
+            const addOption = document.createElement('option');
+            addOption.value = '+tambah';
+            addOption.textContent = '+ Tambah Server Baru';
+            addOption.style.color = '#4361ee';
+            addOption.style.fontWeight = 'bold';
+            serverSelect.appendChild(addOption);
+
+            // 🔥 KEMBALIKAN SESUAI PILIHAN USER (TERMASUKAN SEMUA SERVER)
+            if (selectedValue === '' || uniqueServers.includes(selectedValue) || selectedValue === '+tambah') {
+                serverSelect.value = selectedValue;
+            } else {
+                serverSelect.value = '';
+            }
+        }
+
+        // RENDER PAGINATION (SAMA KAYAK PELANGGAN)
+        const paginationContainer = document.getElementById('pelangganPagination');
+        if (paginationContainer) {
+            paginationContainer.innerHTML = '';
+            
+            const dataForPagination = window.filteredPelangganData || filteredData || [];
+            
+            console.log('🧹 Pagination cleared');
+            console.log('📊 dataForPagination length:', dataForPagination.length);
+            
+            if (dataForPagination.length > 0) {
+                const totalPages = Math.ceil(dataForPagination.length / itemsPerPage);
+                
+                console.log('📐 totalPages:', totalPages);
+                console.log('🔘 Tombol akan dirender?', totalPages > 1 ? 'YA' : 'TIDAK');
+                
+                // ⭐⭐ JANGAN RENDER JIKA CUMA 1 HALAMAN ⭐⭐
+                if (totalPages >= 1) {
+                    let paginationHTML = '<div class="pagination">';
+                    
+                    // TOMBOL KIRI (<)
+                    if (currentPagePelanggan > 1) {
+                        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan - 1})">&laquo;</a>`;
+                    }
+                    
+                    // ANGKA HALAMAN
+                    for (let i = 1; i <= totalPages; i++) {
+                        if (i === currentPagePelanggan) {
+                            paginationHTML += `<span class="page-link active">${i}</span>`;
+                        } else {
+                            paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${i})">${i}</a>`;
+                        }
+                    }
+                    
+                    // TOMBOL KANANAN (>)
+                    if (currentPagePelanggan < totalPages) {
+                        paginationHTML += `<a class="page-link" onclick="changePage('pelanggan', ${currentPagePelanggan + 1})">&raquo;</a>`;
+                    }
+                    
+                    paginationHTML += '</div>';
+                    paginationContainer.innerHTML = paginationHTML;
+                }
+                // ⭐⭐ JIKA CUMA 1 HALAMAN: biarkan kosong ⭐⭐
+            }
         }
         
+        console.log('📍 3. Sampai akhir try block'); // ⭐ TAMBAHAN INI
+
     } catch (error) {
         console.error("❌ Error Load Pelanggan:", error);
-        table.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+        table.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     } finally {
         // ⭐⭐ RESET GUARD: TAMBAHAN BARU ⭐⭐
         window._loadingPelanggan = false;
     }
 }
+
+
+async function loadServerDropdownToModal() {
+    const input = document.getElementById('pelangganServer');
+    if (!input) return;
+
+    // JIKA SUDAH ADA SELECT, STOP
+    if (document.getElementById('pelangganServerSelect')) return;
+
+    const currentValue = input.value || '';
+
+    // 🔒 INPUT ASLI JANGAN DIHAPUS
+    input.type = 'hidden';
+
+    const snap = await db.collection('servers')
+        .where('company_id', '==', globalCompanyId)
+        .get();
+
+    const servers = snap.docs.map(d => d.data().nama);
+
+    const select = document.createElement('select');
+    select.id = 'pelangganServerSelect';
+    select.className = input.className;
+    select.style.width = '100%';
+
+    const optDefault = document.createElement('option');
+    optDefault.value = '';
+    optDefault.textContent = '-- Pilih Server --';
+    select.appendChild(optDefault);
+
+    servers.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === currentValue) opt.selected = true;
+        select.appendChild(opt);
+    });
+
+    // 🔁 SYNC SELECT → INPUT ASLI
+    select.addEventListener('change', () => {
+        input.value = select.value;
+    });
+
+    // PASTIKAN INPUT TERISI SAAT EDIT
+    input.value = currentValue;
+
+    input.parentNode.appendChild(select);
+
+    setTimeout(loadServerDropdownToModal, 0);
+
+}
+
+
+
+
 
 // TAMBAHKAN FUNGSI UNTUK MENYIMPAN FILTER SAAT USER MENGUBAH INPUT
 function saveFilterState() {
@@ -7502,6 +8346,7 @@ function renderPelangganTable(data, totalItems) {
         
         // Reset pagination jika kosong
         const paginationContainer = document.getElementById('pelangganPagination');
+        console.log('🔍 Cari pagination container:', paginationContainer ? 'DITEMUKAN' : 'TIDAK DITEMUKAN');
         if (paginationContainer) paginationContainer.innerHTML = '';
         
         const elStart = document.getElementById('pelangganStart');
@@ -7524,6 +8369,8 @@ function renderPelangganTable(data, totalItems) {
         const paket = pelanggan.paket || '-';
         const harga = pelanggan.harga || 0;
         const status = pelanggan.status || 'nonaktif';
+        const isNew = pelanggan.__isNewImport === true;
+
         
         let badgeClass = 'badge-warning';
         if (status === 'aktif') badgeClass = 'badge-success';
@@ -7531,6 +8378,8 @@ function renderPelangganTable(data, totalItems) {
         
         return `
             <tr>
+                <tr class="${isNew ? 'new-import-row' : ''}">
+
                 <td style="font-weight: bold;">${startIndex + index + 1}</td>
                 <td>
                     <strong>${nama}</strong>
@@ -7720,7 +8569,7 @@ function applyPelangganFilters(data) {
 
 
 // TAMBAHKAN FUNGSI VIEW DETAIL (Opsional, untuk tombol detail)
-async function viewDetailPelanggan(id) {
+async function viewPelanggan(id) {
     try {
         const doc = await db.collection('pelanggan').doc(id).get();
         if (!doc.exists) {
@@ -9969,7 +10818,7 @@ function handleBayarClick(btnElement) {
 
 async function loadTagihanData() {
     logRead('tagihan');
-    
+     await loadServerOptionsForTagihan();
 
     const table = document.getElementById('tagihanTable');
     if (!table) return;
@@ -9977,6 +10826,9 @@ async function loadTagihanData() {
     table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div></td></tr>`;
 
     try {
+
+          // ⭐⭐ AMBIL NILAI FILTER SERVER ⭐⭐
+        const serverFilter = document.getElementById('filterServerTagihan')?.value || "";
         // ⭐⭐ PERBAIKAN 1: FILTER PELANGGAN BERDASARKAN COMPANY_ID ⭐⭐
         const pelangganSnapshot = await db.collection('pelanggan')
             .where('company_id', '==', globalCompanyId)  // ⭐ TAMBAH FILTER INI
@@ -9995,12 +10847,25 @@ async function loadTagihanData() {
             
             pelangganIds.push(doc.id);
             pelangganMap[doc.id] = {
-                alamat: p.alamat || '-',
-                nama: p.nama || '-',
-                telepon: p.telepon || '-',
-                company_id: p.company_id || globalCompanyId // Simpan company_id untuk validasi
-            };
+    alamat: p.alamat || '-',
+    nama: p.nama || '-',
+    telepon: p.telepon || '-',
+    server: p.server || 'Tidak Diketahui',  // ⭐ INI
+    koordinat: p.koordinat || null,         // ⭐ INI
+    company_id: p.company_id || globalCompanyId
+};
         });
+
+                // ⭐⭐ DEKLARASI QUERY ⭐⭐
+        let query = db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId);
+        
+        // ⭐⭐ TAMBAH FILTER JIKA ADA PILIHAN SERVER ⭐⭐
+        if (serverFilter) {
+            query = query.where('server', '==', serverFilter);
+        }
+        
+        const snapshot = await query.get();
 
         if (pelangganIds.length === 0) {
             table.innerHTML = `
@@ -10087,16 +10952,18 @@ async function loadTagihanData() {
             }
             
             if (!groupedMap[pid]) {
-                groupedMap[pid] = {
-                    pelanggan_id: pid,
-                    pelanggan_nama: pelangganMap[pid].nama, 
-                    pelanggan_telepon: pelangganMap[pid].telepon,
-                    pelanggan_alamat: pelangganMap[pid].alamat,
-                    list_tagihan: [], 
-                    total_nominal: 0,
-                    company_id: pelangganMap[pid].company_id  // Simpan company_id
-                };
-            }
+    groupedMap[pid] = {
+        pelanggan_id: pid,
+        pelanggan_nama: pelangganMap[pid].nama, 
+        pelanggan_telepon: pelangganMap[pid].telepon,
+        pelanggan_alamat: pelangganMap[pid].alamat,
+        pelanggan_server: pelangganMap[pid].server || 'Tidak Diketahui',  // ⭐ INI
+        pelanggan_koordinat: pelangganMap[pid].koordinat || null,         // ⭐ INI
+        list_tagihan: [], 
+        total_nominal: 0,
+        company_id: pelangganMap[pid].company_id
+    };
+}
             
             // ⭐⭐ VALIDASI: PASTIKAN TAGIHAN MILIK COMPANY YANG SAMA ⭐⭐
             if (t.company_id !== globalCompanyId) {
@@ -10110,37 +10977,55 @@ async function loadTagihanData() {
             }
         });
 
-        const groupedData = Object.values(groupedMap);
+                const groupedData = Object.values(groupedMap);
 
-        // SORTING: BELUM LUNAS DI ATAS, LUNAS DI BAWAH
-groupedData.sort((a, b) => {
+// ⭐⭐ FILTER BERDASARKAN SERVER ⭐⭐
+let filteredData = [...groupedData];
+if (serverFilter) {
+    filteredData = filteredData.filter(item => {
+        // Cari pelanggan di snapshot
+        const pelangganDoc = pelangganSnapshot.docs.find(doc => doc.id === item.pelanggan_id);
+        if (!pelangganDoc) return false;
+        
+        const pelangganData = pelangganDoc.data();
+        return pelangganData.server === serverFilter;
+    });
+}
+
+// SORTING: BELUM LUNAS DI ATAS, LUNAS DI BAWAH
+filteredData.sort((a, b) => {
     const aBelumLunas = a.list_tagihan.filter(t => t.status !== 'lunas').length;
     const bBelumLunas = b.list_tagihan.filter(t => t.status !== 'lunas').length;
     
-    // 1. Urutkan berdasarkan jumlah tagihan belum lunas (descending)
     if (bBelumLunas !== aBelumLunas) {
         return bBelumLunas - aBelumLunas;
     }
     
-    // 2. Urutkan berdasarkan nama pelanggan
     return a.pelanggan_nama.localeCompare(b.pelanggan_nama);
 });
-        
-        // LOG DEBUGGING
-        console.log(`📊 ${groupedData.length} grup tagihan setelah validasi`);
-        if (groupedData.length > 0) {
-            console.log("Contoh data grup pertama:", groupedData[0]);
-        }
 
-        // 4. PAGINATION
-        const itemsPerPage = 10;
-        const totalData = groupedData.length; 
-        const totalPages = Math.ceil(totalData / itemsPerPage);
-        
-        if (currentPageTagihan > totalPages) currentPageTagihan = 1;
-        const startIndex = (currentPageTagihan - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageData = groupedData.slice(startIndex, endIndex);
+// 4. PAGINATION (PAKAI filteredData BUKAN groupedData)
+const itemsPerPage = 10;
+const totalData = filteredData.length; // ⭐ PAKAI DATA YANG SUDAH FILTER
+const totalPages = Math.ceil(totalData / itemsPerPage);
+
+if (currentPageTagihan > totalPages) currentPageTagihan = 1;
+const startIndex = (currentPageTagihan - 1) * itemsPerPage;
+const endIndex = startIndex + itemsPerPage;
+const pageData = filteredData.slice(startIndex, endIndex); // ⭐ PAKAI filteredData
+
+// ⭐⭐ DEBUG PAGINATION ⭐⭐
+console.log('=== DEBUG PAGINATION ===');
+console.log('Server Filter:', serverFilter);
+console.log('Filtered Data Length:', filteredData.length);
+console.log('Items Per Page:', itemsPerPage);
+console.log('Current Page:', currentPagePelanggan);
+console.log('Start Index:', startIndex);
+console.log('End Index:', endIndex);
+console.log('Page Data Length:', pageData.length);
+console.log('Page Data Names:', pageData.map(p => p.nama));
+console.log('=======================');
+
 
         // 5. RENDER TABEL
 table.innerHTML = pageData.map((item) => {
@@ -10179,9 +11064,8 @@ table.innerHTML = pageData.map((item) => {
     return `
         <tr>
             <td>
-                <strong>Server A</strong><br>
-                <small class="text-muted">Wilayah Utara</small>
-            </td>
+    <strong>${item.pelanggan_server}</strong><br>
+</td>
             <td>
                 <strong>${item.pelanggan_nama}</strong><br>
                 <small class="text-muted">${item.pelanggan_telepon}</small>
@@ -10195,7 +11079,7 @@ table.innerHTML = pageData.map((item) => {
                 
             </td>
             <td>
-                <small style="color: #666;">${item.pelanggan_alamat}</small>    
+                <strong>${item.pelanggan_alamat}</strong>    
             </td>
             <td>
                 <span class="badge badge-primary" style="font-size:14px; padding:8px 12px;">
@@ -10220,7 +11104,47 @@ table.innerHTML = pageData.map((item) => {
     `;
 }).join('');
         // 6. RENDER PAGINATION
-        renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
+        // 6. RENDER PAGINATION (SAMA KAYAK PELANGGAN)
+const paginationContainer = document.getElementById('tagihanPagination');
+if (paginationContainer) {
+    paginationContainer.innerHTML = '';
+    
+    if (totalData > 0) {
+        const totalPages = Math.ceil(totalData / itemsPerPage);
+        
+        if (totalPages > 1) {
+            let paginationHTML = '<div class="pagination">';
+            
+            // TOMBOL KIRI (<)
+            if (currentPageTagihan > 1) {
+                paginationHTML += `<a class="page-link" onclick="changePage('tagihan', ${currentPageTagihan - 1})">&laquo;</a>`;
+            }
+            
+            // ANGKA HALAMAN
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPageTagihan) {
+                    paginationHTML += `<span class="page-link active">${i}</span>`;
+                } else {
+                    paginationHTML += `<a class="page-link" onclick="changePage('tagihan', ${i})">${i}</a>`;
+                }
+            }
+            
+            // TOMBOL KANAN (>)
+            if (currentPageTagihan < totalPages) {
+                paginationHTML += `<a class="page-link" onclick="changePage('tagihan', ${currentPageTagihan + 1})">&raquo;</a>`;
+            }
+            
+            paginationHTML += '</div>';
+            paginationContainer.innerHTML = paginationHTML;
+        }
+    }
+}
+
+if (window.__fromMapOpenDetail) {
+    bukaRiwayatTagihan(window.__fromMapOpenDetail);
+    window.__fromMapOpenDetail = null;
+}
+
         
     } catch (error) {
         console.error("❌ Error load tagihan:", error);
@@ -10793,6 +11717,8 @@ async function loadPage(page) {
             item.classList.add('active');
         }
     });
+
+    
     
     const mainContent = document.getElementById('mainContent');
     if (!mainContent) {
@@ -10802,26 +11728,94 @@ async function loadPage(page) {
     
     let pageHTML = '';
     
+
+let cachedDashboardHTML = '';
+
+
     try {
         switch(page) {
             case 'dashboard':
-                pageHTML = await getDashboardHTML();
-                mainContent.innerHTML = pageHTML;
-                await renderDashboard();
-                break;
-                
-            case 'pelanggan':
-    case 'pelanggan':
-    pageHTML = await getPelangganHTML();
+    // 1. Selalu render ulang HTML Dashboard untuk memastikan container bersih
+    pageHTML = await getDashboardHTML();
     mainContent.innerHTML = pageHTML;
     
-    // TAMBAH INI ↓↓↓
-    setTimeout(async () => {
-        await loadPaketData(); 
-        await loadPelangganData();
-    }, 0);
+    // 2. Pastikan container map terlihat dan ukurannya benar sebelum menginisialisasi Leaflet
+    const mapContainer = document.getElementById('mapContainer');
+    if (mapContainer) {
+        mapContainer.style.display = 'block';
+        mapContainer.style.visibility = 'visible';
+        mapContainer.style.height = '400px'; // Paksa tinggi agar tidak 0px
+        mapContainer.style.width = '100%';
+    }
+
+    // 3. Jalankan logika Dashboard
+    await renderDashboard();
+    
+    // ⭐⭐ FIX UTAMA: RE-INITIALIZE MAP DARI AWAL ⭐⭐
+    setTimeout(() => {
+        const pelangganMapEl = document.getElementById('pelangganMap');
+        if (pelangganMapEl) {
+            console.log("🔄 Force re-initialize map...");
+            
+            // HAPUS MAP LAMA JIKA ADA
+            if (window.pelangganMap) {
+                try {
+                    window.pelangganMap.remove();
+                } catch(e) {
+                    console.log("⚠️ Error removing old map:", e);
+                }
+                window.pelangganMap = null;
+                window.mapMarkers = [];
+                window.isMapInitialized = false;
+            }
+            
+            // TUNGGU DOM READY
+            setTimeout(() => {
+                // INITIALIZE ULANG
+                initPelangganMap();
+                
+                // TUNGGU LEAFLET LOAD
+                setTimeout(() => {
+                    if (window.pelangganMap) {
+                        // SET VIEW DEFAULT
+                        window.pelangganMap.setView([-6.2088, 106.8456], 13);
+                        
+                        // LOAD MARKERS
+                        loadPelangganMap();
+                        
+                        // INVALIDATE SIZE
+                        setTimeout(() => {
+                            window.pelangganMap.invalidateSize(true);
+                            console.log("✅ Map successfully re-initialized with markers");
+                        }, 200);
+                    }
+                }, 100);
+            }, 100);
+        }
+    }, 500);
     
     break;
+                
+                
+            case 'pelanggan':
+     pageHTML = await getPelangganHTML();
+                mainContent.innerHTML = pageHTML;
+                
+                // TAMBAH INI ↓↓↓
+                setTimeout(async () => {
+                    await loadPaketData(); 
+                    await loadPelangganData();
+                    await loadServerOptions(); // ⭐ TAMBAHKAN INI
+                    
+                    // ⭐⭐ TAMBAHKAN INI SETELAH loadServerOptions: ⭐⭐
+                    const dropdown = document.getElementById('filterServer');
+                    if (dropdown) {
+                        // Biarkan onchange natural ke handleServerChange()
+                    }
+                    
+                }, 0);
+                
+                break;
                 
             case 'paket':
                 if (currentRole === 'staff_billing') {
@@ -10835,10 +11829,40 @@ async function loadPage(page) {
                 break;
                 
             case 'tagihan':
-                pageHTML = await getTagihanHTML();
-                mainContent.innerHTML = pageHTML;
-                await loadTagihanData();
-                break;
+    pageHTML = await getTagihanHTML();
+    mainContent.innerHTML = pageHTML;
+    await loadTagihanData();
+    await loadServerOptions();
+    
+    // ⭐⭐ CEK URL HASH UNTUK AUTO-OPEN MODAL ⭐⭐
+    setTimeout(() => {
+        // Parse URL hash: #tagihan&open=TAGIHAN_ID
+        const hash = window.location.hash;
+        console.log("🔍 Checking hash for auto-open:", hash);
+        
+        if (hash.includes('&open=')) {
+            const tagihanId = hash.split('&open=')[1];
+            if (tagihanId && tagihanId.length > 5) {
+                console.log("🚀 Auto-opening tagihan modal for:", tagihanId);
+                
+                // AMBIL DATA DAN BUKA MODAL
+                db.collection('tagihan').doc(tagihanId).get().then(doc => {
+                    if (doc.exists) {
+                        // PANGGIL FUNGSI editTagihan YANG SUDAH ADA
+                        if (typeof editTagihan === 'function') {
+                            console.log("📋 Opening modal for tagihan:", tagihanId);
+                            editTagihan(tagihanId, doc.data());
+                            
+                            // CLEAR HASH SETELAH BUKA
+                            window.location.hash = 'tagihan';
+                        }
+                    }
+                });
+            }
+        }
+    }, 1500); // Delay 1.5 detik biar halaman selesai load
+    
+    break;
                 
             case 'tunggakan':
                 pageHTML = await getTunggakanHTML();
@@ -10880,6 +11904,29 @@ async function loadPage(page) {
             default:
                 pageHTML = `<div class="page"><h3>Halaman tidak ditemukan</h3></div>`;
                 mainContent.innerHTML = pageHTML;
+        }
+
+               // ⭐⭐ PERBAIKAN KHUSUS UNTUK MAP: Reset peta setiap kali kembali ke dashboard ⭐⭐
+        if (page === 'dashboard') {
+            // Hapus peta lama jika ada
+            if (page === 'dashboard') {
+    setTimeout(() => {
+        if (window.pelangganMap) {
+            window.pelangganMap.invalidateSize();
+            loadPelangganMap();
+        }
+    }, 300);
+}
+            
+            // Tunggu DOM siap, lalu buat peta baru
+            setTimeout(() => {
+                const mapContainer = document.getElementById('pelangganMap');
+                if (mapContainer && mapContainer.offsetParent !== null) {
+                    initPelangganMap();
+                    loadPelangganMap();
+                    console.log("✅ Map baru dibuat");
+                }
+            }, 200);
         }
         
         console.log("✅ Page Render Selesai:", page);
@@ -11071,6 +12118,9 @@ function showAddPelangganModal() {
     
     // Tampilkan modal
     showModal('modalPelanggan');
+
+    setTimeout(loadServerDropdownToModal, 0);
+
 }
 
 console.log("✅ Function updated");
@@ -11247,7 +12297,9 @@ function showMessageTemplates() {
 async function savePelanggan() {
     try {
         // Ambil nilai dari form
+
         const pelangganId = document.getElementById('pelangganId').value;
+        const server= document.getElementById('pelangganServer').value.trim();
         const nama = document.getElementById('pelangganNama').value.trim();
         const telepon = document.getElementById('pelangganTelepon').value.trim();
         const alamat = document.getElementById('pelangganAlamat').value.trim();
@@ -11255,7 +12307,7 @@ async function savePelanggan() {
         const harga = document.getElementById('pelangganHarga').value;
         const tanggalPasang = document.getElementById('pelangganTanggalPasang').value;
         const status = document.getElementById('pelangganStatus').value;
-        const koordinat = document.getElementById('pelangganKoordinat').value;
+        const koordinat = document.getElementById('pelangganKoordinat').value.trim();
         const catatan = document.getElementById('pelangganCatatan').value;
         
         // Validasi
@@ -11292,6 +12344,7 @@ async function savePelanggan() {
         
         // Data untuk disimpan
         const pelangganData = {
+            server: document.getElementById('pelangganServer').value,
             nama: nama.toUpperCase(),
             telepon: telepon,
             alamat: alamat,
@@ -11478,12 +12531,14 @@ async function generateTagihanPertama(pelangganId, pelangganData, tglPasang) {
         
         // 4. FILL FORM (SIMPLE VERSION)
         document.getElementById('pelangganId').value = id;
+        document.getElementById('pelangganServer').value = data.server || '';
         document.getElementById('pelangganNama').value = data.nama || '';
         document.getElementById('pelangganTelepon').value = data.telepon || '';
         document.getElementById('pelangganAlamat').value = data.alamat || '';
         document.getElementById('pelangganHarga').value = data.harga || '';
         document.getElementById('pelangganStatus').value = data.status || 'aktif';
         document.getElementById('pelangganTanggalPasang').value = data.tanggal_pasang || '';
+        document.getElementById('pelangganKoordinat').value = data.koordinat || '';
         
         // 5. LOAD & SET PAKET
         setTimeout(async () => {
@@ -11495,10 +12550,14 @@ async function generateTagihanPertama(pelangganId, pelangganData, tglPasang) {
                 console.log("✅ Paket set:", data.paket);
             }
         }, 300);
+
+        
+
         
     } catch (error) {
         console.error("Error:", error);
     }
+    setTimeout(loadServerDropdownToModal, 0);
 }
 
 // ============================================
@@ -11584,6 +12643,8 @@ async function editPelangganDetail(pelangganId) {
         document.getElementById('pelangganTanggalPasang').value = data.tanggal_pasang || '';
         document.getElementById('pelangganStatus').value = data.status || 'aktif';
         document.getElementById('pelangganCatatan').value = data.catatan || '';
+        document.getElementById('pelangganServer').value = pelangganData.server || '';
+        document.getElementById('pelangganKoordinat').value = pelangganData.koordinat || '';
         
         // 3. TUTUP MODAL TUNGGAKAN (Detail/Pay) KALAU ADA
         const modalDetail = document.getElementById('modalDetailTagihan');
@@ -12641,6 +13702,9 @@ async function sendReminderSingle(pelangganId) {
         showToast('error', 'Error', 'Gagal mengirim reminder');
     }
 }
+
+
+
 
 // FUNGSI UNTUK TOMBOL "PRINT"
 function printInvoice(tagihanId) {
@@ -17907,42 +18971,620 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-let backPressCount = 0;
-let backPressTimer = null;
+// ============================================
+// TOMBOL BACK HP: KLIK 2X MUNCUL KONFIRMASI KELUAR
+// ============================================
 
+let backButtonPressed = 0;
+let backButtonTimer = null;
+
+// Fungsi utama handle tombol back
 function handleBackButton() {
-    backPressCount++;
+    backButtonPressed++;
     
-    if (backPressCount === 1) {
-        // Kirim pesan toast ke Kodular
-        if (window.AppInventor) {
-            window.AppInventor.setWebViewString("TOAST: Tekan back lagi untuk keluar");
-        }
+    if (backButtonPressed === 1) {
         
-        // Reset counter setelah 2 detik
-        backPressTimer = setTimeout(() => {
-            backPressCount = 0;
+        // Reset setelah 2 detik
+        backButtonTimer = setTimeout(() => {
+            backButtonPressed = 0;
         }, 2000);
-        
-        // Navigasi back jika bukan di dashboard
-        if (window.currentPage && window.currentPage !== 'dashboard') {
-            window.history.back();
+    } else if (backButtonPressed === 2) {
+        // Reset counter
+        backButtonPressed = 0;
+        if (backButtonTimer) {
+            clearTimeout(backButtonTimer);
+            backButtonTimer = null;
         }
         
-        return true;
+        // Tampilkan popup konfirmasi keluar
+        showExitConfirmation();
+    }
+}
+
+// Popup konfirmasi keluar kustom
+function showExitConfirmation() {
+    const modalId = 'exitConfirmationModal';
+    
+    // Hapus modal lama jika ada
+    const oldModal = document.getElementById(modalId);
+    if (oldModal) oldModal.remove();
+    
+    // Buat modal kustom
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay show';
+    modal.style.zIndex = '999999';
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 400px; animation: modalSlide 0.3s ease;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%); color: white;">
+                <h3 class="modal-title">
+                    <i class="fas fa-door-open"></i> Keluar Aplikasi
+                </h3>
+                <button class="modal-close" style="color: white;" onclick="closeExitModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="font-size: 60px; color: #ff6b6b; margin-bottom: 15px;">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Yakin Mau Keluar?</h4>
+                    <p style="color: #7f8c8d; line-height: 1.5;">
+                        Anda akan keluar dari aplikasi X-BILL.<br>
+                        Pastikan semua data sudah tersimpan.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 15px;">
+                <button onclick="closeExitModal()" class="btn btn-outline" style="padding: 12px 25px; min-width: 120px;">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button onclick="confirmExitApp()" class="btn btn-danger" style="padding: 12px 25px; min-width: 120px; background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+}
+
+// Fungsi tutup modal
+function closeExitModal() {
+    const modal = document.getElementById('exitConfirmationModal');
+    if (modal) modal.remove();
+    document.body.style.overflow = 'auto';
+}
+
+// Fungsi konfirmasi keluar
+function confirmExitApp() {
+    // Log aktivitas keluar
+    db.collection('aktivitas').add({
+        aktivitas: 'User keluar dari aplikasi via back button',
+        user: getUserLogName(),
+        timestamp: new Date().toISOString(),
+        company_id: globalCompanyId
+    });
+    
+    // Logout dari Firebase
+    firebase.auth().signOut().then(() => {
+        closeExitModal();
         
-    } else if (backPressCount === 2) {
-        // Exit app
-        clearTimeout(backPressTimer);
+        // Redirect ke halaman login
+        document.getElementById('loginPage').classList.remove('hidden');
+        document.getElementById('appContainer').classList.add('hidden');
         
-        if (window.AppInventor) {
-            window.AppInventor.setWebViewString("EXIT_APP");
+        showToast('success', 'Sampai Jumpa', 'Anda berhasil keluar dari aplikasi');
+    }).catch(error => {
+        console.error("Error logout:", error);
+        showToast('error', 'Gagal', 'Gagal logout: ' + error.message);
+    });
+}
+
+// Ganti fungsi tambahServerLangsung() dengan ini:
+function tambahServerLangsung() {
+    console.log("🎯 tambahServerLangsung() dipanggil");
+    
+    // Panggil fungsi tampilkanModalServer (yang sudah ada di STEP 2)
+    if (typeof tampilkanModalServer === 'function') {
+        tampilkanModalServer();
+    } else {
+        console.error("❌ Fungsi tampilkanModalServer tidak ditemukan!");
+        // Fallback: tampilkan modal manual
+        const modal = document.getElementById('modalTambahServerKecil');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('show');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         }
-        
-        return true;
+    }
+}
+
+
+// Fungsi tampilkan modal server (jika belum ada)
+function tampilkanModalServer() {
+    console.log("🚀 Menampilkan modal server...");
+    
+    const modal = document.getElementById('modalTambahServerKecil');
+    if (!modal) {
+        console.error("❌ Modal tidak ditemukan");
+        return;
     }
     
-    return true;
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Focus ke input
+    setTimeout(() => {
+        const input = document.getElementById('inputServerBaru');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+    }, 100);
+}
+
+
+// Fungsi simpan dari modal
+async function simpanServerModal() {
+    const input = document.getElementById('inputServerBaru');
+    const namaServer = input.value.trim();
+    
+    if (!namaServer) {
+        showToast('error', 'Error', 'Nama server wajib diisi');
+        input.focus();
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // ⭐⭐ VALIDASI DUPLIKAT DI DATABASE ⭐⭐
+        const checkSnapshot = await db.collection('servers')
+            .where('company_id', '==', globalCompanyId)
+            .where('nama', '==', namaServer)
+            .get();
+            
+        if (!checkSnapshot.empty) {
+            showToast('warning', 'Server sudah ada', 
+                `Server "${namaServer}" sudah terdaftar di database.`);
+            input.focus();
+            hideLoading();
+            return;
+        }
+        
+        // ⭐⭐ SIMPAN KE DATABASE ⭐⭐
+        const serverData = {
+            nama: namaServer,
+            company_id: globalCompanyId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            status: 'aktif'
+        };
+        
+        await db.collection('servers').add(serverData);
+        
+        hideLoading();
+        hideModal('modalTambahServerKecil');
+        
+        // ⭐⭐ REFRESH DROPDOWN (DENGAN FILTER UNIQUE) ⭐⭐
+        await loadServerOptions();
+        
+        showToast('success', 'Berhasil', `Server "${namaServer}" ditambahkan`);
+        
+        // Auto-select server baru
+        setTimeout(() => {
+            const select = document.getElementById('filterServer');
+            if (select) {
+                select.value = namaServer;
+                if (typeof loadPelangganData === 'function') loadPelangganData();
+            }
+        }, 500);
+        
+    } catch (error) {
+        hideLoading();
+        console.error("Error save server:", error);
+        showToast('error', 'Gagal', 'Tidak bisa menyimpan server');
+    }
+}
+
+// ============================================
+// FUNGSI LOAD SERVER OPTIONS DARI DATABASE
+// ============================================
+
+// GANTI FUNGSI loadServerOptions YANG ADA DENGAN INI:
+async function loadServerOptions() {
+    try {
+        console.log("🔄 Memuat opsi server dari collection servers...");
+        
+        // AMBIL DARI COLLECTION servers BUKAN dari field pelanggan!
+        const snapshot = await db.collection('servers')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', '==', 'aktif')
+            .get();
+        
+        // Kumpulkan server unik
+        const servers = new Set();
+        
+        snapshot.forEach(doc => {
+            const serverData = doc.data();
+            if (serverData.nama && serverData.nama.trim() !== '') {
+                servers.add(serverData.nama.trim());
+            }
+        });
+        
+        // Tambah juga dari field server di pelanggan (untuk data lama)
+        const pelangganSnapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+            
+        pelangganSnapshot.forEach(doc => {
+            const pelanggan = doc.data();
+            if (pelanggan.server && pelanggan.server.trim() !== '') {
+                servers.add(pelanggan.server.trim());
+            }
+        });
+        
+        // Urutkan server
+        const sortedServers = Array.from(servers).sort();
+        
+        console.log("📋 Servers dari database (collection + field):", sortedServers);
+        
+        // Update dropdown Pelanggan
+        const filterServerPelanggan = document.getElementById('filterServer');
+        if (filterServerPelanggan) {
+            filterServerPelanggan.innerHTML = '<option value="">Semua Server</option>';
+            
+            sortedServers.forEach(server => {
+                filterServerPelanggan.innerHTML += `<option value="${server}">${server}</option>`;
+            });
+            
+            // Tambah opsi untuk tambah server baru
+            filterServerPelanggan.innerHTML += '<option value="+tambah" style="color: #4361ee; font-weight: bold; background: #f0f9ff;">+ Tambah Server Baru</option>';
+        }
+        
+        // Update dropdown Tagihan
+        const filterServerTagihan = document.getElementById('filterServerTagihan');
+        if (filterServerTagihan) {
+            filterServerTagihan.innerHTML = '<option value="">Semua Server</option>';
+            
+            sortedServers.forEach(server => {
+                filterServerTagihan.innerHTML += `<option value="${server}">${server}</option>`;
+            });
+        }
+        
+        console.log(`✅ ${sortedServers.length} opsi server dimuat dari database`);
+        return sortedServers;
+        
+    } catch (error) {
+        console.error("❌ Error load server options:", error);
+        return [];
+    }
+}
+
+function updateDropdownServer(selectId, servers) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    const selectedValue = select.value;
+    
+    // Clear
+    select.innerHTML = '<option value="">Semua Server</option>';
+    
+    // Filter UNIQUE
+    const uniqueNames = new Set();
+    
+    servers.forEach(server => {
+        if (server.nama && !uniqueNames.has(server.nama)) {
+            uniqueNames.add(server.nama);
+            
+            const option = document.createElement('option');
+            option.value = server.nama;
+            option.textContent = server.nama;
+            select.appendChild(option);
+        }
+    });
+    
+    // Tambah opsi tambah server
+    const addOption = document.createElement('option');
+    addOption.value = "+tambah";
+    addOption.textContent = "+ Tambah Server Baru";
+    addOption.style.cssText = "color: #4361ee; font-weight: bold; background: #f0f9ff;";
+    select.appendChild(addOption);
+    
+    // Kembalikan nilai selected
+    if (selectedValue && selectedValue !== "+tambah") {
+        select.value = selectedValue;
+    }
+}
+
+
+// Fungsi handle perubahan dropdown server
+function handleServerFilterChange(selectElement) {
+    console.log("🔘 Dropdown server dipilih:", selectElement.value);
+    
+    if (selectElement.value === "+tambah") {
+        // Panggil fungsi yang sudah ada
+        tambahServerLangsung();
+        
+        // Reset dropdown ke default
+        setTimeout(() => {
+            selectElement.value = "";
+        }, 100);
+    } else {
+        // Filter normal
+        if (typeof saveFilterState === 'function') saveFilterState();
+        if (typeof loadPelangganData === 'function') loadPelangganData(selectElement.value);
+    }
+}
+
+
+
+function filterByServerTagihan(serverName) {
+    console.log("📡 Filter tagihan by server:", serverName);
+    
+    // Simpan filter ke localStorage/state
+    if (typeof saveFilterState === 'function') {
+        saveFilterState();
+    }
+    
+    // Load data tagihan dengan filter
+    if (typeof loadTagihanData === 'function') {
+        loadTagihanData();
+    }
+}
+
+// Juga buat fungsi untuk reset filter
+function resetFilterTagihan() {
+    const select = document.getElementById('filterServerTagihan');
+    if (select) select.value = "";
+    
+    if (typeof loadTagihanData === 'function') {
+        loadTagihanData();
+    }
+}
+
+
+// Panggil saat halaman pelanggan dimuat
+if (document.querySelector('.pelanggan-page')) {
+    setTimeout(initServerDropdown, 500);
+}
+
+// Tambah event Enter key di input
+document.getElementById('inputServerBaru')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        simpanServerModal();
+    }
+});
+
+// ============================================
+// SETUP EVENT LISTENER UNTUK TOMBOL BACK
+// ============================================
+
+// Event listener untuk Cordova/PhoneGap (jika build jadi app)
+if (window.cordova || window.PhoneGap) {
+    document.addEventListener('deviceready', function() {
+        document.addEventListener('backbutton', function(e) {
+            e.preventDefault();
+            handleBackButton();
+        }, false);
+    }, false);
+} 
+// Fallback untuk browser (PC/mobile)
+else {
+    // Deteksi jika di mobile browser
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Untuk mobile browser, intercept popstate
+        window.addEventListener('popstate', function(e) {
+            e.preventDefault();
+            handleBackButton();
+        });
+    } else {
+        // Untuk PC: tambah tombol debug (opsional)
+        document.addEventListener('keydown', function(e) {
+            // Backspace key untuk simulasi back button
+            if (e.key === 'Backspace' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                handleBackButton();
+            }
+        });
+    }
+}
+
+
+async function loadServerOptionsForTagihan() {
+    try {
+        const snapshot = await db.collection('servers')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        const servers = [];
+        snapshot.forEach(doc => {
+            servers.push(doc.data());
+        });
+        
+        // Sort manual
+        servers.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+        
+        // Update dropdown tagihan (TANPA opsi tambah)
+        updateDropdownServerTagihan('filterServerTagihan', servers);
+        
+    } catch (error) {
+        console.error("Error load servers for tagihan:", error);
+    }
+}
+
+// Fungsi update dropdown khusus tagihan
+function updateDropdownServerTagihan(selectId, servers) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    const selectedValue = select.value;
+    
+    // Clear
+    select.innerHTML = '<option value="">Semua Server</option>';
+    
+    // Filter UNIQUE (sama seperti pelanggan)
+    const uniqueNames = new Set();
+    
+    servers.forEach(server => {
+        if (server.nama && !uniqueNames.has(server.nama)) {
+            uniqueNames.add(server.nama);
+            
+            const option = document.createElement('option');
+            option.value = server.nama;
+            option.textContent = server.nama;
+            select.appendChild(option);
+        }
+    });
+    
+    // ⭐⭐ TIDAK ADA OPSI "+ Tambah Server Baru" ⭐⭐
+    
+    // Kembalikan nilai selected
+    if (selectedValue) {
+        select.value = selectedValue;
+    }
+}
+
+// ⭐ EVENT DRAG HANYA UNTUK ADMIN:
+if (isAdmin) {
+    marker.on('dragend', function(e) {
+        const newPos = e.target.getLatLng();
+        const newKoordinat = `${newPos.lat},${newPos.lng}`;
+        
+        // ⭐ CUSTOM CONFIRM DIALOG
+        const modalId = 'confirmDragModal';
+        const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal-overlay show';
+        modal.style.zIndex = '999999';
+        modal.innerHTML = `
+            <div class="modal" style="max-width: 400px; animation: modalSlide 0.3s ease;">
+                <div class="modal-header">
+                    <h3 class="modal-title" style="color: #4361ee;">
+                        <i class="fas fa-map-marker-alt"></i> Update Lokasi
+                    </h3>
+                    <button class="modal-close" onclick="document.getElementById('${modalId}').remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div style="text-align: center; padding: 15px 0;">
+                        <div style="font-size: 48px; color: #4361ee; margin-bottom: 15px;">
+                            <i class="fas fa-map-pin"></i>
+                        </div>
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Pindah Lokasi Pelanggan</h4>
+                        <p style="color: #7f8c8d; line-height: 1.5; margin-bottom: 20px;">
+                            <strong>${pelanggan.nama || 'Pelanggan'}</strong><br>
+                            Koordinat baru: <strong>${newKoordinat}</strong>
+                        </p>
+                        <div style="background: #f0f9ff; border-radius: 8px; padding: 10px; margin: 10px 0; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <i class="fas fa-info-circle" style="color: #3498db;"></i>
+                                <small><strong>Koordinat lama:</strong></small>
+                            </div>
+                            <div style="padding-left: 25px; font-size: 12px; color: #666;">
+                                ${pelanggan.koordinat || 'Belum ada koordinat'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                    <button class="btn btn-outline" onclick="document.getElementById('${modalId}').remove()" style="padding: 10px 20px;">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button id="btnConfirmDrag" class="btn btn-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-check"></i> Simpan Lokasi Baru
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+        
+        // Event listener untuk tombol konfirmasi
+        document.getElementById('btnConfirmDrag').onclick = async function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            btn.disabled = true;
+            
+            try {
+                // Update koordinat di database
+                await db.collection('pelanggan').doc(doc.id).update({
+                    koordinat: newKoordinat,
+                    updated_at: new Date().toISOString()
+                });
+                
+                // Tutup modal
+                document.getElementById(modalId).remove();
+                document.body.style.overflow = 'auto';
+                
+                // Tampilkan notifikasi sukses
+                showToast('success', 'Berhasil', `Lokasi ${pelanggan.nama} berhasil diperbarui`);
+                
+                // Log aktivitas
+                await db.collection('aktivitas').add({
+                    aktivitas: `Update lokasi pelanggan: ${pelanggan.nama} → ${newKoordinat}`,
+                    user: getUserLogName(),
+                    timestamp: new Date().toISOString(),
+                    company_id: globalCompanyId
+                });
+                
+            } catch (error) {
+                // Kembalikan marker ke posisi semula jika gagal
+                marker.setLatLng([coords[0], coords[1]]);
+                
+                // Tutup modal dan tampilkan error
+                document.getElementById(modalId).remove();
+                document.body.style.overflow = 'auto';
+                
+                console.error("Error update koordinat:", error);
+                showToast('error', 'Gagal', 'Tidak bisa menyimpan lokasi baru: ' + error.message);
+                
+                // Reset tombol
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+    });
+}
+
+// ============================================
+// HANDLE PERUBAHAN SERVER DI DROPDOWN
+// ============================================
+
+function handleServerChange(serverValue) {
+    if (serverValue === "+tambah") {
+        showModal('modalTambahServerKecil');
+        return;
+    }
+    
+    // SIMPAN FILTER YANG DIPILIH
+    window.activeServerFilter = serverValue;
+    
+    // RESET KE HALAMAN 1
+    currentPagePelanggan = 1;
+    
+    // LOAD DATA DENGAN FILTER
+    loadPelangganData(serverValue);
+}
+
+// Fungsi untuk baca state filter saat halaman dimuat
+function loadFilterState() {
+    const savedFilter = localStorage.getItem('filterServerState');
+    if (savedFilter) {
+        const filterDropdown = document.getElementById('filterServer');
+        if (filterDropdown) {
+            filterDropdown.value = savedFilter;
+            handleServerChange(savedFilter);
+        }
+    }
 }
 
 // Auto refresh saat app aktif kembali
