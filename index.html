@@ -1,5 +1,3 @@
-UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -316,7 +314,7 @@ UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
     position: fixed;    /* ⬅️ GANTI INI */
     top: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: 1010;
 }
 
         
@@ -387,7 +385,7 @@ UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
             justify-content: space-around;
             padding: 10px 0;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
+            z-index: 1010;
         }
         
         .nav-item {
@@ -649,24 +647,35 @@ UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
+
+        
         
         /* ========== MODALS ========== */
         .modal-overlay {
             position: fixed;
-            top: 0;
+            top: 80px;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 80px;
             background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 999;
             padding: 20px;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s;
+            pointer-events: none; 
+
+            
+
         }
+
+        /* ⭐ TAMBAHKAN BARIS INI DI BAWAHNYA ⭐ */
+.modal-overlay .modal {
+    pointer-events: auto;
+}
         
         .modal-overlay.show {
             opacity: 1;
@@ -1156,15 +1165,15 @@ UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
 
 .modal-overlay {
     position: fixed;
-    top: 0;
+    top: 80px;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 80px;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 999;
     padding: 20px;
     opacity: 0;
     visibility: hidden;
@@ -1181,6 +1190,241 @@ UPDATE SCRIPT (BUKA TAGIHAN MELALUI MAP)
     background: #ffecec;
 }
 
+
+/* ⭐⭐ PASTE DI CSS ANDA ⭐⭐ */
+@media (max-width: 768px) {
+    /* HEADER RAPI */
+    .page-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 15px 0 !important;
+        margin-bottom: 20px !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    
+    /* JUDUL - KIRI, UKURAN PAS */
+    .page-title {
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        color: var(--dark) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        text-align: left !important;
+        flex: 1 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* CONTAINER TOMBOL - KANAN */
+    .action-buttons {
+        display: flex !important;
+        gap: 5px !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* TOMBOL - KECIL TAPI ADA ICON + TEXT */
+    .page-header .btn,
+    .action-buttons .btn {
+        padding: 6px 10px !important;
+        min-width: auto !important;
+        height: 34px !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        gap: 4px !important;
+    }
+    
+    /* TEXT KECIL */
+    .page-header .btn span,
+    .action-buttons .btn span {
+        display: inline !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        line-height: 1 !important;
+    }
+    
+    /* ICON KECIL */
+    .page-header .btn i,
+    .action-buttons .btn i {
+        font-size: 12px !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+    }
+    
+    /* TOMBOL SPESIFIK - LEBIH KECIL */
+    .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-info {
+        padding: 5px 8px !important;
+        font-size: 10px !important;
+    }
+}
+
+/* ⭐⭐ DESKTOP (NORMAL) ⭐⭐ */
+@media (min-width: 769px) {
+    .page-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    
+    .page-title {
+        font-size: 24px !important;
+    }
+    
+    .action-buttons {
+        display: flex !important;
+        gap: 10px !important;
+    }
+    
+    .action-buttons .btn {
+        padding: 10px 16px !important;
+        font-size: 14px !important;
+        gap: 6px !important;
+    }
+}
+@media (max-width: 768px) {
+    /* CARD UNIFIED - JUDUL + TOMBOL DALAM 1 KOTAK */
+    .page-header {
+        background: white !important;
+        border-radius: 10px !important;
+        padding: 12px 15px !important;
+        margin-bottom: 15px !important;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important;
+        border: 1px solid #e0e0e0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+    }
+    
+    /* JUDUL DALAM CARD */
+    .page-title {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: var(--dark) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        text-align: left !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    
+    /* TOMBOL DALAM CARD YANG SAMA */
+    .action-buttons {
+        display: flex !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* TOMBOL STYLE CARD KECIL */
+    .action-buttons .btn {
+        padding: 7px 10px !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        min-width: 65px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+        border: 1px solid var(--gray-light) !important;
+        background: white !important;
+    }
+    
+    /* WARNA CARD TOMBOL */
+    .action-buttons .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    .action-buttons .btn-success {
+        background: linear-gradient(135deg, var(--success), #00a085) !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    /* ICON + TEXT DALAM CARD TOMBOL */
+    .action-buttons .btn i {
+        font-size: 12px !important;
+        margin: 0 !important;
+    }
+    
+    .action-buttons .btn span {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        display: inline !important;
+    }
+}
+
+/* ⭐⭐ MODAL FIX - TETAP MUNCUL ⭐⭐ */
+.modal-overlay.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* POSISI MODAL - DI TENGAH TANPA KEPOTONG */
+.modal-overlay {
+    position: fixed !important;
+    top: 50px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 50px !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999 !important;
+    padding: 25px !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s !important;
+}
+
+/* MODAL CONTENT */
+.modal-overlay .modal {
+    pointer-events: auto !important;
+    max-height: calc(100vh - 140px) !important;
+    overflow-y: auto !important;
+    width: 100% !important;
+    max-width: 500px !important;
+}
+
+/* PASTIKAN NAVBAR DI ATAS */
+.top-navbar {
+    z-index: 1000 !important;
+}
+
+.bottom-nav {
+    z-index: 1000 !important;
+}
+
+/* HP: MODAL LEBIH KECIL */
+@media (max-width: 768px) {
+    .modal-overlay {
+        top: 70px !important;
+        bottom: 70px !important;
+        padding: 25px !important;
+    }
+    
+    .modal {
+        max-width: 100% !important;
+    }
+}
 
     </style>
 </head>
@@ -2830,6 +3074,7 @@ Terima kasih,
         let globalDataPelanggan = {};
         let globalCompanyId = null; // Variabel global untuk menyimpan ID Perusahaan saat ini
         let mapAlreadyLoaded = false;
+        
 
 
         
@@ -2842,6 +3087,9 @@ let currentPageTagihan = 1;
 let currentPageTunggakan = 1;
 let currentPagePaket = 1;
 let currentPageAktivitas = 1; // Variable untuk halaman aktivitas
+let lastBackPress = 0;
+let pageHistory = ['dashboard']; // ⭐ INISIALISASI DI SINI
+
 const itemsPerPage = 10;
 
 
@@ -2868,6 +3116,24 @@ window.isMapInitialized = false;
 // ⭐⭐ TAMBAHKAN INI UNTUK KONTROL REFRESH ⭐⭐
 window.mapLoading = false;
 window.lastMapLoadTime = 0;
+
+// Event listener untuk logo dropzone (tambah di kode utama)
+document.getElementById('logoDropzone').addEventListener('click', function(e) {
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    document.getElementById('logoUpload').click();
+}, true);
+
+document.addEventListener('click', function(e) {
+    // Jika ada modal terbuka DAN klik di area navbar (atas 80px atau bawah 80px)
+    const openModal = document.querySelector('.modal-overlay.show');
+    if (openModal && (e.clientY < 80 || e.clientY > window.innerHeight - 80)) {
+        openModal.classList.remove('show');
+        openModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        console.log('🛡️ Modal auto-closed karena klik navbar');
+    }
+});
 
 function logRead(action, count = 1) {
     // ⭐⭐ CEK JIKA FUNGSI SEDANG BERJALAN ⭐⭐
@@ -4348,15 +4614,11 @@ async function getTunggakanHTML() {
             <div class="page-header">
                 <h2 class="page-title"><i class="fas fa-clock"></i> Tunggakan</h2>
                 <div class="action-buttons">
-                    <button class="btn btn-outline" onclick="exportTunggakan()">
-                        <i class="fas fa-file-export"></i> Export
-                    </button>
+                    
                     <button class="btn btn-success" onclick="showModal('modalReminder')">
                         <i class="fas fa-envelope"></i> Kirim Reminder
                     </button>
-                    <button class="btn btn-info" onclick="refreshTunggakan()">
-    <i class="fas fa-sync-alt"></i> Refresh Data
-</button>
+                    
                 </div>
             </div>
             
@@ -5342,9 +5604,7 @@ function gantiHalamanTunggakan(pageNum, kategori) {
             <div class="page-header">
                 <h2 class="page-title"><i class="fas fa-chart-bar"></i> Laporan & Analytics</h2>
                 <div class="action-buttons">
-                    <button class="btn btn-outline" onclick="printLaporan()">
-                        <i class="fas fa-print"></i> Print
-                    </button>
+                    
                     <!-- TOMBOL GENERATE TETAP ADA DISINI -->
                     <button class="btn btn-primary" onclick="generateLaporan()">
                         <i class="fas fa-sync-alt"></i> Generate Laporan
@@ -6096,13 +6356,19 @@ function initializeQuickActions() {
     });
 }
 
-// Panggil fungsi ini dalam renderDashboard() setelah rendering selesai
 
+
+
+// Panggil fungsi ini dalam renderDashboard() setelah rendering selesai
 // ============================================
 // RENDER DASHBOARD (FULL FIXED FUNCTION)
 // ============================================
 
 async function renderDashboard() {
+        console.time("renderDashboard"); // ⭐ TAMBAH INI
+
+
+     
         logRead('dashboard');
         
     console.log("🔄 MEMULAI RENDER DASHBOARD dengan data TERISOLASI");
@@ -6346,6 +6612,8 @@ if (mapContainer) {
 
             showToast('error', 'Error Dashboard', 'Gagal memuat data dashboard.');
         }  finally {
+                    console.timeEnd("renderDashboard"); // ⭐ TAMBAH INI
+
     // HAPUS LOADING SEGERA (jangan tunggu semua selesai)
     const loadingEl = document.getElementById('loadingOverlay');
     if (loadingEl) {
@@ -6432,6 +6700,51 @@ tagihanSnapshot.forEach(doc => {
     } catch (error) {
         console.error("❌ Error refreshing dashboard stats:", error);
     }
+}
+
+// ⭐⭐ FUNGSI UNTUK UPDATE DARI CACHE ⭐⭐
+function updateDashboardFromCache() {
+    console.log("⚡ Update UI dari cache...");
+    
+    const { pelangganSnapshot, tagihanSnapshot } = dashboardCache.data;
+    
+    // UPDATE STATISTIK CEPAT
+    if (document.getElementById('statPelanggan')) {
+        document.getElementById('statPelanggan').textContent = pelangganSnapshot.size;
+    }
+    
+    // Hitung cepat untuk tagihan bulan ini
+    const currentMonthText = moment().format('MM-YYYY');
+    let totalTagihanBulanIni = 0;
+    
+    tagihanSnapshot.forEach(doc => {
+        const t = doc.data();
+        if (t.bulan === currentMonthText && t.status === 'belum') {
+            totalTagihanBulanIni += Number(t.jumlah) || 0;
+        }
+    });
+    
+    if (document.getElementById('statTagihanBulanan')) {
+        document.getElementById('statTagihanBulanan').textContent = 
+            totalTagihanBulanIni > 0 ? formatRupiah(totalTagihanBulanIni) : 'Rp 0';
+    }
+    
+    // Hitung tunggakan cepat
+    let totalTunggakan = 0;
+    tagihanSnapshot.forEach(doc => {
+        const t = doc.data();
+        if (t.status === 'belum' || t.status === 'telat') {
+            totalTunggakan += Number(t.jumlah) || 0;
+        }
+    });
+    
+    if (document.getElementById('statTunggakan')) {
+        document.getElementById('statTunggakan').textContent = formatRupiah(totalTunggakan);
+    }
+    
+    // Hapus loading jika masih ada
+    const loadingEl = document.getElementById('loadingOverlay');
+    if (loadingEl) loadingEl.classList.add('hidden');
 }
 
 // HELPER FUNCTION: Wait for element
@@ -7608,6 +7921,25 @@ function forceCloseModal(modalId) {
         document.body.style.overflow = 'auto';
     }
 }
+
+
+function hideModal(modalId) {
+    const modalEl = typeof modalId === 'string'
+        ? document.getElementById(modalId)
+        : modalId;
+
+    if (!modalEl) return;
+
+    modalEl.classList.remove('show');
+    modalEl.classList.add('hidden');
+
+    // 🔥 INI YANG KURANG
+    modalEl.style.display = 'none';
+
+    document.body.style.overflow = 'auto';
+}
+
+
 
 // ==========================================
 // FUNGSI TUTUP MODAL DENGAN TOMBOL CLOSE (X)
@@ -11663,6 +11995,16 @@ async function saveUserSessionAndInit() {
 // ============================================
 
 async function loadPage(page) {
+
+     // ⭐⭐ TAMBAH INI: ⭐⭐
+    // Tutup semua modal saat ganti halaman
+    document.querySelectorAll('.modal-overlay.show').forEach(modal => {
+        modal.classList.remove('show');
+        modal.classList.add('hidden');
+    });
+    document.body.style.overflow = 'auto';
+    // ⭐⭐ SAMPAI SINI ⭐⭐
+
     console.log("🔄 Loading Page:", page);
     
     // 1. AMBIL ROLE USER SAAT INI
@@ -16678,47 +17020,7 @@ async function getSettingHTML() {
                 
             </div>
             
-            <!-- QUICK SETTINGS PANEL (HANYA UNTUK ADMIN) -->
-            ${currentRole === 'admin' ? `
-            <div class="card" style="margin-top: 30px;">
-                <div class="card-header">
-                    <h3><i class="fas fa-bolt"></i> Quick Settings</h3>
-                </div>
-                <div class="card-body">
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px;">
-                        <!-- Tombol Quick Settings Admin... -->
-                        <!-- (Isi sesuai kode asli Anda) -->
-                    </div>
-                </div>
-            </div>
-            ` : ''}
             
-            <!-- SYSTEM STATUS (UNTUK SEMUA) -->
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <h3><i class="fas fa-chart-line"></i> System Status</h3>
-                </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 15px;">
-                        <div class="status-item">
-                            <div class="status-label">Database</div>
-                            <div class="status-value" style="color: #00b894;">
-                                <i class="fas fa-check-circle"></i> Connected
-                             </div>
-                        </div>
-                        <div class="status-item">
-                            <div class="status-label">Storage</div>
-                            <div class="status-value" style="color: #4361ee;">
-                                <i class="fas fa-hdd"></i> 2.4 GB / 5 GB
-                             </div>
-                        </div>
-                        <div class="status-item">
-                            <div class="status-label">App Version</div>
-                            <div class="status-value" id="appVersion">v2.1.0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
         </div>
     `;
@@ -19597,6 +19899,196 @@ document.addEventListener('visibilitychange', function() {
         }
     }
 });
+
+
+
+// ============================================
+// ⭐⭐ HANDLE TOMBOL BACK HP - VERSI IMPROVED ⭐⭐
+// ============================================
+
+// ⭐⭐ DEKLARASI VARIABLE ⭐⭐
+
+
+// FUNGSI UNTUK TAMBAH HISTORY
+function addToPageHistory(page) {
+    if (pageHistory[pageHistory.length - 1] !== page) {
+        pageHistory.push(page);
+        console.log("📝 History:", pageHistory);
+        
+        // Max 10 history
+        if (pageHistory.length > 10) {
+            pageHistory.shift();
+        }
+    }
+}
+
+// FUNGSI NAVIGASI BACK DENGAN TOAST CUSTOM
+function navigateBack() {
+    // Cari halaman sebelumnya dalam riwayat
+    const historyIndex = pageHistory.indexOf(currentPage);
+    
+    if (historyIndex > 0) {
+        const prevPage = pageHistory[historyIndex - 1];
+        
+        // Hapus halaman saat ini dari history
+        pageHistory.splice(historyIndex, 1);
+        
+        // Navigasi ke halaman sebelumnya
+        loadPage(prevPage);
+        
+        // Tampilkan toast custom
+        showToast('info', 'Navigasi', `Kembali ke ${getPageTitle(prevPage)}`, 1500);
+    } else {
+        // Sudah di halaman pertama, tetap di dashboard
+        showToast('info', 'Anda sudah di halaman awal', 'Tidak ada halaman sebelumnya', 1500);
+    }
+}
+
+// FUNGSI KONFIRMASI KELUAR DENGAN MODAL CUSTOM
+function showExitConfirmModal() {
+    // Hapus modal lama jika ada
+    const oldModal = document.getElementById('exitConfirmModal');
+    if (oldModal) oldModal.remove();
+    
+    // Buat modal custom
+    const modal = document.createElement('div');
+    modal.id = 'exitConfirmModal';
+    modal.className = 'modal-overlay show';
+    modal.style.zIndex = '999999';
+    
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header" style="background: var(--danger); color: white;">
+                <h3 class="modal-title">
+                    <i class="fas fa-sign-out-alt"></i> Keluar Aplikasi?
+                </h3>
+                <button class="modal-close" onclick="document.getElementById('exitConfirmModal').remove(); document.body.style.overflow='auto'" style="color: white;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px 0;">
+                    <div style="font-size: 48px; color: var(--danger); margin-bottom: 15px;">
+                        <i class="fas fa-door-open"></i>
+                    </div>
+                    <h4 style="color: var(--dark); margin-bottom: 10px;">Yakin ingin keluar?</h4>
+                    <p style="color: var(--gray); line-height: 1.5;">
+                        Anda akan keluar dari aplikasi X-BILL.<br>
+                        <strong style="color: var(--danger);">Data login tetap tersimpan.</strong>
+                    </p>
+                    <div style="background: rgba(255, 107, 107, 0.1); border-left: 4px solid var(--danger); padding: 10px; margin: 15px 0; text-align: left; border-radius: 4px;">
+                        <i class="fas fa-info-circle" style="color: var(--danger);"></i>
+                        <small style="color: var(--gray);">Untuk logout lengkap, gunakan menu Logout di profil.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+                <button class="btn btn-outline" onclick="document.getElementById('exitConfirmModal').remove(); document.body.style.overflow='auto'" style="padding: 10px 20px;">
+                    <i class="fas fa-times"></i> Batal
+                </button>
+                <button id="btnConfirmExitApp" class="btn btn-danger" style="padding: 10px 20px;">
+                    <i class="fas fa-check"></i> Keluar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    // Event listener untuk tombol konfirmasi
+    document.getElementById('btnConfirmExitApp').onclick = function() {
+        // Tutup modal
+        document.getElementById('exitConfirmModal').remove();
+        document.body.style.overflow = 'auto';
+        
+        // Tampilkan toast custom
+        showToast('info', 'Aplikasi Ditutup', 'Anda telah keluar dari aplikasi X-BILL', 2000);
+        
+        // Sembunyikan app container, tampilkan login page
+        document.getElementById('appContainer').classList.add('hidden');
+        document.getElementById('loginPage').classList.remove('hidden');
+        
+        // Reset history
+        pageHistory = ['dashboard'];
+        currentPage = 'dashboard';
+        
+        // Reset last back press
+        lastBackPress = 0;
+    };
+}
+
+// FUNGSI HANDLE TOMBOL BACK UTAMA (DENGAN TOAST CUSTOM)
+function handleBackButton() {
+    const now = Date.now();
+    
+    // Jika bukan di dashboard, navigasi back
+    if (currentPage !== 'dashboard') {
+        navigateBack();
+        return;
+    }
+    
+    // Jika di dashboard, cek double tap
+    if (now - lastBackPress < 2000) {
+        // Double tap - Tampilkan konfirmasi keluar (MODAL CUSTOM)
+        showExitConfirmModal();
+        lastBackPress = 0;
+    } else {
+        // Single tap - Tampilkan toast custom X-BILL
+        showToast('info', 'Tips', 'Tekan back sekali lagi dalam 2 detik untuk keluar aplikasi', 2000);
+        lastBackPress = now;
+        
+        // Reset setelah 2 detik
+        setTimeout(() => {
+            lastBackPress = 0;
+        }, 2000);
+    }
+}
+
+// ============================================
+// SETUP EVENT LISTENERS
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🔧 Setup tombol back handler dengan navigasi");
+    
+    // ⭐⭐ UPDATE HISTORY SETIAP KALI GANTI HALAMAN ⭐⭐
+    const originalLoadPage = window.loadPage;
+    window.loadPage = function(page) {
+        addToPageHistory(page);
+        return originalLoadPage.apply(this, arguments);
+    };
+    
+    // 1. BROWSER BACK BUTTON
+    window.addEventListener('popstate', function(event) {
+        console.log("🔙 Tombol back browser ditekan");
+        handleBackButton();
+        
+        // Cegah navigasi default browser
+        history.pushState(null, null, '#' + currentPage);
+    });
+    
+    // 2. HARDWARE BACK BUTTON (HP)
+    if (typeof navigator !== 'undefined' && navigator.app) {
+        document.addEventListener('backbutton', function(e) {
+            e.preventDefault();
+            console.log("📱 Tombol back hardware HP ditekan");
+            handleBackButton();
+        }, false);
+    }
+    
+    // 3. KEYBOARD BACK (Backspace/Alt+Left)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' || (e.altKey && e.key === 'ArrowLeft')) {
+            console.log("⌨️ Tombol keyboard back ditekan");
+            e.preventDefault();
+            handleBackButton();
+        }
+    });
+    
+    // 4. INISIALISASI HISTORY
+    history.pushState(null, null, '#dashboard');
+});
+
+
+
     </script>
 </body>
 </html>
