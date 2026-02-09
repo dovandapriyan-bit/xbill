@@ -314,23 +314,37 @@
     position: fixed;    /* ⬅️ GANTI INI */
     top: 0;
     width: 100%;
-    z-index: 1010;
+    z-index: 1000;
 }
 
         
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 20px;
+            gap: 4px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
+             line-height: 1.2;      /* biar teks tidak renggang */
         }
         
         .navbar-brand i {
             font-size: 24px;
         }
+
+        .navbar-brand img {
+    margin-right: 2px !important; /* rapetin jarak */
+    width: 32px !important;
+    height: 32px !important;
+    display: block;
+}
+
+#companyNameNav {
+    margin-left: 1px !important;
+}
+
+
         
         .user-menu {
             display: flex;
@@ -661,12 +675,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 999;
+            z-index: 1000;
             padding: 20px;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s;
-            pointer-events: none; 
+           
 
             
 
@@ -1118,11 +1132,11 @@
 
 /* Pastikan modal tetap di atas peta */
 .modal-overlay {
-    z-index: 1000 !important;
+    z-index: 2000 !important;
 }
 
 .modal {
-    z-index: 1001 !important;
+    z-index: 2001 !important;
 }
 
 /* Animasi untuk modal kustom */
@@ -2985,32 +2999,38 @@ Terima kasih,
 
 
 <!-- MODAL: DETAIL TUNGGAKAN -->
+<!-- ⭐⭐ MODAL DETAIL TUNGGAKAN ⭐⭐ -->
 <div class="modal-overlay hidden" id="modalDetailTunggakan">
-    <div class="modal">
+    <div class="modal modal-lg">
         <div class="modal-header">
             <h3 class="modal-title"><i class="fas fa-clock" style="color: var(--danger);"></i> Detail Tunggakan</h3>
             <button class="modal-close" onclick="hideModal('modalDetailTunggakan')">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="padding: 15px;">
             <div class="table-responsive">
-                <table class="table">
+                <table class="table" style="font-size: 12px;">
                     <thead>
                         <tr>
-                            <th>No</th>
-                            <th>Nama</th>
-                            <th>Total Tunggakan</th>
-                            <th>Periode (Belum Bayar)</th>
+                            <th style="width: 8%; font-size: 11px;">Server</th>
+                            <th style="width: 18%; font-size: 11px;">Pelanggan</th>
+                            <th style="width: 12%; font-size: 11px;">Lokasi</th>
+                            <th style="width: 12%; font-size: 11px;">Bulan</th>
+                            <th style="width: 12%; font-size: 11px;">Nominal</th>
+                            <th style="width: 12%; font-size: 11px;">Jatuh Tempo</th>
+                            <th style="width: 8%; font-size: 11px;">Kategori</th>
+                            <th style="width: 8%; font-size: 11px;">Status</th>
+                            <th style="width: 10%; font-size: 11px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tunggakanTable">
-                        <!-- Data akan diisi oleh JS -->
+                        <!-- Data akan diisi -->
                     </tbody>
                 </table>
             </div>
             <div id="tunggakanPagination" class="mt-3"></div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="hideModal('modalDetailTunggakan')">Tutup</button>
+        <div class="modal-footer" style="padding: 10px 15px;">
+            <button class="btn btn-outline" onclick="hideModal('modalDetailTunggakan')" style="padding: 8px 15px; font-size: 12px;">Tutup</button>
         </div>
     </div>
 </div>
@@ -3072,50 +3092,52 @@ Terima kasih,
         let paketData = [];
         let tagihanData = [];
         let globalDataPelanggan = {};
-        let globalCompanyId = null; // Variabel global untuk menyimpan ID Perusahaan saat ini
+        let globalCompanyId = null;
         let mapAlreadyLoaded = false;
-        
 
+        // ================================
+        // PAGINATION & PAGE STATE
+        // ================================
+        let currentPagePelanggan = 1;
+        let currentPageTagihan = 1;
+        let currentPageTunggakan = 1;
+        let currentPagePaket = 1;
+        let currentPageAktivitas = 1;
+        let lastBackPress = 0;
+        let pageHistory = ['dashboard'];
 
-        
+        const itemsPerPage = 10;
 
+        // ================================
+        // READ COUNTER
+        // ================================
+        let readsCounter = {
+            dashboard: 0,
+            aktivitas: 0,
+            generate: 0,
+            pelanggan: 0,
+            tagihan: 0,
+            total: 0
+        };
 
+        // ================================
+        // MAP GLOBAL
+        // ================================
+        window.pelangganMap = null;
+        window.mapMarkers = [];
+        window.isMapInitialized = false;
+        window.mapLoading = false;
+        window.lastMapLoadTime = 0;
 
-        // Tambah di awal script setelah deklarasi variabel lain (line ~96)
-let currentPagePelanggan = 1;
-let currentPageTagihan = 1;
-let currentPageTunggakan = 1;
-let currentPagePaket = 1;
-let currentPageAktivitas = 1; // Variable untuk halaman aktivitas
-let lastBackPress = 0;
-let pageHistory = ['dashboard']; // ⭐ INISIALISASI DI SINI
-
-const itemsPerPage = 10;
-
-
-// ⭐⭐ TEMPATKAN DI AWAL SCRIPT (setelah deklarasi variabel) ⭐⭐
-let readsCounter = {
-    dashboard: 0,
-    aktivitas: 0, 
-    generate: 0,
-    pelanggan: 0,
-    tagihan: 0,
-    total: 0
-};
-
-// ============================================
-// VARIABEL GLOBAL UNTUK MAP (WAJIB)
-// ============================================
-window.pelangganMap = null;
-window.mapMarkers = [];
-window.isMapInitialized = false;
-
-
-
-
-// ⭐⭐ TAMBAHKAN INI UNTUK KONTROL REFRESH ⭐⭐
-window.mapLoading = false;
-window.lastMapLoadTime = 0;
+        // ================================
+        // 🔥 CACHE TUNGGAKAN (TARUH DI SINI)
+        // ================================
+        window._tunggakanCache = null;
+        window._tunggakanCacheTime = 0;
+        const TUNGGAKAN_CACHE_TTL = 60 * 1000; // 60 detik
+        window._pelangganCache = null;
+        window._pelangganCacheTime = 0;
+        const PELANGGAN_CACHE_TTL = 5 * 60 * 1000; // 5 menit
 
 // Event listener untuk logo dropzone (tambah di kode utama)
 document.getElementById('logoDropzone').addEventListener('click', function(e) {
@@ -3124,16 +3146,18 @@ document.getElementById('logoDropzone').addEventListener('click', function(e) {
     document.getElementById('logoUpload').click();
 }, true);
 
-document.addEventListener('click', function(e) {
+
+// DISABLE sementara — bikin klik di modal (logo preview) ikut nutup modal
+// document.addEventListener('click', function(e) {
     // Jika ada modal terbuka DAN klik di area navbar (atas 80px atau bawah 80px)
-    const openModal = document.querySelector('.modal-overlay.show');
-    if (openModal && (e.clientY < 80 || e.clientY > window.innerHeight - 80)) {
-        openModal.classList.remove('show');
-        openModal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-        console.log('🛡️ Modal auto-closed karena klik navbar');
-    }
-});
+//    const openModal = document.querySelector('.modal-overlay.show');
+  //  if (openModal && (e.clientY < 80 || e.clientY > window.innerHeight - 80)) {
+    //    openModal.classList.remove('show');
+      //  openModal.classList.add('hidden');
+        //document.body.style.overflow = 'auto';
+       
+   // }
+//});
 
 function logRead(action, count = 1) {
     // ⭐⭐ CEK JIKA FUNGSI SEDANG BERJALAN ⭐⭐
@@ -5434,6 +5458,9 @@ if (item.list_tagihan.length > 0) {
                     </button>
                 </td>
             </tr>`;
+    }  finally {
+        // ✅ WAJIB ADA – INI KUNCI MASALAHNYA
+        window._loadingTunggakan = false;
     }
 }
 
@@ -7786,14 +7813,47 @@ function getLocation() {
             showToast('success', 'Sukses', 'Lokasi ditemukan.');
         },
         (error) => {
-            // Jangan banyak toast error
-            console.error("GPS Error:", error);
-            showToast('error', 'Gagal', 'Gagal ambil lokasi (Cek GPS/WiFi).');
+    console.warn("GPS Error:", error);
+
+    // ❌ user menolak izin
+    if (error.code === 1) {
+        console.warn('Izin lokasi ditolak user');   
+        return;
+    }
+
+    // ⏱️ timeout / posisi tidak ditemukan
+    if (error.code === 3) {
+    console.warn('GPS timeout, coba fallback lokasi');
+
+    // 🔥 fallback: coba ambil lokasi tanpa akurasi tinggi
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            coordInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            showToast('success', 'Lokasi', 'Lokasi perkiraan berhasil diambil');
+        },
+        (err) => {
+            console.warn('Fallback GPS gagal:', err);
         },
         {
-            enableHighAccuracy: true,
-            timeout: 5000, // Cuma 5 DETIK
-            maximumAge: 0
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 300000
+        }
+    );
+    return;
+}
+
+
+    // error lain (jarang)
+    showToast('error', 'Gagal', 'Tidak bisa mengambil lokasi.');
+},
+
+        {
+            enableHighAccuracy: false,
+            timeout: 15000,      // beri waktu
+            maximumAge: 60000    // boleh pakai cache lokasi
         }
     );
 }
@@ -8156,6 +8216,24 @@ function showModal(modalId) {
     console.log('🚀 loadPelangganData DIPANGGIL dengan serverFilter:', serverFilter);
     console.log('📍 1. Masuk fungsi loadPelangganData');
 
+    let useCacheOnly = false;
+
+
+        // ===============================
+    // 🔥 CACHE CHECK (NO FIRESTORE READ)
+    // ===============================
+    const now = Date.now();
+    if (
+        window._pelangganCache &&
+        (now - window._pelangganCacheTime) < PELANGGAN_CACHE_TTL
+    ) {
+        console.log('⚡ Pakai cache pelanggan (NO READ)');
+        pelangganData = window._pelangganCache;
+        useCacheOnly = true;
+    }
+
+
+
     // ⭐⭐ GUARD: Cegah double execution
     if (window._loadingPelanggan) {
         console.log('⏸️ loadPelangganData sedang berjalan, skip...');
@@ -8176,12 +8254,25 @@ function showModal(modalId) {
     try {
         console.log('📍 2. Masuk try block'); // ⭐ TAMBAHAN INI
 
+
+        // ===============================
+        // 🔥 CACHE GUARD (DI SINI)
+        // ===============================
+        if (useCacheOnly === true) {
+            console.log('🚫 Skip Firestore query (pakai cache)');
+            // LEWATI QUERY, LANJUT KE PROSES DI BAWAH
+        }
+
         // 1. AMBIL DATA DARI FIREBASE
-        const snapshot = await db.collection('pelanggan')
-            .where('company_id', '==', globalCompanyId)
-            .get();
+        let snapshot = null;
+        if (!useCacheOnly) {
+        snapshot = await db.collection('pelanggan')
+        .where('company_id', '==', globalCompanyId)
+        .get();
+        }
         
-        if (snapshot.empty) {
+        if (!useCacheOnly && snapshot && snapshot.empty) {
+
             table.innerHTML = `
                 <tr>
                     <td colspan="9" class="text-center" style="padding: 40px;">
@@ -8201,7 +8292,9 @@ renderPelangganTable(window.filteredPelangganData);
         }
         
         // 2. SIMPAN DATA KE ARRAY GLOBAL (PENTING!)
-        window.pelangganData = snapshot.docs.map(doc => ({
+        if (!useCacheOnly && snapshot) {
+    window.pelangganData = snapshot.docs.map(doc => ({
+
             id: doc.id,
             server: doc.data().server || '',
             nama: doc.data().nama || 'Tidak ada nama',
@@ -8217,8 +8310,25 @@ renderPelangganTable(window.filteredPelangganData);
             catatan: doc.data().catatan || '',
             company_id: doc.data().company_id || 'TIDAK ADA'
         }));
+    }
+
+        // ===============================
+        // 🔥 URUTKAN: DATA TERBARU DI ATAS
+        // ===============================
+        window.pelangganData.sort((a, b) => {
+            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
+
         
         console.log(`📊 Data pelanggan diambil: ${window.pelangganData.length} record.`);
+
+            // ===============================
+            // 💾 SIMPAN KE CACHE PELANGGAN
+            // ===============================
+            window._pelangganCache = pelangganData;
+            window._pelangganCacheTime = Date.now();
+            console.log('💾 Cache pelanggan disimpan:', pelangganData.length);
+
 
         // 3. AMBIL NILAI FILTER DARI UI
         const statusFilter = document.getElementById('filterStatus')?.value || '';
@@ -12689,7 +12799,7 @@ async function savePelanggan() {
             server: document.getElementById('pelangganServer').value,
             nama: nama.toUpperCase(),
             telepon: telepon,
-            alamat: alamat,
+            alamat: alamat.toUpperCase(),
             paket: paket,
             harga: parseFloat(harga),
             tanggal_pasang: tanggalPasang,
@@ -12720,6 +12830,13 @@ async function savePelanggan() {
             const newDocRef = await db.collection('pelanggan').add(pelangganData);
             message = 'Pelanggan baru berhasil ditambahkan';
         }
+
+        // ===============================
+        // 🔥 RESET CACHE PELANGGAN (WAJIB)
+        // ===============================
+        window._pelangganCache = null;
+        window._pelangganCacheTime = 0;
+
 
         // ⭐⭐ LOG AKTIVITAS DETAIL ⭐⭐
         try {
@@ -15831,7 +15948,31 @@ async function showBrandingSettings() {
             }
         }
         
+       // TAMPILKAN MODAL
         showModal('modalBranding');
+        
+        // ⭐⭐ TAMBAHKAN INI: Setup logo dropzone SETELAH modal ditampilkan ⭐⭐
+        setTimeout(function() {
+            const logoDropzone = document.getElementById('logoDropzone');
+            const logoUpload = document.getElementById('logoUpload');
+            
+            if (logoDropzone && logoUpload) {
+                console.log('🔧 Setting up logo dropzone events...');
+                
+                // Hapus event listeners lama
+                const newDropzone = logoDropzone.cloneNode(true);
+                logoDropzone.parentNode.replaceChild(newDropzone, logoDropzone);
+                
+                // Setup event listener baru
+                document.getElementById('logoDropzone').addEventListener('click', function(e) {
+                    console.log('🎯 Logo dropzone clicked (from branding settings)');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    document.getElementById('logoUpload').click();
+                }, true);
+            }
+        }, 100); // Tunggu 100ms agar DOM modal selesai render
         
     } catch (error) {
         console.error("Error show branding:", error);
@@ -17342,6 +17483,8 @@ function previewLogo(input) {
     }
 }
 
+
+
 // 4. SIMPAN KONTAK & NOTIFIKASI
 async function saveContactSettings() {
     try {
@@ -18408,17 +18551,473 @@ async function loadLunasBulanIniData(page = 1) {
 // FUNGSI DETAIL TUNGGAKAN (REAL-TIME CALCULATION)
 // ============================================
 
-function showDetailTunggakan() {
-    console.log("🔴 Membuka detail tunggakan...");
-    showModal('modalDetailTunggakan'); // Pastikan ID Modal HTML ini sama
-    loadTunggakanDynamicData();
+// ⭐⭐ PERBAIKI FUNGSI showDetailTunggakan() ⭐⭐
+async function showDetailTunggakan() {
+    console.log("📋 Membuka modal detail tunggakan dari dashboard...");
+    
+    const modal = document.getElementById('modalDetailTunggakan');
+    if (!modal) {
+        showToast('error', 'Error', 'Modal tidak ditemukan');
+        return;
+    }
+    
+    // ⭐⭐ RESET KE HALAMAN 1 SETIAP KALI MODAL DIBUKA ⭐⭐
+    window.currentTunggakanModalPage = 1;
+    
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    // Load data dengan halaman 1
+    await loadTunggakanDataForModal('semua', 1);
 }
+
+async function loadTunggakanDataForModal(filterKategori = 'semua', page = 1) {
+    console.log(`📊 Loading data tunggakan untuk modal, halaman ${page}...`);
+    
+    const table = document.getElementById('tunggakanTable');
+    const pagination = document.getElementById('tunggakanPagination');
+    
+    if (!table) {
+        console.error("❌ Tabel tidak ditemukan di modal");
+        return;
+    }
+    
+    try {
+        table.innerHTML = `<tr><td colspan="9" class="text-center">Memuat data...</td></tr>`;
+        
+        // Ambil data pelanggan untuk mendapatkan SERVER dan KOORDINAT
+        const pelangganSnapshot = await db.collection('pelanggan')
+            .where('company_id', '==', globalCompanyId)
+            .get();
+        
+        // Buat mapping pelanggan yang lengkap
+        const pelangganMap = {};
+        pelangganSnapshot.forEach(doc => {
+            const p = doc.data();
+            pelangganMap[doc.id] = {
+                nama: p.nama || 'Tanpa Nama',
+                telepon: p.telepon || '-',
+                alamat: p.alamat || '-',
+                server: p.server || '-',
+                koordinat: p.koordinat || '-',
+                lokasi: p.lokasi || '-'
+            };
+        });
+        
+        // Ambil data tagihan tunggakan
+        const snapshot = await db.collection('tagihan')
+            .where('company_id', '==', globalCompanyId)
+            .where('status', 'in', ['belum', 'telat'])
+            .get();
+        
+        if (snapshot.empty) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center text-muted" style="padding: 40px;">
+                        <i class="fas fa-check-circle" style="font-size: 48px; color: #e9ecef;"></i>
+                        <h4 style="margin-top:15px; color: var(--gray);">Tidak Ada Tunggakan</h4>
+                        <p>Semua tagihan sudah lunas.</p>
+                    </td>
+                </tr>`;
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        // Group data berdasarkan Pelanggan
+        const groupedMap = {};
+        
+        snapshot.forEach(doc => {
+            const t = doc.data();
+            const pid = t.pelanggan_id;
+            
+            if (!pelangganMap[pid]) return;
+            
+            const pelangganInfo = pelangganMap[pid];
+            
+            if (!groupedMap[pid]) {
+                groupedMap[pid] = {
+                    pelanggan_id: pid,
+                    pelanggan_nama: pelangganInfo.nama,
+                    pelanggan_telepon: pelangganInfo.telepon,
+                    pelanggan_alamat: pelangganInfo.alamat,
+                    pelanggan_server: pelangganInfo.server,
+                    pelanggan_koordinat: pelangganInfo.koordinat,
+                    pelanggan_lokasi: pelangganInfo.lokasi,
+                    list_tagihan: [],
+                    total_nominal: 0
+                };
+            }
+            
+            groupedMap[pid].list_tagihan.push({
+                ...t,
+                tagihan_id: doc.id
+            });
+            groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
+        });
+        
+        // Proses data
+        let processedData = Object.values(groupedMap).map(item => {
+            let maxHariTerlambat = 0;
+            let statusTerparah = 'belum';
+            
+            item.list_tagihan.forEach(t => {
+                if (t.status === 'telat' && t.tanggal_jatuh_tempo) {
+                    statusTerparah = 'telat';
+                    let mJatuhTempo = moment(t.tanggal_jatuh_tempo, 'DD-MM-YYYY');
+                    if (!mJatuhTempo.isValid()) mJatuhTempo = moment(t.tanggal_jatuh_tempo);
+                    if (mJatuhTempo.isValid()) {
+                        const hariTelat = moment().diff(mJatuhTempo, 'days');
+                        if (hariTelat > maxHariTerlambat) maxHariTerlambat = hariTelat;
+                    }
+                }
+            });
+            
+            let kategori = 'ringan';
+            if (statusTerparah === 'telat') {
+                if (maxHariTerlambat > 60) kategori = 'berat';
+                else if (maxHariTerlambat > 30) kategori = 'sedang';
+            }
+            
+            let listBulan = item.list_tagihan.map(t => {
+                const rawBulan = t.bulan || '';
+                let dateObj = null;
+                
+                if (rawBulan.includes('-')) {
+                    const parts = rawBulan.split('-');
+                    if (parts.length === 2 && parts[0].length === 4) dateObj = moment(rawBulan); 
+                    else if (parts.length === 2 && parts[0].length <= 2) dateObj = moment(rawBulan, 'MM-YYYY');
+                    else if (parts.length === 3) {
+                        const fixedString = `${parts[1]}-${parts[2]}-${parts[0]}`;
+                        dateObj = moment(fixedString, 'YYYY-MM-DD');
+                    }
+                } else {
+                    dateObj = moment(rawBulan);
+                }
+                if (dateObj && dateObj.isValid()) return dateObj.format('MMM YY');
+                return rawBulan;
+            }).join(', ');
+            
+            let jatuhTempoText = '-';
+            let jatuhTempoDate = null;
+            
+            if (item.list_tagihan.length > 0) {
+                let latestMonth = null;
+                let latestTimestamp = 0;
+                
+                item.list_tagihan.forEach(tagihan => {
+                    if (tagihan.bulan) {
+                        let monthMoment = null;
+                        
+                        if (tagihan.bulan.includes('-')) {
+                            const parts = tagihan.bulan.split('-');
+                            if (parts.length === 2) {
+                                if (parts[0].length === 2) {
+                                    monthMoment = moment(`${parts[1]}-${parts[0]}-01`);
+                                } else if (parts[0].length === 4) {
+                                    monthMoment = moment(`${parts[0]}-${parts[1]}-01`);
+                                }
+                            }
+                        }
+                        
+                        if (monthMoment && monthMoment.isValid()) {
+                            const timestamp = monthMoment.valueOf();
+                            if (timestamp > latestTimestamp) {
+                                latestTimestamp = timestamp;
+                                latestMonth = monthMoment;
+                            }
+                        }
+                    }
+                });
+                
+                if (latestMonth) {
+                    jatuhTempoDate = latestMonth.date(10);
+                    jatuhTempoText = jatuhTempoDate.format('DD MMM YYYY');
+                } else {
+                    if (item.list_tagihan[0].tanggal_jatuh_tempo) {
+                        jatuhTempoDate = moment(item.list_tagihan[0].tanggal_jatuh_tempo, 'DD-MM-YYYY');
+                        if (jatuhTempoDate.isValid()) {
+                            jatuhTempoText = jatuhTempoDate.format('DD MMM YYYY');
+                        }
+                    }
+                }
+            }
+            
+            return { 
+                ...item, 
+                kategori: kategori, 
+                hari_terlambat: maxHariTerlambat,
+                string_bulan: listBulan,
+                string_jatuh_tempo: jatuhTempoText,
+                jatuh_tempo_date: jatuhTempoDate,
+                jumlah_tagihan: item.list_tagihan.length
+            };
+        });
+        
+        // Filter data berdasarkan kategori
+        let allData = [...processedData];
+        if (filterKategori !== 'semua') {
+            allData = allData.filter(item => item.kategori === filterKategori);
+        }
+        
+        // ⭐⭐ PAGINATION LOGIC ⭐⭐
+        const itemsPerPage = 10;
+        const totalPages = Math.ceil(allData.length / itemsPerPage);
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const tableData = allData.slice(startIndex, endIndex);
+        
+        // ⭐⭐ RENDER TABEL DENGAN PAGINATION ⭐⭐
+        table.innerHTML = tableData.map((item, index) => {
+            let badgeColor = '#fdcb6e';
+            let badgeText = 'Ringan';
+            if (item.kategori === 'sedang') {
+                badgeColor = '#e17055';
+                badgeText = 'Sedang';
+            } else if (item.kategori === 'berat') {
+                badgeColor = '#d63031';
+                badgeText = 'Berat';
+            }
+            
+            // ⭐⭐ TAMPILKAN KOORDINAT/LOKASI - TOMBOL MAP KECIL ⭐⭐
+            let lokasiDisplay = '-';
+            if (item.pelanggan_koordinat && item.pelanggan_koordinat !== '-') {
+                lokasiDisplay = `
+                    <div style="display: flex; align-items: center; gap: 3px; font-size: 11px;">
+                        <i class="fas fa-map-marker-alt" style="color: #4361ee; font-size: 10px;"></i>
+                        <span>${item.pelanggan_koordinat}</span>
+                    </div>
+                `;
+            } else if (item.pelanggan_lokasi && item.pelanggan_lokasi !== '-') {
+                lokasiDisplay = `<small style="font-size: 11px;">${item.pelanggan_lokasi}</small>`;
+            }
+            
+            // ⭐⭐ TAMPILKAN SERVER ⭐⭐
+            let serverBadge = '';
+            if (item.pelanggan_server && item.pelanggan_server !== '-') {
+                const serverColors = {
+                    'Server Utama': '#4361ee',
+                    'Server Timur': '#00b894',
+                    'Server Barat': '#fd79a8',
+                    'Server Selatan': '#fdcb6e',
+                    'Server Pusat': '#6c5ce7'
+                };
+                
+                const color = serverColors[item.pelanggan_server] || '#6c757d';
+                serverBadge = `
+                    <span style="background: ${color}; color: white; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: bold;">
+                        ${item.pelanggan_server}
+                    </span>
+                `;
+            }
+            
+            // ⭐⭐ TOMBOL MAP KECIL ⭐⭐
+            let tombolMap = '';
+            if (item.pelanggan_koordinat && item.pelanggan_koordinat !== '-') {
+                tombolMap = `
+                    <button class="btn btn-xs btn-outline" 
+                            onclick="showOnMap('${item.pelanggan_koordinat}', '${item.pelanggan_nama}')" 
+                            title="Lihat di Peta"
+                            style="padding: 1px 4px; font-size: 10px; margin-top: 2px;">
+                        <i class="fas fa-map" style="font-size: 9px;"></i>
+                    </button>
+                `;
+            }
+            
+            return `
+                <tr>
+                    <!-- SERVER -->
+                    <td style="text-align: center; font-size: 11px;">
+                        ${serverBadge || '<span class="text-muted">-</span>'}
+                    </td>
+                    
+                    <!-- PELANGGAN -->
+                    <td style="font-size: 12px;">
+                        <strong>${item.pelanggan_nama}</strong>
+                        <br>
+                        <small class="text-muted" style="font-size: 10px;">${item.pelanggan_telepon}</small>
+                        <br>
+                        <small style="color: #666; font-size: 10px;">${item.pelanggan_alamat}</small>
+                    </td>
+                    
+                    <!-- LOKASI/KOORDINAT -->
+                    <td style="font-size: 11px;">
+                        ${lokasiDisplay}
+                        ${tombolMap}
+                    </td>
+                    
+                    <!-- BULAN TAGIHAN -->
+                    <td style="font-size: 11px;">
+                        <small style="color: var(--gray);">${item.string_bulan}</small>
+                        <br>
+                        <small class="text-muted" style="font-size: 10px;">${item.jumlah_tagihan} tagihan</small>
+                    </td>
+                    
+                    <!-- NOMINAL -->
+                    <td style="font-size: 12px;">
+                        <strong>${formatRupiah(item.total_nominal)}</strong>
+                        <br>
+                        <small class="text-muted" style="font-size: 10px;">${item.hari_terlambat > 0 ? `${item.hari_terlambat} hari telat` : 'Belum telat'}</small>
+                    </td>
+                    
+                    <!-- JATUH TEMPO -->
+                    <td style="font-size: 11px;">
+                        <small>${item.string_jatuh_tempo}</small>
+                        ${item.jatuh_tempo_date ? `<br><small class="text-muted" style="font-size: 9px;">${moment(item.jatuh_tempo_date).fromNow()}</small>` : ''}
+                    </td>
+                    
+                    <!-- KATEGORI -->
+                    <td>
+                        <span style="background: ${badgeColor}; color: white; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: bold;">
+                            ${badgeText}
+                        </span>
+                    </td>
+                    
+                    <!-- STATUS -->
+                    <td>
+                        <span class="badge badge-warning" style="font-size: 10px; padding: 2px 6px;">
+                            <i class="fas fa-clock" style="font-size: 9px;"></i> Belum
+                        </span>
+                    </td>
+                    
+                    <!-- AKSI -->
+                    <td>
+                        <div class="btn-group" style="gap: 2px;">
+                            <button class="btn btn-sm btn-success" 
+                                    onclick="showPayAllModal('${item.pelanggan_id}')" 
+                                    title="Bayar Semua Tunggakan"
+                                    style="padding: 2px 6px; font-size: 11px;">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" 
+                                    onclick="viewTagihanDetails('${item.pelanggan_id}')" 
+                                    title="Rincian Tagihan"
+                                    style="padding: 2px 6px; font-size: 11px;">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // ⭐⭐ RENDER PAGINATION DENGAN TOMBOL KIRI & KANAN ⭐⭐
+        let paginationHTML = '<div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 15px;">';
+        
+        // TOMBOL PREVIOUS (KIRI)
+        if (page > 1) {
+            paginationHTML += `
+                <a class="page-link" 
+                   onclick="loadTunggakanDataForModal('${filterKategori}', ${page - 1})"
+                   style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                    &laquo; Prev
+                </a>
+            `;
+        }
+        
+        // ANGKA HALAMAN
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === page) {
+                paginationHTML += `
+                    <span class="page-link active" 
+                          style="padding: 6px 10px; background: #4361ee; color: white; border-radius: 4px;">
+                        ${i}
+                    </span>
+                `;
+            } else {
+                paginationHTML += `
+                    <a class="page-link" 
+                       onclick="loadTunggakanDataForModal('${filterKategori}', ${i})"
+                       style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                        ${i}
+                    </a>
+                `;
+            }
+        }
+        
+        // TOMBOL NEXT (KANAN)
+        if (page < totalPages) {
+            paginationHTML += `
+                <a class="page-link" 
+                   onclick="loadTunggakanDataForModal('${filterKategori}', ${page + 1})"
+                   style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-decoration: none;">
+                    Next &raquo;
+                </a>
+            `;
+        }
+        
+        paginationHTML += '</div>';
+        
+        // INFO SUMMARY
+        paginationHTML += `
+            <div style="text-align: center; margin-top: 10px; color: var(--gray); font-size: 12px;">
+                <i class="fas fa-info-circle"></i> 
+                Halaman ${page} dari ${totalPages} | 
+                Menampilkan ${startIndex + 1}-${Math.min(endIndex, allData.length)} dari ${allData.length} data
+            </div>
+        `;
+        
+        pagination.innerHTML = paginationHTML;
+        
+    } catch (error) {
+        console.error("❌ Error load tunggakan modal:", error);
+        table.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-danger" style="padding: 40px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px;"></i>
+                    <h4 style="margin-top:15px;">Error Memuat Data</h4>
+                    <p>${error.message}</p>
+                </td>
+            </tr>`;
+    }
+}
+
+// ⭐⭐ FUNGSI UNTUK TAMPILKAN DI PETA ⭐⭐
+// ⭐⭐ FUNGSI UNTUK TAMPILKAN DI PETA (TOMBOL KECIL) ⭐⭐
+function showOnMap(koordinat, nama) {
+    console.log("🗺️ Menampilkan di peta:", koordinat, nama);
+    
+    // Parsing koordinat
+    const parts = koordinat.split(',');
+    if (parts.length !== 2) {
+        showToast('error', 'Format Error', 'Format koordinat tidak valid');
+        return;
+    }
+    
+    const lat = parseFloat(parts[0].trim());
+    const lng = parseFloat(parts[1].trim());
+    
+    if (isNaN(lat) || isNaN(lng)) {
+        showToast('error', 'Format Error', 'Koordinat harus angka');
+        return;
+    }
+    
+    // Buka Google Maps di tab baru
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
+    
+    // Notifikasi kecil
+    showToast('info', 'Peta', `Membuka lokasi ${nama}`, 2000);
+}
+
 
 // ============================================
 // LOAD DATA TUNGGAKAN DENGAN PERHITUNGAN DINAMIS
 // ============================================
 
-async function loadTunggakanDynamicData(page = 1) {
+async function loadTunggakanDynamicData(page = currentPageTunggakan) {
+
+    currentPageTunggakan = page;
+
     const table = document.getElementById('tunggakanTable');
     if (!table) return;
     
