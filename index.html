@@ -1151,6 +1151,12 @@
     }
 }
 
+#modalBranding {
+    pointer-events: auto !important;
+}
+
+
+
 /* Tambah di bagian style */
 .leaflet-marker-draggable {
     cursor: move !important;
@@ -1605,17 +1611,31 @@
                 <!-- LOGO UPLOAD -->
                 <div class="form-group text-center" style="margin-bottom: 30px;">
                     <label>Logo Perusahaan</label>
-                    <div style="border: 2px dashed var(--gray-light); border-radius: 15px; padding: 30px; margin-top: 10px; cursor: pointer;" 
-                         onclick="document.getElementById('logoUpload').click()" id="logoDropzone">
+                    <div id="logoDropzone"
+                        style="border: 2px dashed var(--gray-light);
+                                border-radius: 15px;
+                                padding: 30px;
+                                margin-top: 10px;
+                                cursor: pointer;
+                                position: relative;
+                                overflow: hidden;">
+
+                        <!-- INPUT FILE DIPINDAH KE DALAM -->
+                        <input type="file" id="logoUpload"
+                            accept="image/*"
+                            style="opacity:0; position:absolute; inset:0; cursor:pointer;"
+                            onchange="previewLogo(this)">
+
                         <div id="logoPreview" style="width: 150px; height: 150px; margin: 0 auto; 
-                             background: var(--light); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            background: var(--light); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                             <i class="fas fa-building" style="font-size: 48px; color: var(--gray);"></i>
                         </div>
+
                         <p class="mt-3" style="color: var(--gray);">Klik untuk upload logo</p>
                         <small class="text-muted">Rekomendasi: 500x500px, PNG/JPG, maks 2MB</small>
                     </div>
-                    <input type="file" id="logoUpload" accept="image/*" style="display: none;" 
-                           onchange="previewLogo(this)">
+
+
                 </div>
                 
                 <!-- COLOR SCHEME -->
@@ -3130,7 +3150,7 @@ Terima kasih,
         window.lastMapLoadTime = 0;
 
         // ================================
-        // 🔥 CACHE TUNGGAKAN (TARUH DI SINI)
+        // 🔥 CACHE (TARUH DI SINI)
         // ================================
         window._tunggakanCache = null;
         window._tunggakanCacheTime = 0;
@@ -3138,6 +3158,21 @@ Terima kasih,
         window._pelangganCache = null;
         window._pelangganCacheTime = 0;
         const PELANGGAN_CACHE_TTL = 5 * 60 * 1000; // 5 menit
+        // CACHE DASHBOARD
+        window._dashboardCache = null;
+        window._dashboardCacheTime = 0;
+        const DASHBOARD_CACHE_TTL = 60 * 1000; // 60 detik
+        // DASHBOARD LOAD GUARD
+        window._dashboardLoaded = false;
+        window._dashboardDirty = true; // 🔥 PENTING
+        // CACHE TAGIHAN
+        window._tagihanCache = null;
+        window._tagihanCacheTime = 0;
+        window._loadingTagihan = false;
+        const TAGIHAN_CACHE_TTL = 60 * 1000; // 60 detik
+
+
+
 
 // Event listener untuk logo dropzone (tambah di kode utama)
 document.getElementById('logoDropzone').addEventListener('click', function(e) {
@@ -11594,6 +11629,9 @@ if (window.__fromMapOpenDetail) {
     }
 }
 
+
+
+
 // Fungsi untuk membuka Google Maps
 function openGoogleMaps(coordinates) {
     if (!coordinates || coordinates.trim() === '') {
@@ -12186,67 +12224,69 @@ let cachedDashboardHTML = '';
 
     try {
         switch(page) {
-            case 'dashboard':
-    // 1. Selalu render ulang HTML Dashboard untuk memastikan container bersih
+           case 'dashboard':
+
+    // 1. SELALU render HTML dashboard
     pageHTML = await getDashboardHTML();
     mainContent.innerHTML = pageHTML;
-    
-    // 2. Pastikan container map terlihat dan ukurannya benar sebelum menginisialisasi Leaflet
+
+    // 🔥 TUNGGU DOM SELESAI DIBUAT
+    setTimeout(async () => {
+        await renderDashboard();
+    }, 0);
+
+    // 2. Setup container map
     const mapContainer = document.getElementById('mapContainer');
     if (mapContainer) {
         mapContainer.style.display = 'block';
         mapContainer.style.visibility = 'visible';
-        mapContainer.style.height = '400px'; // Paksa tinggi agar tidak 0px
+        mapContainer.style.height = '400px';
         mapContainer.style.width = '100%';
     }
 
-    // 3. Jalankan logika Dashboard
+    // 🔥 GUARD: JIKA SUDAH LOAD & TIDAK DIRTY → STOP DI SINI
+    if (window._dashboardLoaded && !window._dashboardDirty) {
+        console.log('⚡ Dashboard pakai cache, skip logic berat');
+        break;
+    }
+
+    console.log('🔄 Dashboard render logic berat');
+
+    // reset state
+    window._dashboardLoaded = true;
+    window._dashboardDirty = false;
+
+    // 3. Load data dashboard (Firestore)
     await renderDashboard();
-    
-    // ⭐⭐ FIX UTAMA: RE-INITIALIZE MAP DARI AWAL ⭐⭐
+
+    // 4. INIT / RE-INIT MAP (AMAN)
     setTimeout(() => {
         const pelangganMapEl = document.getElementById('pelangganMap');
         if (pelangganMapEl) {
-            console.log("🔄 Force re-initialize map...");
-            
-            // HAPUS MAP LAMA JIKA ADA
+
+            // hapus map lama jika ada
             if (window.pelangganMap) {
-                try {
-                    window.pelangganMap.remove();
-                } catch(e) {
-                    console.log("⚠️ Error removing old map:", e);
-                }
+                try { window.pelangganMap.remove(); } catch(e){}
                 window.pelangganMap = null;
                 window.mapMarkers = [];
                 window.isMapInitialized = false;
             }
-            
-            // TUNGGU DOM READY
+
+            initPelangganMap();
+
             setTimeout(() => {
-                // INITIALIZE ULANG
-                initPelangganMap();
-                
-                // TUNGGU LEAFLET LOAD
-                setTimeout(() => {
-                    if (window.pelangganMap) {
-                        // SET VIEW DEFAULT
-                        window.pelangganMap.setView([-6.2088, 106.8456], 13);
-                        
-                        // LOAD MARKERS
-                        loadPelangganMap();
-                        
-                        // INVALIDATE SIZE
-                        setTimeout(() => {
-                            window.pelangganMap.invalidateSize(true);
-                            console.log("✅ Map successfully re-initialized with markers");
-                        }, 200);
-                    }
-                }, 100);
-            }, 100);
+                if (window.pelangganMap) {
+                    window.pelangganMap.setView([-6.2088, 106.8456], 13);
+                    loadPelangganMap();
+                    window.pelangganMap.invalidateSize(true);
+                    window.isMapInitialized = true;
+                }
+            }, 200);
         }
-    }, 500);
-    
+    }, 300);
+
     break;
+
                 
                 
             case 'pelanggan':
