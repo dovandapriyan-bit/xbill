@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1612,44 +1615,39 @@
                 <div class="form-group text-center" style="margin-bottom: 30px;">
                     <label>Logo Perusahaan</label>
                     <div id="logoDropzone"
-     style="border: 2px dashed var(--gray-light);
-            border-radius: 15px;
-            padding: 30px;
-            margin-top: 10px;
-            text-align: center;">
+                    onclick="document.getElementById('logoUpload').click()"
+                    style="border: 2px dashed var(--gray-light);
+                            border-radius: 15px;
+                            padding: 30px;
+                            margin-top: 10px;
+                            text-align: center;
+                            cursor:pointer;">
 
-    <label for="logoUpload" style="cursor:pointer; display:block;">
+                    <input type="file" id="logoUpload" accept="image/*" style="display: none;" onchange="handleLogoUpload(this)">
 
-        <div id="logoPreview"
-             style="width: 150px; height: 150px; margin: 0 auto;
-                    background: var(--light);
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;">
-            <i class="fas fa-building"
-               style="font-size: 48px; color: var(--gray);"></i>
-        </div>
+                    <label style="cursor:pointer; display:block;">
 
-        <p style="color: var(--gray); margin-top: 12px;">
-            Klik untuk upload logo
-        </p>
+                        <div id="logoPreview"
+                            style="width: 150px; height: 150px; margin: 0 auto;
+                                    background: var(--light);
+                                    border-radius: 10px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;">
+                            <i class="fas fa-building"
+                            style="font-size: 48px; color: var(--gray);"></i>
+                        </div>
 
-    </label>
+                        <p style="color: var(--gray); margin-top: 12px;">
+                            Klik untuk upload logo
+                        </p>
 
-    <small class="text-muted">
-        Rekomendasi: 500×500px, PNG/JPG, maks 2MB
-    </small>
-</div>
+                    </label>
 
-<input type="file"
-       id="logoUpload"
-       accept="image/*"
-       style="display:none"
-       onchange="previewLogo(this)">
-
-
-
+                    <small class="text-muted">
+                        Rekomendasi: 500×500px, PNG/JPG, maks 2MB
+                    </small>
+                </div>
                 </div>
                 
                 <!-- COLOR SCHEME -->
@@ -1660,51 +1658,9 @@
                         <input type="color" class="form-control" id="secondaryColor" value="#7209b7" style="flex: 1;">
                     </div>
                 </div>
+               
                 
-                <!-- FAVICON -->
-                <div class="form-group">
-                    <label>Favicon</label>
-                    <input type="file" class="form-control" id="faviconUpload" accept=".ico,image/*">
-                    <small class="text-muted">File .ico atau PNG 32x32px</small>
-                </div>
                 
-                <!-- THEME OPTIONS -->
-                <div class="form-group">
-                    <label>Tema Dashboard</label>
-                    <div class="form-check">
-                        <input type="radio" class="form-check-input" name="dashboardTheme" id="themeLight" value="light" checked>
-                        <label class="form-check-label" for="themeLight">Light Mode</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="radio" class="form-check-input" name="dashboardTheme" id="themeDark" value="dark">
-                        <label class="form-check-label" for="themeDark">Dark Mode</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="radio" class="form-check-input" name="dashboardTheme" id="themeAuto" value="auto">
-                        <label class="form-check-label" for="themeAuto">Auto (ikuti sistem)</label>
-                    </div>
-                </div>
-                
-                <!-- FONT SETTINGS -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Font Utama</label>
-                        <select class="form-control" id="mainFont">
-                            <option value="'Segoe UI', system-ui">Segoe UI (Default)</option>
-                            <option value="'Poppins', sans-serif">Poppins</option>
-                            <option value="'Inter', sans-serif">Inter</option>
-                            <option value="'Roboto', sans-serif">Roboto</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Font Size</label>
-                        <select class="form-control" id="fontSize">
-                            <option value="14px">Kecil (14px)</option>
-                            <option value="16px" selected>Normal (16px)</option>
-                            <option value="18px">Besar (18px)</option>
-                        </select>
-                    </div>
-                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -3094,6 +3050,49 @@ Terima kasih,
     </div>
 </div>
 
+<!-- MODAL IMPORT PAKET -->
+<div class="modal-overlay hidden" id="modalImportPaket">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-file-import"></i> Import Data Paket</h3>
+            <button class="modal-close" onclick="hideModal('modalImportPaket')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Pilih File Excel/CSV</label>
+                <input type="file" class="form-control" id="fileImportPaket" 
+                       accept=".xlsx,.xls,.csv">
+                <small class="text-muted">Format: Excel (.xlsx, .xls) atau CSV</small>
+            </div>
+            
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> Logika Import:</h6>
+                <p style="margin: 5px 0; font-size: 12px;">
+                    • Data yang <strong>sudah ada</strong> (nama+kecepatan+harga sama) akan <strong>dilewati</strong><br>
+                    • Hanya data <strong>baru</strong> yang akan dimasukkan<br>
+                    • Untuk update data existing, gunakan tombol <strong>Edit</strong> di tabel
+                </p>
+            </div>
+            
+            <div class="alert alert-success">
+                <h6><i class="fas fa-download"></i> Template:</h6>
+                <p style="margin: 5px 0; font-size: 12px;">
+                    <a href="javascript:void(0)" onclick="downloadTemplatePaket()" 
+                       style="color: var(--primary); text-decoration: underline;">
+                       Download Template Excel
+                    </a>
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="hideModal('modalImportPaket')">Batal</button>
+            <button class="btn btn-success" onclick="importDataPaket()">
+                <i class="fas fa-upload"></i> Import Data Baru
+            </button>
+        </div>
+    </div>
+</div>  
+
     
     <!-- ========== ALL JAVASCRIPT ========== -->
     <script>
@@ -4417,25 +4416,28 @@ function toggleTunggakanFilter() {
 }
         
         async function getPaketHTML() {
-            return `
-                <div class="page paket-page">
-                    <div class="page-header">
-                        <h2 class="page-title"><i class="fas fa-wifi"></i> Data Paket Internet</h2>
-                        <div>
-                            <button class="btn btn-outline" onclick="exportPaket()">
-                                <i class="fas fa-file-export"></i> Export
-                            </button>
-                            <button class="btn btn-primary" onclick="showAddPaketModal()">
-                                <i class="fas fa-plus"></i> Tambah Paket
-                            </button>
-                        </div>
-                    </div>
-                    
-                    
-                    
-                    <div class="card">
+    return `
+        <div class="page paket-page">
+            <div class="page-header">
+                <h2 class="page-title"><i class="fas fa-wifi"></i> Data Paket Internet</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="showImportPaketModal()">
+                        <i class="fas fa-file-import"></i> Import
+                    </button>
+                    <button class="btn btn-outline" onclick="exportPaket()">
+                        <i class="fas fa-file-export"></i> Export
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
                 <div class="card-header">
                     <h3>Detail Paket</h3>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="showAddPaketModal()">
+                            <i class="fas fa-plus"></i> Tambah Paket
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -5324,24 +5326,36 @@ if (item.list_tagihan.length > 0) {
     }
 }
 
-            // Hitung hari terlambat
             item.list_tagihan.forEach(t => {
-                if (t.status === 'telat' && t.tanggal_jatuh_tempo) {
-                    statusTerparah = 'telat';
+                // CEK SEMUA TAGIHAN YANG BELUM LUNAS (baik 'belum' maupun 'telat')
+                if ((t.status === 'belum' || t.status === 'telat') && t.tanggal_jatuh_tempo) {
+                    statusTerparah = t.status === 'telat' ? 'telat' : 'belum';
+                    
+                    // Parse tanggal jatuh tempo (ikuti format yang sudah ada)
                     let mJatuhTempo = moment(t.tanggal_jatuh_tempo, 'DD-MM-YYYY');
                     if (!mJatuhTempo.isValid()) mJatuhTempo = moment(t.tanggal_jatuh_tempo);
+                    
                     if (mJatuhTempo.isValid()) {
                         const hariTelat = moment().diff(mJatuhTempo, 'days');
-                        if (hariTelat > maxHariTerlambat) maxHariTerlambat = hariTelat;
+                        
+                        // CARI HARI TERLAMBAT TERBESAR (tagihan terlama)
+                        if (hariTelat > maxHariTerlambat) {
+                            maxHariTerlambat = hariTelat;
+                        }
                     }
                 }
             });
 
-            // Tentukan kategori
+            // TENTUKAN KATEGORI BERDASARKAN HARI TERLAMBAT TERBESAR
             let kategori = 'ringan';
-            if (statusTerparah === 'telat') {
-                if (maxHariTerlambat > 60) kategori = 'berat';
-                else if (maxHariTerlambat > 30) kategori = 'sedang';
+            if (maxHariTerlambat > 60) {
+                kategori = 'berat';
+            } else if (maxHariTerlambat > 30) {
+                kategori = 'sedang';
+            } else if (maxHariTerlambat > 0) {
+                kategori = 'ringan';
+            } else {
+                kategori = 'belum_telat'; // untuk yang belum lewat jatuh tempo
             }
 
             return { 
@@ -5443,9 +5457,10 @@ if (item.list_tagihan.length > 0) {
                         ${item.jatuh_tempo_date ? `<br><small class="text-muted">${moment(item.jatuh_tempo_date).fromNow()}</small>` : ''}
                     </td>
                     <td>
-                        <span style="background: ${badgeColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">
-                            ${badgeText} (${item.hari_terlambat} Hari)
-                        </span>
+                        <div style="background: ${badgeColor}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; white-space: nowrap; text-align: center; line-height: 1.2;">
+                            <div style="font-size: 10px;">${badgeText}</div>
+                            <div>(${item.hari_terlambat} Hari)</div>
+                        </div>
                     </td>
                     <td>
                         <span class="badge badge-warning">
@@ -7293,66 +7308,51 @@ function refreshDashboard() {
 // ============================================
 
 function initPelangganMap() {
-    console.log("🗺️ Cek inisialisasi peta...");
-    
-    // 1. CEK JIKA SEDANG LOADING (Mencegah double load)
-    if (window.mapLoading) {
-        console.log("⏳ Peta sedang loading, skip init");
-        return null;
-    }
+    console.log("🗺️ Init pelanggan map (FINAL FIX)");
 
-    // 2. CEK JIKA CONTAINER ADA
     const mapContainer = document.getElementById('pelangganMap');
     if (!mapContainer) {
-        console.warn("⚠️ Container #pelangganMap tidak ditemukan");
+        console.warn("⚠️ #pelangganMap tidak ada");
         return null;
     }
 
-    // 3. PASTIKAN TAMPILAN CONTAINER (Fix Masalah Peta Putih/Hilang)
+    // 🔥 FIX UTAMA: HANCURKAN MAP LAMA TOTAL
+    if (window.pelangganMap) {
+        console.warn('♻️ Destroy map lama');
+
+        window.pelangganMap.off();
+        window.pelangganMap.remove();
+        window.pelangganMap = null;
+    }
+
+    // 🔥 FIX LEAFLET: bersihkan flag container
+    mapContainer._leaflet_id = null;
+    mapContainer.innerHTML = '';
+
+    // Pastikan container valid
     mapContainer.style.display = 'block';
-    mapContainer.style.visibility = 'visible';
     mapContainer.style.height = '400px';
     mapContainer.style.width = '100%';
 
-    console.log("🔄 Memulai inisialisasi peta...");
-    window.mapLoading = true;
-    
-    try {
-        
-        
+    // BUAT MAP BARU
+    window.pelangganMap = L.map(mapContainer).setView(
+        [-2.5489, 118.0149], 
+        5
+    );
 
-        // 5. BUAT PETA BARU
-        if (!window.pelangganMap) {
-    window.pelangganMap = L.map('pelangganMap').setView([-2.5489, 118.0149], 5);
-} else {
-    console.warn('⛔ MAP SUDAH ADA, TIDAK BUAT ULANG');
-}
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(window.pelangganMap);
 
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(window.pelangganMap);
-        
-        window.isMapInitialized = true;
-        console.log("✅ Peta berhasil diinisialisasi");
+    setTimeout(() => {
+        window.pelangganMap.invalidateSize(true);
+    }, 200);
 
-        // 6. INVALIDATE SIZE (Agar Peta Menyesuaikan Diri dengan Container)
-        setTimeout(() => {
-            if (window.pelangganMap) {
-                window.pelangganMap.invalidateSize();
-            }
-        }, 200);
-
-    } catch (error) {
-        console.error("❌ Gagal inisialisasi peta:", error);
-        window.pelangganMap = null;
-        window.isMapInitialized = false;
-    }
-    
-    window.mapLoading = false;
+    console.log("✅ Map berhasil dibuat ulang");
     return window.pelangganMap;
 }
+
 
 
 
@@ -7396,13 +7396,7 @@ function bukaDetailTagihanPelanggan(pelangganId) {
 // Fungsi memuat data pelanggan ke peta
 async function loadPelangganMap() {
 
-    if (window.__mapLoaded === true) {
-    console.warn('⛔ MAP SUDAH LOADED, SKIP');
-    return;
-}
-window.__mapLoaded = false;
-
-
+   
 
     console.log("📍 Memuat data pelanggan ke peta...");
     
@@ -7418,18 +7412,22 @@ window.__mapLoaded = false;
         mapContainer.style.display = 'block';
     }
     
-    if (typeof map !== 'undefined' && map !== null) {
-    setTimeout(function() {
-        map.invalidateSize();
+    if (window.pelangganMap) {
+    setTimeout(() => {
+        window.pelangganMap.invalidateSize(true);
     }, 200);
 }
+
 
 
     
     try {
         // Hapus marker lama
-        mapMarkers.forEach(marker => marker.remove());
-        mapMarkers = [];
+        if (Array.isArray(mapMarkers) && mapMarkers.length > 0) {
+            mapMarkers.forEach(marker => marker.remove());
+            mapMarkers = [];
+        }
+
         
         // Ambil data pelanggan dari Firestore
         const snapshot = await db.collection('pelanggan')
@@ -7474,10 +7472,16 @@ window.__mapLoaded = false;
                         });
                         
                         // 1. BUAT MARKER
+if (!window.pelangganMap) {
+    console.error('❌ MAP BELUM ADA, MARKER DIBATALKAN');
+    return;
+}
+
 const marker = L.marker([coords[0], coords[1]], {
     icon: customIcon,
     draggable: true
-}).addTo(window.pelangganMap || null);
+}).addTo(window.pelangganMap);
+
 
 // 2. SIMPAN DATA
 marker._pelangganId = doc.id;
@@ -7632,6 +7636,8 @@ L.DomEvent.on(popupContent.querySelector('.btn-save'), 'click', async function()
 
 // 5. SIMPAN KE ARRAY
 mapMarkers.push(marker);
+markerCount++;
+
                     }
                 } catch (error) {
                     console.warn(`Koordinat invalid: ${pelanggan.koordinat}`, error);
@@ -7646,11 +7652,34 @@ mapMarkers.push(marker);
         }
         
         // Auto zoom ke semua marker jika ada
-        if (mapMarkers.length > 0) {
-            const group = new L.featureGroup(mapMarkers);
-            window.pelangganMap.fitBounds(group.getBounds().pad(0.1));
+        if (mapMarkers.length > 0 && window.pelangganMap) {
+    const group = new L.featureGroup(mapMarkers);
+
+    // 🔥 FIX FINAL: PAKSA Z-INDEX LEAFLET
+setTimeout(() => {
+    const mapEl = document.getElementById('pelangganMap');
+    if (!mapEl) return;
+
+    mapEl.style.position = 'relative';
+    mapEl.style.zIndex = '1';
+
+    const panes = mapEl.querySelectorAll('.leaflet-pane');
+    panes.forEach(p => p.style.zIndex = '500');
+
+    const markerPane = mapEl.querySelector('.leaflet-marker-pane');
+    if (markerPane) {
+        markerPane.style.zIndex = '9999';
+    }
+
+    const popupPane = mapEl.querySelector('.leaflet-popup-pane');
+    if (popupPane) {
+        popupPane.style.zIndex = '10000';
+    }
+}, 100);
 
         }
+
+
         
         console.log(`✅ ${markerCount} marker ditambahkan ke peta`);
 
@@ -7797,29 +7826,35 @@ async function savePelangganKoordinat(pelangganId, newKoordinat, pelangganNama, 
     }
 }
 
-// Fungsi refresh peta
 function refreshPelangganMap() {
-    console.log("🔄 Refresh map manual...");
-    
-    // ⭐⭐ PASTIKAN CONTAINER MAP VISIBLE ⭐⭐
-    const mapContainer = document.getElementById('pelangganMap');
-    if (mapContainer) {
-        mapContainer.style.display = 'block';
-        mapContainer.style.visibility = 'visible';
-        mapContainer.style.opacity = '1';
+    console.log("🔥 HARD REFRESH MAP");
+
+    const mapEl = document.getElementById('pelangganMap');
+    if (!mapEl) return;
+
+    // 🔥 HANCURKAN MAP LAMA TOTAL
+    if (window.pelangganMap) {
+        try {
+            window.pelangganMap.off();
+            window.pelangganMap.remove();
+        } catch (e) {}
     }
-    
-    // ⭐⭐ FORCE RE-INIT MAP JIKA TIDAK ADA ⭐⭐
-    if (!window.pelangganMap) {
-        window.isMapInitialized = false;
-        window.mapMarkers = [];
-    }
-    
-    // ⭐⭐ LOAD MAP LAGI ⭐⭐
+
+    // 🔥 RESET SEMUA FLAG
+    window.pelangganMap = null;
+    window.mapMarkers = [];
+    window.__mapLoaded = false;
+    window.isMapInitialized = false;
+
+    // 🔥 INIT MAP BARU (DOM BARU)
+    initPelangganMap();
+
     setTimeout(() => {
         loadPelangganMap();
-    }, 300);
+        window.pelangganMap.invalidateSize(true);
+    }, 200);
 }
+
 
 // Fungsi zoom ke semua marker
 function focusOnAllMarkers() {
@@ -12240,66 +12275,85 @@ let cachedDashboardHTML = '';
         switch(page) {
            case 'dashboard':
 
-    // 1. SELALU render HTML dashboard
-    pageHTML = await getDashboardHTML();
-    mainContent.innerHTML = pageHTML;
+                // 1. SELALU render HTML dashboard
+                pageHTML = await getDashboardHTML();
+                mainContent.innerHTML = pageHTML;
 
-    // 🔥 TUNGGU DOM SELESAI DIBUAT
-    setTimeout(async () => {
-        await renderDashboard();
-    }, 0);
+                // 🔥 TUNGGU DOM SELESAI DIBUAT
+                await renderDashboard();
 
-    // 2. Setup container map
-    const mapContainer = document.getElementById('mapContainer');
-    if (mapContainer) {
-        mapContainer.style.display = 'block';
-        mapContainer.style.visibility = 'visible';
-        mapContainer.style.height = '400px';
-        mapContainer.style.width = '100%';
-    }
 
-    // 🔥 GUARD: JIKA SUDAH LOAD & TIDAK DIRTY → STOP DI SINI
-    if (window._dashboardLoaded && !window._dashboardDirty) {
-        console.log('⚡ Dashboard pakai cache, skip logic berat');
-        break;
-    }
-
-    console.log('🔄 Dashboard render logic berat');
-
-    // reset state
-    window._dashboardLoaded = true;
-    window._dashboardDirty = false;
-
-    // 3. Load data dashboard (Firestore)
-    await renderDashboard();
-
-    // 4. INIT / RE-INIT MAP (AMAN)
-    setTimeout(() => {
-        const pelangganMapEl = document.getElementById('pelangganMap');
-        if (pelangganMapEl) {
-
-            // hapus map lama jika ada
-            if (window.pelangganMap) {
-                try { window.pelangganMap.remove(); } catch(e){}
-                window.pelangganMap = null;
-                window.mapMarkers = [];
-                window.isMapInitialized = false;
-            }
-
-            initPelangganMap();
-
-            setTimeout(() => {
-                if (window.pelangganMap) {
-                    window.pelangganMap.setView([-6.2088, 106.8456], 13);
-                    loadPelangganMap();
-                    window.pelangganMap.invalidateSize(true);
-                    window.isMapInitialized = true;
+                // 2. Setup container map
+                const mapContainer = document.getElementById('mapContainer');
+                if (mapContainer) {
+                    mapContainer.style.display = 'block';
+                    mapContainer.style.visibility = 'visible';
+                    mapContainer.style.height = '400px';
+                    mapContainer.style.width = '100%';
                 }
-            }, 200);
-        }
-    }, 300);
 
-    break;
+                // 🔥 GUARD: JIKA SUDAH LOAD & TIDAK DIRTY → STOP DI SINI
+                if (window._dashboardLoaded && !window._dashboardDirty) {
+                    console.log('⚡ Dashboard pakai cache, skip logic berat');
+                    break;
+                }
+
+                console.log('🔄 Dashboard render logic berat');
+
+                // reset state
+                window._dashboardLoaded = true;
+                window._dashboardDirty = false;
+
+                // 3. Load data dashboard (Firestore)
+                await renderDashboard();
+
+               
+                // 4. INIT MAP (PASTI NEMPEL KE DOM BARU)
+// 4. MAP FIX: REBIND KE DOM BARU (JANGAN REMOVE)
+// 4. INIT MAP (FIX LOGIN + NAV)
+const waitForMapDOM = () => {
+    const el = document.getElementById('pelangganMap');
+    if (!el || !el.isConnected) {
+        requestAnimationFrame(waitForMapDOM);
+        return;
+    }
+
+    // 🔥 HANCURKAN TOTAL MAP LAMA
+    if (window.pelangganMap) {
+        window.pelangganMap.off();
+        window.pelangganMap.remove();
+        window.pelangganMap = null;
+    }
+
+    window.mapMarkers = [];
+
+    // 🔥 FORCE DOM STABIL
+    el.style.display = 'block';
+    el.offsetHeight; // ⬅️ WAJIB
+
+    // 🔥 INIT SETELAH DOM BENAR-BENAR ADA
+    initPelangganMap();
+
+    requestAnimationFrame(() => {
+        if (!window.pelangganMap) return;
+
+        // 🔥 RESET INTERNAL LEAFLET
+        window.pelangganMap.setView(
+            [-6.2088, 106.8456],
+            13,
+            { animate: false }
+        );
+
+        loadPelangganMap();
+        window.pelangganMap.invalidateSize();
+    });
+};
+
+waitForMapDOM();
+
+
+
+break;
 
                 
                 
@@ -12413,27 +12467,18 @@ let cachedDashboardHTML = '';
         }
 
                // ⭐⭐ PERBAIKAN KHUSUS UNTUK MAP: Reset peta setiap kali kembali ke dashboard ⭐⭐
-        if (page === 'dashboard') {
-            // Hapus peta lama jika ada
-            if (page === 'dashboard') {
+        // ⭐⭐ PERBAIKAN KHUSUS UNTUK MAP: Reset ukuran map saat kembali ke dashboard ⭐⭐
+if (page === 'dashboard') {
     setTimeout(() => {
-        if (window.pelangganMap) {
-            window.pelangganMap.invalidateSize();
-            loadPelangganMap();
+        const mapContainer = document.getElementById('pelangganMap');
+        if (mapContainer && mapContainer.offsetParent !== null) {
+            if (window.pelangganMap) {
+                window.pelangganMap.invalidateSize(true);
+                console.log("✅ Map resize ulang");
+            }
         }
-    }, 300);
+    }, 200);
 }
-            
-            // Tunggu DOM siap, lalu buat peta baru
-            setTimeout(() => {
-                const mapContainer = document.getElementById('pelangganMap');
-                if (mapContainer && mapContainer.offsetParent !== null) {
-                    initPelangganMap();
-                    loadPelangganMap();
-                    console.log("✅ Map baru dibuat");
-                }
-            }, 200);
-        }
         
         console.log("✅ Page Render Selesai:", page);
         
@@ -15673,7 +15718,211 @@ function validateEmail(email) {
 }
 
 
+// Fungsi untuk menampilkan modal import paket
+function showImportPaketModal() {
+    const modal = document.getElementById('modalImportPaket');
+    if (modal) {
+        // Reset file input
+        document.getElementById('fileImportPaket').value = '';
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        showToast('info', 'Import Paket', 'Membuka form import data paket');
+    }
+}
 
+// FUNGSI IMPORT DATA PAKET (DENGAN LOGIKA SAMA DENGAN IMPORT PELANGGAN)
+async function importDataPaket() {
+    const fileInput = document.getElementById('fileImportPaket');
+    
+    if (!fileInput || !fileInput.files.length) {
+        showToast('error', 'Error', 'Pilih file terlebih dahulu');
+        return;
+    }
+    
+    try {
+        showLoading();
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) throw new Error('File kosong');
+
+                // AMBIL DATA PAKET YANG SUDAH ADA DI DATABASE
+                const snapshot = await db.collection('paket')
+                    .where('company_id', '==', globalCompanyId)
+                    .get();
+                
+                // Buat map untuk cek duplikat (sama seperti di savePaket)
+                const existingPackages = {};
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    // Key unik: nama + kecepatan + harga
+                    const key = `${p.nama}_${p.kecepatan}_${p.harga}`.toLowerCase();
+                    existingPackages[key] = true;
+                });
+
+                let insertCount = 0;
+                let skipCount = 0;
+                const batch = db.batch();
+                const now = new Date().toISOString();
+
+                for (let i = 0; i < jsonData.length; i++) {
+                    try {
+                        const row = jsonData[i];
+                        
+                        // Cari kolom (smart mapping)
+                        const keys = Object.keys(row);
+                        const findKey = (search) => {
+                            return keys.find(k => k.toLowerCase().includes(search.toLowerCase()));
+                        };
+
+                        // MAPPING KOLOM (sama seperti di form tambah paket)
+                        const namaRaw = row[findKey('nama')] || row[findKey('paket')] || row[findKey('nama_paket')];
+                        const kecepatanRaw = row[findKey('kecepatan')] || row[findKey('speed')];
+                        const hargaRaw = row[findKey('harga')] || row[findKey('price')];
+                        
+                        if (!namaRaw || !kecepatanRaw || !hargaRaw) {
+                            skipCount++;
+                            continue;
+                        }
+
+                        const nama = namaRaw.toString().trim().toUpperCase();
+                        const kecepatan = kecepatanRaw.toString().trim();
+                        const harga = parseInt(hargaRaw.toString().replace(/[^\d]/g, '')) || 0;
+                        
+                        if (!nama || !kecepatan || harga === 0) {
+                            skipCount++;
+                            continue;
+                        }
+                        
+                        // CEK DUPLIKAT (sama seperti validasi di savePaket)
+                        const uniqueKey = `${nama}_${kecepatan}_${harga}`.toLowerCase();
+                        if (existingPackages[uniqueKey]) {
+                            skipCount++;
+                            continue;
+                        }
+                        
+                        // DATA OPSIONAL (sama field dengan form tambah paket)
+                        const kuota = row[findKey('kuota')] ? 
+                            row[findKey('kuota')].toString().trim() : 'Unlimited';
+                        const deskripsi = row[findKey('deskripsi')] ? 
+                            row[findKey('deskripsi')].toString().trim() : '';
+                        
+                        // PROSES FITUR (jika ada)
+                        let fitur = [];
+                        const fiturRaw = row[findKey('fitur')];
+                        if (fiturRaw) {
+                            fitur = fiturRaw.toString().split(/[,;]/)
+                                .map(f => f.trim())
+                                .filter(f => f.length > 0);
+                        }
+                        
+                        // STATUS
+                        const statusRaw = row[findKey('status')];
+                        const status = statusRaw ? 
+                            statusRaw.toString().trim().toLowerCase() : 'aktif';
+                        
+                        // Warna default (sama seperti di form)
+                        const warna = '#4361ee';
+                        
+                        // BUAT DATA PAKET (FORMAT SAMA DENGAN savePaket())
+                        const paketData = {
+                            nama: nama,
+                            kecepatan: kecepatan,
+                            harga: harga,
+                            kuota: kuota,
+                            deskripsi: deskripsi,
+                            fitur: fitur,
+                            status: status,
+                            warna: warna,
+                            company_id: globalCompanyId, // SAMA
+                            created_at: now,             // SAMA
+                            updated_at: now              // SAMA
+                        };
+                        
+                        // GENERATE ID (sama pattern dengan savePaket)
+                        const paketId = `PAKET_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+                        
+                        batch.set(db.collection('paket').doc(paketId), paketData);
+                        insertCount++;
+                        
+                        // TANDAI SUDAH ADA
+                        existingPackages[uniqueKey] = true;
+                        
+                    } catch (err) {
+                        console.error(`Error baris ${i+1}:`, err);
+                        skipCount++;
+                    }
+                }
+                
+                // SIMPAN KE DATABASE
+                if (insertCount > 0) {
+                    await batch.commit();
+                    
+                    // LOG AKTIVITAS (sama seperti di savePaket)
+                    await db.collection('aktivitas').add({
+                        aktivitas: `Import ${insertCount} paket baru`,
+                        user: getUserLogName(),
+                        timestamp: now,
+                        company_id: globalCompanyId
+                    });
+                    
+                    showToast('success', 'Berhasil', 
+                        `${insertCount} paket baru ditambahkan<br>` +
+                        `${skipCount} data dilewati (sudah ada)`);
+                } else {
+                    showToast('info', 'Tidak Ada Data Baru', 
+                        'Semua data sudah ada di sistem');
+                }
+                
+                hideModal('modalImportPaket');
+                await loadPaketData(); // Refresh tabel paket
+                
+            } catch (error) {
+                hideLoading();
+                showToast('error', 'Format Salah', 'File tidak sesuai format');
+            }
+        };
+        
+        reader.onerror = () => {
+            hideLoading();
+            showToast('error', 'Error', 'Gagal membaca file');
+        };
+        
+        reader.readAsArrayBuffer(file);
+        
+    } catch (error) {
+        hideLoading();
+        console.error("Error import:", error);
+        showToast('error', 'Gagal', 'Gagal import data');
+    }
+}
+
+function downloadTemplatePaket() {
+    const templateData = [
+        // HEADER (kolom bisa fleksibel, akan dicari secara smart)
+        ['nama_paket', 'kecepatan', 'harga', 'kuota', 'deskripsi', 'fitur', 'status'],
+        // CONTOH DATA (format sama dengan form tambah paket)
+        ['PAKET 10 MBPS', '10 Mbps', '150000', 'Unlimited', 'Paket hemat untuk browsing', 'Unlimited Bandwidth,24/7 Support', 'aktif'],
+        ['PAKET 20 MBPS', '20 Mbps', '250000', 'Unlimited', 'Untuk streaming & gaming', 'Unlimited Bandwidth,Gaming,Streaming HD', 'aktif'],
+        ['PAKET 50 MBPS', '50 Mbps', '500000', 'Unlimited', 'Paket bisnis & keluarga', 'Unlimited Bandwidth,Priority Support,4K Streaming', 'aktif']
+    ];
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Template Paket');
+    XLSX.writeFile(wb, 'Template_Paket_XBILL.xlsx');
+    
+    showToast('success', 'Template', 'Template berhasil didownload');
+}
 
 
         async function exportPaket() {
@@ -15973,64 +16222,9 @@ function showCompanyProfile() {
 // ============================================
 // 2. BRANDING
 // ============================================
-async function showBrandingSettings() {
-    try {
-        // 1. Ambil data dari Firestore
-        const docRef = db.collection('settings').doc('branding');
-        const doc = await docRef.get();
-        
-        if (doc.exists) {
-            const data = doc.data();
-            
-            // 2. Load Warna & Font (Tetap sama)
-            if (document.getElementById('primaryColor')) document.getElementById('primaryColor').value = data.primary_color || '#4361ee';
-            if (document.getElementById('secondaryColor')) document.getElementById('secondaryColor').value = data.secondary_color || '#7209b7';
-            if (document.getElementById('mainFont')) document.getElementById('mainFont').value = data.font || "'Segoe UI', system-ui";
-            if (document.getElementById('fontSize')) document.getElementById('fontSize').value = data.font_size || '16px';
-            
-            // 3. Load Logo (BAGIAN YANG DIPERBAIKI)
-            const logoPreview = document.getElementById('logoPreview');
-            if (logoPreview) {
-                // Cek apakah ada field 'logo' di database dan isinya tidak kosong
-                if (data.logo && data.logo.trim() !== "") {
-                    // Jika ada, tampilkan gambar tersebut
-                    logoPreview.innerHTML = `<img src="${data.logo}" style="width:100%;height:100%;object-fit:contain;border-radius:10px;">`;
-                } else {
-                    // Jika tidak ada di database, tampilkan icon default
-                    logoPreview.innerHTML = `<i class="fas fa-building" style="font-size: 48px; color: var(--gray);"></i>`;
-                }
-            }
-        }
-        
-       // TAMPILKAN MODAL
-        showModal('modalBranding');
-        
-        // ⭐⭐ TAMBAHKAN INI: Setup logo dropzone SETELAH modal ditampilkan ⭐⭐
-        setTimeout(function() {
-            const logoDropzone = document.getElementById('logoDropzone');
-            const logoUpload = document.getElementById('logoUpload');
-            
-            if (logoDropzone && logoUpload) {
-                console.log('🔧 Setting up logo dropzone events...');
-                
-                // Hapus event listeners lama
-                const newDropzone = logoDropzone.cloneNode(true);
-                logoDropzone.parentNode.replaceChild(newDropzone, logoDropzone);
-                
-                // Setup event listener baru
-                document.getElementById('logoDropzone').addEventListener('click', function(e) {
-                    console.log('🎯 Logo dropzone clicked (from branding settings)');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    document.getElementById('logoUpload').click();
-                }, true);
-            }
-        }, 100); // Tunggu 100ms agar DOM modal selesai render
-        
-    } catch (error) {
-        console.error("Error show branding:", error);
-    }
+function showBrandingSettings() {
+    // Fungsi sederhana, cuma buka modal
+    showModal('modalBranding');
 }
 
 // ============================================
@@ -17399,18 +17593,31 @@ async function saveBranding() {
                 companyLogo = img.src;
             }
         }
-        
-        // 3. SIMPAN KE DATABASE (kode sisanya sama)
+
+        if (
+    !document.getElementById('primaryColor') ||
+    !document.getElementById('secondaryColor')
+) {
+    hideLoading();
+    showToast('error', 'Gagal Simpan', 'Form branding belum siap');
+    return;
+}
+
+
+        const mainFontEl = document.getElementById('mainFont');
+        const fontSizeEl = document.getElementById('fontSize');
+
         const brandingData = {
             companyLogo: companyLogo,
             primaryColor: document.getElementById('primaryColor').value,
             secondaryColor: document.getElementById('secondaryColor').value,
-            dashboardTheme: document.querySelector('input[name="dashboardTheme"]:checked').value,
-            mainFont: document.getElementById('mainFont').value,
-            fontSize: document.getElementById('fontSize').value,
+            dashboardTheme: (document.querySelector('input[name="dashboardTheme"]:checked') || { value: 'default' }).value,
+            mainFont: mainFontEl ? mainFontEl.value : null,
+            fontSize: fontSizeEl ? fontSizeEl.value : null,
             company_id: companyId,
             updated_at: new Date().toISOString()
         };
+
         
         await db.collection('company_settings').doc(companyId).set(brandingData, { merge: true });
         localStorage.setItem(`companySettings_${companyId}`, JSON.stringify(brandingData));
@@ -18250,21 +18457,33 @@ updateNavbarTime();
 
 async function loadBrandingSettings() {
     try {
-        const doc = await db.collection('company_settings').doc('branding').get();
+        const companyId = await ensureCompanyId();
+const doc = await db.collection('company_settings').doc(companyId).get();
+
         
         if (doc.exists) {
             const data = doc.data();
             
-            // Isi form
-            document.getElementById('primaryColor').value = data.primaryColor || '#4361ee';
-            document.getElementById('secondaryColor').value = data.secondaryColor || '#7209b7';
+            const primaryColorEl = document.getElementById('primaryColor');
+            if (primaryColorEl) primaryColorEl.value = data.primaryColor || '#4361ee';
+
+            const secondaryColorEl = document.getElementById('secondaryColor');
+            if (secondaryColorEl) secondaryColorEl.value = data.secondaryColor || '#7209b7';
             
             // Set radio button
             const theme = data.dashboardTheme || 'light';
-            document.getElementById(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`).checked = true;
-            
-            document.getElementById('mainFont').value = data.mainFont || "'Segoe UI', system-ui";
-            document.getElementById('fontSize').value = data.fontSize || '16px';
+            const themeRadio = document.getElementById(
+                `theme${theme.charAt(0).toUpperCase() + theme.slice(1)}`
+            );
+            if (themeRadio) {
+                themeRadio.checked = true;
+            }
+                        
+           const mainFontEl = document.getElementById('mainFont');
+            if (mainFontEl) mainFontEl.value = data.mainFont || "'Segoe UI', system-ui";
+
+            const fontSizeEl = document.getElementById('fontSize');
+            if (fontSizeEl) fontSizeEl.value = data.fontSize || '16px';
             
             // Terapkan langsung
             applyBrandingStyles(data);
@@ -20690,6 +20909,62 @@ function showExitConfirmModal() {
     };
 }
 
+function handleLogoUpload(input) {
+    console.log("🎯 Fungsi dipanggil");
+    console.log("📂 File:", input.files);
+    
+    if (!input.files || input.files.length === 0) {
+        console.error("❌ Tidak ada file");
+        return;
+    }
+    
+    const file = input.files[0];
+    console.log("📄 File details:", file.name, file.size, file.type);
+    
+    // Validasi
+    if (file.size > 2 * 1024 * 1024) {
+        alert("Maksimal 2MB");
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        alert("Hanya file gambar (JPG, PNG, GIF)");
+        return;
+    }
+    
+    // Preview
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        console.log("✅ FileReader berhasil, result:", e.target.result.substring(0, 50) + "...");
+        
+        const logoPreview = document.getElementById('logoPreview');
+        console.log("🔍 Element logoPreview:", logoPreview);
+        
+        if (logoPreview) {
+            logoPreview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.borderRadius = '10px';
+            logoPreview.appendChild(img);
+            console.log("🎨 Preview berhasil ditambahkan");
+        } else {
+            console.error("❌ Element #logoPreview tidak ditemukan di DOM");
+        }
+    };
+    
+    reader.onerror = function(e) {
+        console.error("❌ FileReader error:", e);
+        alert("Gagal membaca file");
+    };
+    
+    reader.readAsDataURL(file);
+    console.log("📖 Membaca file sebagai DataURL...");
+}
+
 // FUNGSI HANDLE TOMBOL BACK UTAMA (DENGAN TOAST CUSTOM)
 function handleBackButton() {
     const now = Date.now();
@@ -20760,6 +21035,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. INISIALISASI HISTORY
     history.pushState(null, null, '#dashboard');
 });
+
+
+
+function pickImage(){
+    if (window.AppInventor) {
+        AppInventor.setWebViewString("PICK_IMAGE");
+    }
+}
 
 
 
