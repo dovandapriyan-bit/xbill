@@ -3550,6 +3550,11 @@ document.getElementById('loginForm').onsubmit = async function(e) {
             const companyId = currentUser.uid;
             globalCompanyId = companyId;
 
+            // 🔥 TAMBAHKAN 3 BARIS INI DI SINI
+            localStorage.removeItem(`companyProfile_${globalCompanyId}`);
+            window._pelangganCache = null;
+            window._dashboardCache = null;
+                        
 
     // ⭐⭐ AUTO-LOAD/BUAT DATA PERUSAHAAN UNTUK SEMUA USER ⭐⭐
     try {
@@ -8512,11 +8517,17 @@ renderPelangganTable(window.filteredPelangganData);
         // ===============================
         // 🔥 URUTKAN: DATA TERBARU DI ATAS
         // ===============================
-        window.pelangganData.sort((a, b) => {
-            const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : new Date(a.created_at || 0).getTime();
-            const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : new Date(b.created_at || 0).getTime();
-            return timeB - timeA;
-        });
+        // PASTIKAN window.pelangganData ADA SEBELUM DISORT
+// PASTIKAN window.pelangganData ADA SEBELUM DISORT
+if (!window.pelangganData || !Array.isArray(window.pelangganData)) {
+    window.pelangganData = [];
+}
+
+window.pelangganData.sort((a, b) => {
+    const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : new Date(a.created_at || 0).getTime();
+    const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : new Date(b.created_at || 0).getTime();
+    return timeB - timeA;
+});
 
 
 
@@ -8525,7 +8536,7 @@ renderPelangganTable(window.filteredPelangganData);
             // ===============================
             // 💾 SIMPAN KE CACHE PELANGGAN
             // ===============================
-            window._pelangganCache = pelangganData;
+            window._pelangganCache = window.pelangganData;
             window._pelangganCacheTime = Date.now();
             console.log('💾 Cache pelanggan disimpan:', pelangganData.length);
 
