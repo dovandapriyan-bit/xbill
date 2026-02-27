@@ -301,48 +301,55 @@
             display: flex;
             flex-direction: column;
             background: #f5f7fb;
-            padding-top: 80px;
+            padding-top: 60px;
         }
         
         /* ========== TOP NAVBAR ========== */
         .top-navbar {
-    background: white;
-    padding: 15px 25px;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: fixed;    /* ⬅️ GANTI INI */
-    top: 0;
-    width: 100%;
-    z-index: 1000;
-}
+        background: white;
+        padding: 15px 25px;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: fixed;    /* ⬅️ GANTI INI */
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+        height: 60px;              /* ⬅️ TAMBAH INI */
+        box-sizing: border-box;    /* ⬅️ TAMBAH INI */
+        }
 
-        
+
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 10px;
             font-size: 18px;
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
-             line-height: 1.2;      /* biar teks tidak renggang */
+            line-height: 1.2;      /* biar teks tidak renggang */
+            height: 100%;
         }
         
-        .navbar-brand i {
-            font-size: 24px;
-        }
+        .navbar-brand {
+    gap: 12px;
+}
 
-        .navbar-brand img {
-    margin-right: 2px !important; /* rapetin jarak */
-    width: 32px !important;
-    height: 32px !important;
+.navbar-brand img {
+    margin-right: 10px;
+    max-height: 40px;
+    max-width: 200px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     display: block;
 }
 
 #companyNameNav {
-    margin-left: 1px !important;
+    font-size: 22px;
+    margin-left: 8px;
 }
 
 
@@ -1765,15 +1772,19 @@
 
                     <label style="cursor:pointer; display:block;">
 
-                        <div id="logoPreview"
-                            style="width: 150px; height: 150px; margin: 0 auto;
-                                    background: var(--light);
-                                    border-radius: 10px;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;">
-                            <i class="fas fa-building"
-                            style="font-size: 48px; color: var(--gray);"></i>
+                        <div id="logoPreview" style="
+    width: 200px;
+    height: auto;
+    min-height: 60px;
+    max-height: 100px;
+    margin: 0 auto;
+    background: var(--light);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;">
+                            <i class="fas fa-building" style="font-size: 48px; color: var(--gray);"></i>
                         </div>
 
                         <p style="color: var(--gray); margin-top: 12px;">
@@ -3192,7 +3203,44 @@ Terima kasih,
             window._loadingTagihan = false;
             const TAGIHAN_CACHE_TTL = 60 * 1000; // 60 detik
 
+            // ============================================
+            // CACHE GLOBAL SYSTEM
+            // ============================================
+            const CACHE = {
+                data: {},
+                time: {},
 
+                // Ambil data dari cache
+                get(key, maxAge = 300000) { // maxAge default 5 menit
+                    if (this.data[key] && this.time[key] > Date.now() - maxAge) {
+                        console.log(`✅ CACHE HIT: ${key}`);
+                        return this.data[key];
+                    }
+                    console.log(`❌ CACHE MISS: ${key}`);
+                    return null;
+                },
+
+                // Simpan data ke cache
+                set(key, data) {
+                    this.data[key] = data;
+                    this.time[key] = Date.now();
+                    console.log(`💾 CACHE SET: ${key}`);
+                },
+
+                // Hapus cache tertentu
+                remove(key) {
+                    delete this.data[key];
+                    delete this.time[key];
+                    console.log(`🗑️ CACHE REMOVED: ${key}`);
+                },
+
+                // Hapus semua cache
+                clear() {
+                    this.data = {};
+                    this.time = {};
+                    console.log('🧹 ALL CACHE CLEARED');
+                }
+            };
 
 
 // Event listener untuk logo dropzone (tambah di kode utama)
@@ -3480,7 +3528,7 @@ async function ensureCompanyId() {
             created_at: new Date().toISOString()
         });
 
-        await db.collection('companies').doc(newCompanyId).set({
+            await db.collection('company_settings').doc(newCompanyId).set({
             id: newCompanyId,
             admin_email: currentUser.email,
             created_at: new Date().toISOString()
@@ -3554,7 +3602,7 @@ document.getElementById('loginForm').onsubmit = async function(e) {
             localStorage.removeItem(`companyProfile_${globalCompanyId}`);
             window._pelangganCache = null;
             window._dashboardCache = null;
-                        
+
 
     // ⭐⭐ AUTO-LOAD/BUAT DATA PERUSAHAAN UNTUK SEMUA USER ⭐⭐
     try {
@@ -3882,7 +3930,7 @@ function confirmDialog(message, callback) {
             
             <div class="stats-grid">
                 <!-- CARD 1: TOTAL PELANGGAN -->
-                <div class="stat-card" onclick="navigateToPelanggan()" style="cursor: pointer;">
+                <div class="stat-card" id="cardTotalPelanggan" onclick="navigateToPelanggan()" style="cursor: pointer;">
                     <div class="stat-icon primary">
                         <i class="fas fa-users"></i>
                     </div>
@@ -6618,7 +6666,11 @@ window._dashboardLoaded = true;
             console.warn("⚠️ Elemen #statPelanggan tidak ditemukan!");
         }
 
-
+        const userRole = localStorage.getItem('userRole');
+        if (userRole !== 'admin') {
+            const card = document.getElementById('cardTotalPelanggan');
+            if (card) card.style.display = 'none';
+        }
 
         let totalTagihanBulanIni = 0;
         let lunasCount = 0;
@@ -8419,18 +8471,16 @@ function showModal(modalId) {
     let useCacheOnly = false;
 
 
-        // ===============================
-    // 🔥 CACHE CHECK (NO FIRESTORE READ)
-    // ===============================
-    const now = Date.now();
-    if (
-        window._pelangganCache &&
-        (now - window._pelangganCacheTime) < PELANGGAN_CACHE_TTL
-    ) {
-        console.log('⚡ Pakai cache pelanggan (NO READ)');
-        pelangganData = window._pelangganCache;
+    // ===== CEK CACHE GLOBAL =====
+if (!useCacheOnly) {
+    const cached = CACHE.get('pelangganData', PELANGGAN_CACHE_TTL);
+    if (cached) {
+        console.log('⚡ Pakai cache pelanggan (0 READ)');
+        window.pelangganData = cached;
         useCacheOnly = true;
     }
+}
+// ===== END CEK CACHE =====
 
 
 
@@ -8485,15 +8535,15 @@ function showModal(modalId) {
                     </td>
                 </tr>`;
             window.pelangganData = pelangganData;
-window.filteredPelangganData = [...pelangganData]; // 🔥 WAJIB
-renderPelangganTable(window.filteredPelangganData);
+            window.filteredPelangganData = [...pelangganData]; // 🔥 WAJIB
+            renderPelangganTable(window.filteredPelangganData);
 
 
         }
 
         // 2. SIMPAN DATA KE ARRAY GLOBAL (PENTING!)
         if (!useCacheOnly && snapshot) {
-    window.pelangganData = snapshot.docs.map(doc => ({
+        window.pelangganData = snapshot.docs.map(doc => ({
 
             id: doc.id,
             server: doc.data().server || '',
@@ -8518,27 +8568,26 @@ renderPelangganTable(window.filteredPelangganData);
         // 🔥 URUTKAN: DATA TERBARU DI ATAS
         // ===============================
         // PASTIKAN window.pelangganData ADA SEBELUM DISORT
-// PASTIKAN window.pelangganData ADA SEBELUM DISORT
-if (!window.pelangganData || !Array.isArray(window.pelangganData)) {
-    window.pelangganData = [];
-}
+        // PASTIKAN window.pelangganData ADA SEBELUM DISORT
+        if (!window.pelangganData || !Array.isArray(window.pelangganData)) {
+            window.pelangganData = [];
+        }
 
-window.pelangganData.sort((a, b) => {
-    const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : new Date(a.created_at || 0).getTime();
-    const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : new Date(b.created_at || 0).getTime();
-    return timeB - timeA;
-});
+        window.pelangganData.sort((a, b) => {
+            const timeA = a.created_at?.toDate ? a.created_at.toDate().getTime() : new Date(a.created_at || 0).getTime();
+            const timeB = b.created_at?.toDate ? b.created_at.toDate().getTime() : new Date(b.created_at || 0).getTime();
+            return timeB - timeA;
+        });
 
 
 
         console.log(`📊 Data pelanggan diambil: ${window.pelangganData.length} record.`);
 
             // ===============================
-            // 💾 SIMPAN KE CACHE PELANGGAN
+            // 💾 SIMPAN KE CACHE GLOBAL
             // ===============================
-            window._pelangganCache = window.pelangganData;
-            window._pelangganCacheTime = Date.now();
-            console.log('💾 Cache pelanggan disimpan:', pelangganData.length);
+            CACHE.set('pelangganData', window.pelangganData);
+            console.log('💾 Cache pelanggan disimpan:', window.pelangganData.length);
 
 
         // 3. AMBIL NILAI FILTER DARI UI
@@ -9262,10 +9311,22 @@ async function loadPaketData() {
             return;
         }
 
+        // ===== TAMBAH 3 BARIS INI =====
+        const cachedPaket = CACHE.get('paketData', 3600000);
+        if (cachedPaket) {
+            return renderPaketTable(cachedPaket);
+        }
+        // ===== SELESAI =====
+
         // Ambil data
         const snapshot = await db.collection('paket')
             .where('company_id', '==', globalCompanyId)
             .get();
+
+            // ===== TAMBAH 1 BARIS INI =====
+            CACHE.set('paketData', snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            // ===== SELESAI =====
+
 
         console.log(`📊 ${snapshot.size} paket ditemukan`);
 
@@ -10870,16 +10931,15 @@ async function bukaNotaDanKonfirmasi(tagihanId, pelangganId, namaPelanggan, nomi
         // ----------------------------------------
 
         // --- AMBIL DATA DARI VARIABEL GLOBAL (SINKRON DASHBOARD) ---
-       // --- AMBIL DATA DARI VARIABEL GLOBAL (SINKRON DASHBOARD) ---
-let namaPerusahaan = 'X-BILL';
-let alamatPerusahaan = 'Jl. Merdeka No. 45, Jakarta';
+
+let logoPerusahaan = '';
 if (globalCompanyId) {
     const companyDoc = await db.collection('company_settings').doc(globalCompanyId).get();
-
     if (companyDoc.exists) {
         const data = companyDoc.data();
         namaPerusahaan = data.companyName || 'X-BILL';
         alamatPerusahaan = data.companyAddress || 'Jl. Merdeka No. 45, Jakarta';
+        logoPerusahaan = data.companyLogo || '';
     }
 }
 
@@ -10917,32 +10977,56 @@ if (globalCompanyId) {
                 <div id="strukPrintable" style="
                     background: white;
                     width:320px;
-                    padding:15px;
+                    padding:5px;
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 12px;
                     color: #333;
-                    box-shadow:0 0 20px rgba(0,0,0,0.5);
+                    box-shadow:0 0 5px rgba(0,0,0,0.5);
                     position: relative;
                     border-radius:5px;
-                    margin-bottom: 15px;
+                    margin-bottom: 5px;
                 ">
 
                     <!-- HEADER (PERUSAHAAN) -->
                     <div style="
-                        text-align: center;
-                        border-bottom: 2px dashed #000;
-                        padding-bottom: 10px;
-                        margin-bottom: 10px;
+                         text-align: center;
+    border-bottom: 2px dashed #000;
+    padding-top: 0;           /* ← TAMBAH INI */
+    padding-bottom: 5px;
+    margin-top: 0;            /* ← TAMBAH INI */
+    margin-bottom: 2px;
                     ">
-                        <h2 id="displayStrukCompanyName" style="
-                            margin: 0;
-                            font-size: 16px;
-                            font-weight: bold;
-                            text-transform: uppercase;
-                            color: #000;
-                        ">${namaPerusahaan}</h2>
-                        <p style="margin: 2px 0 0 0; font-size: 10px; color: #666;">Billing Management System</p>
-                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">${alamatPerusahaan}</p>
+                        ${logoPerusahaan ?
+`
+<div style="
+    width:200px;
+    height:100px;
+    margin:0 auto -35px auto;
+    overflow:hidden;
+    line-height:0;
+">
+    <img src="${logoPerusahaan}"
+        style="
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            object-position:center;
+            display:block;
+        ">
+</div>
+`
+:
+`<h2 id="displayStrukCompanyName" style="
+    margin:0;
+    font-size:16px;
+    font-weight:bold;
+    text-transform:uppercase;
+    color:#000;
+">${namaPerusahaan}</h2>`
+}
+
+                        <p style="margin: 0; font-size: 10px; color: #666;">Billing Management System</p>
+                        <p style="margin: 0; font-size: 12px; color: #666;">${alamatPerusahaan}</p>
                         </div>
 
                     <!-- INFO TRANSAKSI -->
@@ -11516,16 +11600,24 @@ async function loadTagihanData() {
 
                 // ⭐⭐ DEKLARASI QUERY ⭐⭐
         let tagihanSnapshot;
+let tagihanData = [];
+// ✅ TAMBAH INI:
 
-if (window.__CACHE.tagihan) {
-    console.log("⚡ Tagihan dari CACHE");
-    tagihanSnapshot = window.__CACHE.tagihan;
+const cachedTagihan = CACHE.get('tagihanData', TAGIHAN_CACHE_TTL);
+if (cachedTagihan) {
+    console.log("✅ PAKAI CACHE TAGIHAN - 0 READ");
+    tagihanData = cachedTagihan;
 } else {
-    tagihanSnapshot = await db.collection('tagihan')
+    console.log("📥 AMBIL TAGIHAN DARI FIREBASE");
+    const tagihanSnapshot = await db.collection('tagihan')
         .where('company_id', '==', globalCompanyId)
         .get();
 
-    window.__CACHE.tagihan = tagihanSnapshot;
+    tagihanSnapshot.forEach(doc => {
+        tagihanData.push({ id: doc.id, data: doc.data() });
+    });
+
+    CACHE.set('tagihanData', tagihanData);
 }
 
 
@@ -11546,8 +11638,7 @@ if (window.__CACHE.tagihan) {
 
         console.log(`👥 ${pelangganIds.length} pelanggan valid untuk company: ${globalCompanyId}`);
 
-        // 2. AMBIL HANYA TAGIHAN YANG PELANGGANNYA MASIH ADA
-        let tagihanData = [];
+        
 
         if (pelangganIds.length <= 10) {
             // JIKA PELANGGAN <= 10, AMBIL SEKALIGUS DENGAN FILTER COMPANY
@@ -13861,6 +13952,29 @@ async function generateTagihanBulk() {
 
         const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM');
 
+
+        // PAKAI DATA DARI GLOBAL ATAU AMBIL BARU
+        let paketMap = {};
+        if (!window.paketData) window.paketData = [];
+        if (window.paketData && window.paketData.length > 0) {
+            // PAKAI DATA YANG SUDAH ADA
+            window.paketData.forEach(p => {
+                paketMap[p.nama] = p.harga;
+            });
+            console.log('⚡ Pakai paketData global');
+        } else {
+            // AMBIL DARI DATABASE KALAU KOSONG
+            const snapshot = await db.collection('paket')
+                .where('company_id', '==', globalCompanyId)
+                .get();
+            snapshot.forEach(doc => {
+                const p = doc.data();
+                paketMap[p.nama] = p.harga;
+                window.paketData.push(p); // SIMPAN KE GLOBAL
+            });
+            console.log('📦 Ambil paket dari database');
+        }
+
         // 2. AMBIL SEMUA PELANGGAN AKTIF
         const pelangganSnapshot = await db.collection('pelanggan')
             .where('company_id', '==', globalCompanyId)
@@ -13913,7 +14027,7 @@ async function generateTagihanBulk() {
                 const existingKey = `${pelangganId}_${bulanKey}`;
 
                 if (!existingTagMap.has(existingKey)) {
-                    let jumlahTagihan = Number(pelanggan.harga) || 0;
+                    let jumlahTagihan = paketMap[pelanggan.paket] || 0;
                     let isProrata = false;
                     let catatan = 'Tagihan normal';
 
@@ -13968,6 +14082,40 @@ async function generateTagihanBulk() {
         // 5. SIMPAN
         if (totalTagihanDibuat > 0) {
             await batch.commit();
+
+                 // ===== UPDATE CACHE =====
+            // Ambil cache lama (data Feb–Juli)
+            const cachedTagihan = CACHE.get('tagihanData', 3600000) || [];
+
+            // Ambil data baru yang BARU DIGENERATE (misal Agustus)
+            const snapshotBaru = await db.collection('tagihan')
+                .where('company_id', '==', globalCompanyId)
+                .where('bulan', '==', bulanGenerateInput)
+                .get();
+
+            const dataBaru = [];
+            snapshotBaru.forEach(doc => {
+                dataBaru.push({ id: doc.id, data: doc.data() });
+            });
+
+            // Gabungin cache lama + data baru
+            const cacheBaru = [...cachedTagihan, ...dataBaru];
+
+            // Hapus duplikat berdasarkan ID (jaga-jaga)
+            const uniqueCache = [];
+            const seen = new Set();
+            cacheBaru.forEach(item => {
+                if (!seen.has(item.id)) {
+                    seen.add(item.id);
+                    uniqueCache.push(item);
+                }
+            });
+
+            // Simpan cache baru
+            CACHE.set('tagihanData', uniqueCache);
+            console.log(`💾 CACHE UPDATE: ${cachedTagihan.length} lama + ${dataBaru.length} baru = ${uniqueCache.length} total (${bulanGenerateInput})`);
+            // ===== END UPDATE CACHE =====
+
             console.log(`💾 BERHASIL: ${totalTagihanDibuat} tagihan disimpan.`);
             showToast('success', 'Berhasil', `${totalTagihanDibuat} tagihan baru dibuat.`);
 
@@ -13976,6 +14124,8 @@ async function generateTagihanBulk() {
                 user: currentUser?.email || "Admin",
                 timestamp: now,
                 company_id: globalCompanyId
+
+
             });
 
         } else {
@@ -18111,6 +18261,8 @@ async function saveBranding() {
                 const newImg = document.createElement('img');
                 newImg.src = companyLogo;
                 newImg.style.height = '40px';
+                newImg.style.width = 'auto';
+                newImg.style.maxWidth = '200px';
                 newImg.style.objectFit = 'contain';
                 navbarBrand.prepend(newImg);
             }
@@ -18746,9 +18898,9 @@ async function saveBrandingSettings() {
         
         // SIMPAN LOGO KE COLLECTION companies
         if (logoUrl) {
-            await db.collection('companies').doc(globalCompanyId).set({
-                logo_url: logoUrl,
-                updated_at: new Date().toISOString()
+            await db.collection('company_settings').doc(globalCompanyId).set({
+            logo_url: logoUrl,
+            updated_at: new Date().toISOString()
             }, { merge: true });
             
             // UPDATE LOGO INSTANT DI UI
@@ -21449,34 +21601,252 @@ function handleLogoUpload(input) {
     const reader = new FileReader();
     
     reader.onload = function(e) {
-        console.log("✅ FileReader berhasil, result:", e.target.result.substring(0, 50) + "...");
-        
         const logoPreview = document.getElementById('logoPreview');
-        console.log("🔍 Element logoPreview:", logoPreview);
-        
-        if (logoPreview) {
-            logoPreview.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            img.style.borderRadius = '10px';
-            logoPreview.appendChild(img);
-            console.log("🎨 Preview berhasil ditambahkan");
-        } else {
-            console.error("❌ Element #logoPreview tidak ditemukan di DOM");
-        }
+
+        // KOSONGKAN DULU
+        logoPreview.innerHTML = '';
+
+        // BUAT GAMBAR BARU
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain';
+        img.style.borderRadius = '10px';
+
+        // TAMBAHIN KE PREVIEW
+        logoPreview.appendChild(img);
+
+        // BARU PANGGIL MAKE DRAGGABLE
+        makeDraggable(img);
+
+        console.log("🎨 Preview berhasil ditambahkan");
     };
-    
+
     reader.onerror = function(e) {
         console.error("❌ FileReader error:", e);
         alert("Gagal membaca file");
     };
-    
+
     reader.readAsDataURL(file);
     console.log("📖 Membaca file sebagai DataURL...");
 }
+
+
+let isDragging = false;
+let startX, startY, startLeft, startTop;
+let currentImage = null;
+
+function makeDraggable(imgElement) {
+    currentImage = imgElement;
+
+    // Style dasar
+    imgElement.style.position = 'absolute';
+    imgElement.style.cursor = 'move';
+    imgElement.style.width = 'auto';
+    imgElement.style.height = 'auto';
+    imgElement.style.maxWidth = 'none';
+    imgElement.style.maxHeight = 'none';
+    imgElement.style.userSelect = 'none';
+    imgElement.style.webkitUserSelect = 'none';
+    imgElement.style.touchAction = 'none';
+    imgElement.style.transition = 'width 0.2s ease, height 0.2s ease';
+
+    const parent = imgElement.parentElement;
+    parent.style.position = 'relative';
+    parent.style.overflow = 'hidden';
+
+    // Ambil ukuran asli
+    if (!imgElement.dataset.naturalWidth) {
+        const tempImg = new Image();
+        tempImg.src = imgElement.src;
+        tempImg.onload = function() {
+            imgElement.dataset.naturalWidth = tempImg.width;
+            imgElement.dataset.naturalHeight = tempImg.height;
+            imgElement.dataset.scale = 1;
+            imgElement.style.width = tempImg.width + 'px';
+            imgElement.style.height = tempImg.height + 'px';
+        };
+    }
+
+    // ========== DRAG (1 JARI) ==========
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    const startDrag = (e) => {
+        if (e.touches && e.touches.length > 1) return;
+
+        e.preventDefault();
+        isDragging = true;
+
+        const clientX = e.clientX ?? e.touches[0].clientX;
+        const clientY = e.clientY ?? e.touches[0].clientY;
+
+        startX = clientX;
+        startY = clientY;
+        startLeft = imgElement.offsetLeft;
+        startTop = imgElement.offsetTop;
+    };
+
+    imgElement.addEventListener('mousedown', startDrag);
+    imgElement.addEventListener('touchstart', startDrag);
+
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        if (e.touches && e.touches.length > 1) {
+            isDragging = false;
+            return;
+        }
+
+        e.preventDefault();
+
+        const clientX = e.clientX ?? e.touches[0].clientX;
+        const clientY = e.clientY ?? e.touches[0].clientY;
+
+        imgElement.style.left = (startLeft + clientX - startX) + 'px';
+        imgElement.style.top = (startTop + clientY - startY) + 'px';
+    };
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+
+    const stopDrag = () => {
+        isDragging = false;
+    };
+
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchend', stopDrag);
+    document.addEventListener('touchcancel', stopDrag);
+
+    // ========== ZOOM UNTUK PC (WHEEL) ==========
+    imgElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+
+        let currentWidth = parseFloat(imgElement.style.width) || imgElement.dataset.naturalWidth;
+        let step = 50; // 50 pixel tiap scroll
+
+        if (e.deltaY > 0) {
+            currentWidth -= step;
+        } else {
+            currentWidth += step;
+        }
+
+        // Batasi ukuran (min 50px, max 1000px)
+        currentWidth = Math.min(1000, Math.max(50, currentWidth));
+
+        // Hitung scale berdasarkan ukuran baru
+        let scale = currentWidth / imgElement.dataset.naturalWidth;
+
+        // Simpan scale dan terapkan ukuran
+        imgElement.dataset.scale = scale;
+        imgElement.style.width = currentWidth + 'px';
+        imgElement.style.height = (imgElement.dataset.naturalHeight * scale) + 'px';
+
+        console.log('Ukuran baru:', currentWidth, 'Scale:', scale);
+    }, { passive: false });
+
+    // ========== PINCH ZOOM UNTUK ANDROID ==========
+    let initialDistance = 0;
+    let initialScale = 1;
+
+    imgElement.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            initialDistance = Math.sqrt(dx * dx + dy * dy);
+            initialScale = parseFloat(imgElement.dataset.scale || '1');
+        }
+    });
+
+    imgElement.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const currentDistance = Math.sqrt(dx * dx + dy * dy);
+
+            if (initialDistance > 0) {
+                let scale = initialScale * (currentDistance / initialDistance);
+                scale = Math.min(3, Math.max(0.02, scale));
+
+                imgElement.dataset.scale = scale;
+                imgElement.style.width = (imgElement.dataset.naturalWidth * scale) + 'px';
+                imgElement.style.height = (imgElement.dataset.naturalHeight * scale) + 'px';
+            }
+        }
+    }, { passive: false });
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    isDragging = true;
+
+    const img = currentImage;
+    if (!img) return;
+
+    // Posisi awal mouse
+    if (e.type === 'mousedown') {
+        startX = e.clientX;
+        startY = e.clientY;
+    } else {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    }
+
+    // Posisi awal gambar
+    const rect = img.getBoundingClientRect();
+    const parentRect = img.parentElement.getBoundingClientRect();
+
+    startLeft = rect.left - parentRect.left;
+    startTop = rect.top - parentRect.top;
+
+    img.style.transition = 'none';
+}
+
+function stopDrag() {
+    isDragging = false;
+    if (currentImage) {
+        currentImage.style.transition = 'all 0.2s';
+    }
+}
+
+function drag(e) {
+    if (!isDragging || !currentImage) return;
+    e.preventDefault();
+
+    let currentX, currentY;
+    if (e.type === 'mousemove') {
+        currentX = e.clientX;
+        currentY = e.clientY;
+    } else {
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+    }
+
+    // Hitung pergerakan
+    const deltaX = currentX - startX;
+    const deltaY = currentY - startY;
+
+    // Posisi baru
+    let newLeft = startLeft + deltaX;
+    let newTop = startTop + deltaY;
+
+    // Batasi biar ga keluar parent
+    const parent = currentImage.parentElement;
+    const parentWidth = parent.clientWidth;
+    const parentHeight = parent.clientHeight;
+    const imgWidth = currentImage.width;
+    const imgHeight = currentImage.height;
+
+    newLeft = Math.max(Math.min(newLeft, parentWidth - imgWidth), 0);
+    newTop = Math.max(Math.min(newTop, parentHeight - imgHeight), 0);
+
+    // Terapkan posisi
+    currentImage.style.left = newLeft + 'px';
+    currentImage.style.top = newTop + 'px';
+}
+
 
 // FUNGSI HANDLE TOMBOL BACK UTAMA (DENGAN TOAST CUSTOM)
 function handleBackButton() {
