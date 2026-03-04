@@ -1794,11 +1794,11 @@
                     </label>
 
                     <small class="text-muted">
-                        Rekomendasi: 500×500px, PNG/JPG, maks 2MB
+                        Rekomendasi: 200×68px, PNG/JPG, maks 2MB
                     </small>
                 </div>
                 </div>
-                
+
                 <!-- COLOR SCHEME -->
                 <div class="form-group">
                     <label>Warna Utama</label>
@@ -1807,9 +1807,9 @@
                         <input type="color" class="form-control" id="secondaryColor" value="#7209b7" style="flex: 1;">
                     </div>
                 </div>
-               
-                
-                
+
+
+
             </form>
         </div>
         <div class="modal-footer">
@@ -3594,9 +3594,22 @@ document.getElementById('loginForm').onsubmit = async function(e) {
             globalCompanyId = null;
 
             
-            // 2. SET COMPANY ID = UID
-            const companyId = currentUser.uid;
-            globalCompanyId = companyId;
+           // 2. AMBIL COMPANY_ID DARI FIRESTORE DULU
+let companyId = currentUser.uid; // default fallback
+
+try {
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData.company_id) {
+            companyId = userData.company_id;
+        }
+    }
+} catch (error) {
+    console.error("Error ambil company_id:", error);
+}
+
+globalCompanyId = companyId;
 
             // 🔥 TAMBAHKAN 3 BARIS INI DI SINI
             localStorage.removeItem(`companyProfile_${globalCompanyId}`);
@@ -3697,12 +3710,26 @@ document.getElementById('loginForm').onsubmit = async function(e) {
             document.getElementById('appContainer').classList.remove('hidden');
             
             // 6. UPDATE USER INFO
-            let displayName = currentUser.displayName || currentUser.email || 'Administrator';
-            const userNameEl = document.getElementById('userName');
-            const userAvatarEl = document.getElementById('userAvatar');
-            
-            if (userNameEl) userNameEl.innerText = displayName;
-            if (userAvatarEl) userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+            let displayName = currentUser.email || 'Administrator';
+
+// Ambil dari Firestore dulu
+try {
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData.name) {
+            displayName = userData.name;
+        }
+    }
+} catch (error) {
+    console.error("Error ambil user data:", error);
+}
+
+const userNameEl = document.getElementById('userName');
+const userAvatarEl = document.getElementById('userAvatar');
+
+if (userNameEl) userNameEl.innerText = displayName;
+if (userAvatarEl) userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
             
             // 7. UPDATE DROPDOWN
             const dropdownCompanyName = document.getElementById('dropdownCompanyName');
@@ -4654,6 +4681,8 @@ async function resetGenerate() {
             });
 
             await batch.commit();
+
+            
             
             // Tutup modal
             document.getElementById(modalId).remove();
@@ -4672,6 +4701,8 @@ async function resetGenerate() {
             
             // Refresh data tagihan
             await loadTagihanData();
+
+            document.getElementById('tagihanTable').innerHTML = '<tr><td colspan="8" class="text-center">Memuat data...</td></tr>';
             
             // Log aktivitas
             await db.collection('aktivitas').add({
@@ -10688,6 +10719,16 @@ async function prosesBayarDanUpdateNota(tagihanId, pelangganId, namaPelanggan, n
             catatan_bayar: 'Lunas via Web App',
             updated_at: new Date().toISOString()
         });
+        
+            // UPDATE CACHE
+const cacheKey = `tagihanData_${globalCompanyId}`;
+let cache = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+const idx = cache.findIndex(item => item.id === tagihanId);
+if (idx !== -1) {
+    cache[idx].data.status = 'lunas';
+    cache[idx].data.tanggal_bayar = tglSekarang;
+    localStorage.setItem(cacheKey, JSON.stringify(cache));
+}
 
         // =========================
         // 2. UPDATE TAMPILAN NOTA
@@ -10886,6 +10927,9 @@ async function prepareModalPayAll(pelangganId, idsString, totalNominal, bulanStr
 // 1. FUNGSI UTAMA: BUKA NOTA + UPDATE PETUGAS & PERUSAHAAN
 async function bukaNotaDanKonfirmasi(tagihanId, pelangganId, namaPelanggan, nominal, bulan) {
     try {
+
+                document.getElementById('tagihanId').value = tagihanId;
+
         // Ambil Data Pelanggan
         let dataPelanggan = {
             nama: namaPelanggan,
@@ -10999,15 +11043,12 @@ if (globalCompanyId) {
                         ${logoPerusahaan ?
 `
 <div style="
-    width:200px;
-    height:68px;
-    margin:0 auto -6px auto;
-    background-image:url('${logoPerusahaan}');
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
+    width:70%;
+    height:50px;
+    margin:0 auto 5px auto;
+    overflow:hidden;
+    line-height:0;
 ">
-</div>
     <img src="${logoPerusahaan}"
         style="
             width:100%;
@@ -11546,11 +11587,7 @@ function handleBayarClick(btnElement) {
 }
 
 // ================== GLOBAL CACHE ==================
-window.__CACHE = {
-    pelanggan: null,
-    tagihan: null
-};
-
+window.__CACHE = {};
 
 async function loadTagihanData() {
     logRead('tagihan');
@@ -11568,17 +11605,16 @@ async function loadTagihanData() {
         // ⭐⭐ PERBAIKAN 1: FILTER PELANGGAN BERDASARKAN COMPANY_ID ⭐⭐
         let pelangganSnapshot;
 
-            if (window.__CACHE.pelanggan) {
-                console.log("⚡ Pelanggan dari CACHE");
-                pelangganSnapshot = window.__CACHE.pelanggan;
-            } else {
-                pelangganSnapshot = await db.collection('pelanggan')
-                    .where('company_id', '==', globalCompanyId)
-                    .get();
-
-                window.__CACHE.pelanggan = pelangganSnapshot;
-            }
-
+           const cacheKeyPelanggan = `pelanggan_${globalCompanyId}`;
+if (window.__CACHE[cacheKeyPelanggan]) {
+    console.log("⚡ Pelanggan dari CACHE");
+    pelangganSnapshot = window.__CACHE[cacheKeyPelanggan];
+} else {
+    pelangganSnapshot = await db.collection('pelanggan')
+        .where('company_id', '==', globalCompanyId)
+        .get();
+    window.__CACHE[cacheKeyPelanggan] = pelangganSnapshot;
+}
         const pelangganIds = [];
         const pelangganMap = {};
 
@@ -11606,10 +11642,12 @@ async function loadTagihanData() {
 let tagihanData = [];
 // ✅ TAMBAH INI:
 
-const cachedTagihan = CACHE.get('tagihanData', TAGIHAN_CACHE_TTL);
+const cacheKey = `tagihanData_${globalCompanyId}`;
+const cachedTagihan = localStorage.getItem(cacheKey);
+
 if (cachedTagihan) {
-    console.log("✅ PAKAI CACHE TAGIHAN - 0 READ");
-    tagihanData = cachedTagihan;
+    console.log("✅ PAKAI LOCALSTORAGE - 0 READ");
+    tagihanData = JSON.parse(cachedTagihan);
 } else {
     console.log("📥 AMBIL TAGIHAN DARI FIREBASE");
     const tagihanSnapshot = await db.collection('tagihan')
@@ -11620,9 +11658,8 @@ if (cachedTagihan) {
         tagihanData.push({ id: doc.id, data: doc.data() });
     });
 
-    CACHE.set('tagihanData', tagihanData);
+    localStorage.setItem(cacheKey, JSON.stringify(tagihanData));
 }
-
 
         if (pelangganIds.length === 0) {
             table.innerHTML = `
@@ -11641,41 +11678,9 @@ if (cachedTagihan) {
 
         console.log(`👥 ${pelangganIds.length} pelanggan valid untuk company: ${globalCompanyId}`);
 
-        
 
-        if (pelangganIds.length <= 10) {
-            // JIKA PELANGGAN <= 10, AMBIL SEKALIGUS DENGAN FILTER COMPANY
-            const tagihanSnapshot = await db.collection('tagihan')
-                .where('pelanggan_id', 'in', pelangganIds)
-                .where('company_id', '==', globalCompanyId)  // ⭐ TAMBAH FILTER INI
-                .get();
 
-            tagihanSnapshot.forEach(doc => {
-                const data = doc.data();
-                // ⭐⭐ VALIDASI TAMBAHAN: PASTIKAN TAGIHAN MILIK COMPANY INI ⭐⭐
-                if (data.company_id === globalCompanyId) {
-                    tagihanData.push({ id: doc.id, data: data });
-                } else {
-                    console.warn(`⚠️ Tagihan ${doc.id} bukan milik company ini:`, data.company_id);
-                }
-            });
-        } else {
-            // JIKA PELANGGAN > 10, AMBIL PER BATCH (FIREBASE LIMIT 10)
-            for (let i = 0; i < pelangganIds.length; i += 10) {
-                const batchIds = pelangganIds.slice(i, i + 10);
-                const batchSnapshot = await db.collection('tagihan')
-                    .where('pelanggan_id', 'in', batchIds)
-                    .where('company_id', '==', globalCompanyId)  // ⭐ TAMBAH FILTER INI
-                    .get();
 
-                batchSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.company_id === globalCompanyId) {
-                        tagihanData.push({ id: doc.id, data: data });
-                    }
-                });
-            }
-        }
 
         if (tagihanData.length === 0) {
             table.innerHTML = `
@@ -11722,16 +11727,19 @@ if (cachedTagihan) {
 }
 
             // ⭐⭐ VALIDASI: PASTIKAN TAGIHAN MILIK COMPANY YANG SAMA ⭐⭐
-            if (t.company_id !== globalCompanyId) {
-                console.warn(`⚠️ Tagihan ${item.id} company_id tidak match:`, t.company_id);
-                return;
-            }
+            //if (t.company_id !== globalCompanyId) {
+                //console.warn(`⚠️ Tagihan ${item.id} company_id tidak match:`, t.company_id);
+               // return;
+          //  }
 
             groupedMap[pid].list_tagihan.push(t);
             if (t.status !== 'lunas') {
                 groupedMap[pid].total_nominal += Number(t.jumlah) || 0;
             }
         });
+
+
+        
 
                 const groupedData = Object.values(groupedMap);
 
@@ -11747,6 +11755,8 @@ if (serverFilter) {
         return pelangganData.server === serverFilter;
     });
 }
+
+
 
 // SORTING: BELUM LUNAS DI ATAS, LUNAS DI BAWAH
 filteredData.sort((a, b) => {
@@ -11901,11 +11911,22 @@ if (window.__fromMapOpenDetail) {
     window.__fromMapOpenDetail = null;
 }
 
+ // PALING AKHIR SEBELUM CATCH
+window._debugGroupedMap = groupedMap;
+window._debugGroupedData = groupedData;
+window._debugFilteredData = filteredData;
+console.log('DEBUG VARIABLES SET:', { 
+    groupedMap: Object.keys(groupedMap).length, 
+    groupedData: groupedData.length,
+    filteredData: filteredData.length 
+});
+
 
     } catch (error) {
         console.error("❌ Error load tagihan:", error);
         table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
     }
+   
 }
 
 
@@ -13937,13 +13958,88 @@ async function generateTagihanBulk() {
     logRead('generate');
     console.log("🚀 GENERATE TAGIHAN (FIX TANGGAL)...");
 
+    // ⭐ CEGAH DUPLIKAT EKSEKUSI
+    if (window._generatingTagihan) return;
+    window._generatingTagihan = true;
+
     try {
         const bulanGenerateInput = document.getElementById('generateBulan').value;
-        // Kita pakai fixed tanggal 10 sesuai contoh user
         const tglJatuhTempoFix = 10;
 
         if (!bulanGenerateInput) {
             showToast('error', 'Error', 'Pilih bulan generate');
+            return;
+        }
+
+        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM').startOf('month');
+        const sekarang = moment().startOf('month');
+
+        // 🔥 CEK BULAN DEPAN
+        if (bulanGenerate.isAfter(sekarang, 'month')) {
+            // ===== POPUP SMOOTH =====
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0);
+                backdrop-filter: blur(0px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 999999;
+                transition: background 0.25s ease, backdrop-filter 0.25s ease;
+            `;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: white;
+                padding: 30px;
+                border-radius: 14px;
+                text-align: center;
+                width: 340px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+                transform: translateY(20px) scale(0.95);
+                opacity: 0;
+                transition: all 0.25s ease;
+            `;
+
+            modal.innerHTML = `
+                <h3 style="color:#e53935;margin-bottom:10px;">Gagal Generate</h3>
+                <p style="margin-bottom:20px;">
+                    Tagihan belum tersedia untuk bulan 
+                    <b>${bulanGenerate.format('MMMM YYYY')}</b>
+                </p>
+                <button id="closeGeneratePopup"
+                    style="
+                        padding:8px 22px;
+                        border:none;
+                        border-radius:8px;
+                        background:#e53935;
+                        color:white;
+                        cursor:pointer;
+                    ">
+                    Tutup
+                </button>
+            `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                overlay.style.background = 'rgba(0,0,0,0.5)';
+                overlay.style.backdropFilter = 'blur(4px)';
+                modal.style.transform = 'translateY(0) scale(1)';
+                modal.style.opacity = '1';
+            }, 10);
+
+            document.getElementById('closeGeneratePopup').onclick = () => {
+                overlay.style.background = 'rgba(0,0,0,0)';
+                overlay.style.backdropFilter = 'blur(0px)';
+                modal.style.transform = 'translateY(20px) scale(0.95)';
+                modal.style.opacity = '0';
+                setTimeout(() => overlay.remove(), 200);
+            };
+
             return;
         }
 
@@ -13953,27 +14049,22 @@ async function generateTagihanBulk() {
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         generateBtn.disabled = true;
 
-        const bulanGenerate = moment(bulanGenerateInput, 'YYYY-MM');
-
-
         // PAKAI DATA DARI GLOBAL ATAU AMBIL BARU
         let paketMap = {};
         if (!window.paketData) window.paketData = [];
         if (window.paketData && window.paketData.length > 0) {
-            // PAKAI DATA YANG SUDAH ADA
             window.paketData.forEach(p => {
                 paketMap[p.nama] = p.harga;
             });
             console.log('⚡ Pakai paketData global');
         } else {
-            // AMBIL DARI DATABASE KALAU KOSONG
             const snapshot = await db.collection('paket')
                 .where('company_id', '==', globalCompanyId)
                 .get();
             snapshot.forEach(doc => {
                 const p = doc.data();
                 paketMap[p.nama] = p.harga;
-                window.paketData.push(p); // SIMPAN KE GLOBAL
+                window.paketData.push(p);
             });
             console.log('📦 Ambil paket dari database');
         }
@@ -14008,133 +14099,94 @@ async function generateTagihanBulk() {
         const now = new Date().toISOString();
 
         // 4. PROSES PER PELANGGAN
-        for (const doc of pelangganSnapshot.docs) {
-            const pelanggan = doc.data();
-            const pelangganId = doc.id;
+for (const doc of pelangganSnapshot.docs) {
+    const pelanggan = doc.data();
+    const pelangganId = doc.id;
 
-            let tanggalPasang = moment(pelanggan.tanggal_pasang, ['YYYY-MM-DD', 'DD-MM-YYYY']);
-            if (!tanggalPasang.isValid()) tanggalPasang = moment('2020-01-01');
+    // Ambil tanggal pasang
+    let tanggalPasang = moment(pelanggan.tanggal_pasang, ['YYYY-MM-DD', 'DD-MM-YYYY']);
+    if (!tanggalPasang.isValid()) {
+        tanggalPasang = moment('2020-01-01');
+    }
 
-            // ⭐ LOGIKA: START LOOP = BULAN PASANG + 1
-            let bulanSaatIni = tanggalPasang.clone().add(1, 'month').startOf('month');
+    // HITUNG JUMLAH BULAN DARI PASANG SAMPE BULAN GENERATE
+    const bulanPasang = tanggalPasang.clone().startOf('month');
+    let totalBulan = bulanGenerate.diff(bulanPasang, 'months');
+    
+    // GENERATE SEMUA BULAN YANG KURANG
+    for (let i = 1; i <= totalBulan; i++) {
+        const bulanTagihan = bulanPasang.clone().add(i, 'months');
+        const bulanKey = bulanTagihan.format('MM-YYYY');
+        const existingKey = `${pelangganId}_${bulanKey}`;
 
-            const maxLoop = 24;
-            let loopCount = 0;
-
-            // Loop sampai bulan input
-            while (bulanSaatIni.isSameOrBefore(bulanGenerate, 'month') && loopCount < maxLoop) {
-
-                // Format Key: MM-YYYY
-                const bulanKey = bulanSaatIni.format('MM-YYYY');
-
-                const existingKey = `${pelangganId}_${bulanKey}`;
-
-                if (!existingTagMap.has(existingKey)) {
-                    let jumlahTagihan = paketMap[pelanggan.paket] || 0;
-                    let isProrata = false;
-                    let catatan = 'Tagihan normal';
-
-                    // Cek Prorata
-                    const bulanPertama = tanggalPasang.clone().add(1, 'month').startOf('month');
-                    if (bulanSaatIni.isSame(bulanPertama, 'month')) {
-                        isProrata = true;
-                        const daysInMonth = bulanSaatIni.daysInMonth();
-                        const sisaHari = daysInMonth - tanggalPasang.date() + 1;
-                        jumlahTagihan = Math.round((jumlahTagihan / daysInMonth) * sisaHari);
-                        catatan = `Prorata ${sisaHari} hari`;
-                    }
-
-                    // ⭐ FIX KRUSIAL: BANGUN TANGGAL DARI YEAR, MONTH, DATE (AGAR TIDAK SALAH)
-                    // Kita clone bulanSaatIni, lalu set tanggalnya ke 10.
-                    const jatuhTempoDate = bulanSaatIni.clone().date(tglJatuhTempoFix);
-
-                    // Format ke string DD-MM-YYYY
-                    const jatuhTempoString = jatuhTempoDate.format('DD-MM-YYYY');
-
-                    const tagihanId = `INV_${bulanKey.replace('-', '')}_${pelangganId}_${Date.now()}`;
-                    const tagihanRef = db.collection('tagihan').doc(tagihanId);
-
-                    batch.set(tagihanRef, {
-                        id: tagihanId,
-                        pelanggan_id: pelangganId,
-                        pelanggan_nama: pelanggan.nama || '',
-                        pelanggan_telepon: pelanggan.telepon || '',
-                        bulan: bulanKey, // 02-2026
-                        jumlah: jumlahTagihan,
-                        tanggal_jatuh_tempo: jatuhTempoString, // Hasil: 10 Feb 2026
-                        status: 'belum',
-                        company_id: globalCompanyId,
-                        created_at: now,
-                        updated_at: now,
-                        metadata: {
-                            is_prorata: isProrata,
-                            catatan: catatan,
-                            bulan_generate: bulanGenerateInput
-                        }
-                    });
-
-                    totalTagihanDibuat++;
-                    console.log(`   ✅ ${pelanggan.nama} - ${bulanKey} (JT: ${jatuhTempoString})`);
-                }
-
-                bulanSaatIni.add(1, 'month');
-                loopCount++;
+        if (!existingTagMap.has(existingKey)) {
+            let jumlahTagihan = paketMap[pelanggan.paket] || 150000;
+            
+            // CEK PRORATA UNTUK BULAN PERTAMA
+            if (i === 1) {
+                const daysInMonth = bulanTagihan.daysInMonth();
+                const sisaHari = daysInMonth - tanggalPasang.date() + 1;
+                jumlahTagihan = Math.round((jumlahTagihan / daysInMonth) * sisaHari);
             }
+
+            const jatuhTempoDate = bulanTagihan.clone().date(10);
+            const jatuhTempoString = jatuhTempoDate.format('DD-MM-YYYY');
+            const tagihanId = `INV_${bulanKey.replace('-', '')}_${pelangganId}_${Date.now()}`;
+
+            batch.set(db.collection('tagihan').doc(tagihanId), {
+                id: tagihanId,
+                pelanggan_id: pelangganId,
+                pelanggan_nama: pelanggan.nama || '',
+                pelanggan_telepon: pelanggan.telepon || '',
+                bulan: bulanKey,
+                jumlah: jumlahTagihan,
+                tanggal_jatuh_tempo: jatuhTempoString,
+                status: 'belum',
+                company_id: globalCompanyId,
+                created_at: now,
+                updated_at: now
+            });
+
+            totalTagihanDibuat++;
+            console.log(`✅ ${pelanggan.nama} - ${bulanKey}`);
         }
+    }
+}
 
         // 5. SIMPAN
-        if (totalTagihanDibuat > 0) {
-            await batch.commit();
+if (totalTagihanDibuat > 0) {
+    await batch.commit();
 
-                 // ===== UPDATE CACHE =====
-            // Ambil cache lama (data Feb–Juli)
-            const cachedTagihan = CACHE.get('tagihanData', 3600000) || [];
+    // ===== UPDATE LOCALSTORAGE =====
+    const cacheKey = `tagihanData_${globalCompanyId}`;
+    
+    // AMBIL SEMUA DATA TAGIHAN, BUKAN CUMA BULAN INI!
+    const snapshotSemua = await db.collection('tagihan')
+        .where('company_id', '==', globalCompanyId)
+        .get();
 
-            // Ambil data baru yang BARU DIGENERATE (misal Agustus)
-            const snapshotBaru = await db.collection('tagihan')
-                .where('company_id', '==', globalCompanyId)
-                .where('bulan', '==', bulanGenerateInput)
-                .get();
+    const dataSemua = snapshotSemua.docs.map(doc => ({
+        id: doc.id,
+        data: doc.data()
+    }));
 
-            const dataBaru = [];
-            snapshotBaru.forEach(doc => {
-                dataBaru.push({ id: doc.id, data: doc.data() });
-            });
+    // SIMPAN SEMUA DATA
+    localStorage.setItem(cacheKey, JSON.stringify(dataSemua));
+    console.log(`💾 CACHE: ${dataSemua.length} total tagihan`);
 
-            // Gabungin cache lama + data baru
-            const cacheBaru = [...cachedTagihan, ...dataBaru];
+    console.log(`💾 BERHASIL: ${totalTagihanDibuat} tagihan disimpan.`);
+    showToast('success', 'Berhasil', `${totalTagihanDibuat} tagihan baru dibuat.`);
 
-            // Hapus duplikat berdasarkan ID (jaga-jaga)
-            const uniqueCache = [];
-            const seen = new Set();
-            cacheBaru.forEach(item => {
-                if (!seen.has(item.id)) {
-                    seen.add(item.id);
-                    uniqueCache.push(item);
-                }
-            });
+    await db.collection('aktivitas').add({
+        aktivitas: `Generate: ${totalTagihanDibuat} tagihan (${bulanGenerate.format('MMMM YYYY')})`,
+        user: currentUser?.email || "Admin",
+        timestamp: now,
+        company_id: globalCompanyId
+    });
 
-            // Simpan cache baru
-            CACHE.set('tagihanData', uniqueCache);
-            console.log(`💾 CACHE UPDATE: ${cachedTagihan.length} lama + ${dataBaru.length} baru = ${uniqueCache.length} total (${bulanGenerateInput})`);
-            // ===== END UPDATE CACHE =====
-
-            console.log(`💾 BERHASIL: ${totalTagihanDibuat} tagihan disimpan.`);
-            showToast('success', 'Berhasil', `${totalTagihanDibuat} tagihan baru dibuat.`);
-
-            await db.collection('aktivitas').add({
-                aktivitas: `Generate: ${totalTagihanDibuat} tagihan (${bulanGenerate.format('MMMM YYYY')})`,
-                user: currentUser?.email || "Admin",
-                timestamp: now,
-                company_id: globalCompanyId
-
-
-            });
-
-        } else {
-            showToast('info', 'Info', 'Semua tagihan sudah ada.');
-        }
-
+} else {
+    showToast('info', 'Info', 'Semua tagihan sudah ada.');
+}
         forceCloseModal('modalGenerateTagihan');
         await loadTagihanData();
 
@@ -14147,6 +14199,7 @@ async function generateTagihanBulk() {
             generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Tagihan';
             generateBtn.disabled = false;
         }
+        window._generatingTagihan = false;
     }
 }
 
@@ -14648,14 +14701,22 @@ function printInvoiceDetail(tagihanId) {
                     status: 'lunas',
                     total_bayar: totalBayar,
                     metode_bayar: metodeBayar,
-                    tanggal_bayar: tanggalBayar,
+                    tanggal_bayar: moment().format('DD MMM YYYY, HH:mm'),
                     referensi_bayar: referensiBayar,
                     catatan_bayar: catatanBayar,
                     updated_at: new Date().toISOString()
                 });
 
 
-
+// ⭐⭐ TARUH SINI, SETELAH UPDATE TAPI SEBELUM LOG ACTIVITY ⭐⭐
+        const cacheKey = `tagihanData_${globalCompanyId}`;
+        let cache = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        const index = cache.findIndex(item => item.id === tagihanId);
+        if (index !== -1) {
+            cache[index].data.status = 'lunas';
+            cache[index].data.tanggal_bayar = moment().format('DD MMM YYYY, HH:mm');
+            localStorage.setItem(cacheKey, JSON.stringify(cache));
+        }
 
                 // Log activity
                 await db.collection('aktivitas').add({
