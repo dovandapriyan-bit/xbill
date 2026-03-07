@@ -1454,6 +1454,8 @@
     }
 }
 
+
+
     </style>
 </head>
 <body>
@@ -3947,131 +3949,119 @@ function confirmDialog(message, callback) {
         
        async function getDashboardHTML() {
     return `
-        <div class="page dashboard-page">
-            <div class="page-header">
-                <h2 class="page-title"><i class="fas fa-home"></i> Dashboard</h2>
-                <button class="btn btn-primary" onclick="refreshDashboard()">
+       <div class="page dashboard-page">
+    <div class="page-header">
+        <h2 class="page-title"><i class="fas fa-home"></i> Dashboard</h2>
+        <button class="btn btn-primary" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+    
+    <!-- CARD DASHBOARD RAPI -->
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+
+        <!-- CARD 1: TOTAL PELANGGAN -->
+        <div class="stat-card" style="padding: 15px; cursor: pointer;" onclick="navigateToPelanggan()">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="stat-icon primary" style="width: 40px; height: 40px; font-size: 18px;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div class="stat-value" id="statPelanggan" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0</div>
+                    <div class="stat-label" style="font-size: 12px;">Total Pelanggan</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 2: TAGIHAN BULAN INI -->
+        <div class="stat-card" style="padding: 15px; cursor: pointer;" onclick="navigateToTagihan()">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="stat-icon success" style="width: 40px; height: 40px; font-size: 18px;">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div class="stat-value" id="statTagihanBulanan" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                    <div class="stat-label" style="font-size: 12px;">Tagihan Bulan Ini</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 3: LUNAS -->
+        <div class="stat-card" style="padding: 15px; cursor: pointer;" onclick=//"showLunasBulanIni()">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="stat-icon success" style="width: 40px; height: 40px; font-size: 18px; background: #00b894;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div class="stat-value" id="statLunasPersen" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0%</div>
+                    <div class="stat-label" style="font-size: 12px;">Pelunasan</div>
+                    <small class="text-muted" id="statLunasCount" style="font-size: 11px;">0 pelanggan</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 4: TUNGGAKAN -->
+        <div class="stat-card" style="padding: 15px; cursor: pointer;" onclick=//"showDetailTunggakan()">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="stat-icon danger" style="width: 40px; height: 40px; font-size: 18px;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div class="stat-value" id="statTunggakan" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                    <div class="stat-label" style="font-size: 12px;">Tunggakan</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CHARTS DAN MAP (TETAP) -->
+    <div class="charts-container">
+        <div class="chart-card">
+            <h3>Tagihan 6 Bulan Terakhir</h3>
+            <canvas id="chartTagihan" height="150"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Status Pelanggan</h3>
+            <canvas id="chartStatus" height="150"></canvas>
+        </div>
+    </div>
+
+    <!-- PETA LOKASI PELANGGAN -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-map-marked-alt"></i> Peta Lokasi Pelanggan</h3>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline" onclick="refreshPelangganMap()">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
+                <button class="btn btn-sm btn-primary" onclick="focusOnAllMarkers()">
+                    <i class="fas fa-search"></i> Zoom All
+                </button>
             </div>
-            
-            <div class="stats-grid">
-                <!-- CARD 1: TOTAL PELANGGAN -->
-                <div class="stat-card" id="cardTotalPelanggan" onclick="navigateToPelanggan()" style="cursor: pointer;">
-                    <div class="stat-icon primary">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="statPelanggan">0</div>
-                        <div class="stat-label">Total Pelanggan</div>
-                        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #4361ee;">
-                            <i class="fas fa-external-link-alt"></i> Klik untuk lihat detail
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- CARD 2: TAGIHAN BULAN INI -->
-                <div class="stat-card" onclick="navigateToTagihan()" style="cursor: pointer;">
-                    <div class="stat-icon success">
-                        <i class="fas fa-receipt"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="statTagihanBulanan">Rp 0</div>
-                        <div class="stat-label">Tagihan Bulan Ini</div>
-                        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #00b894;">
-                            <i class="fas fa-external-link-alt"></i> Klik untuk lihat tagihan
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- CARD 3: LUNAS -->
-                <div class="stat-card" onclick="//showLunasBulanIni()" style="cursor: pointer;">
-    <div class="stat-icon success">
-        <i class="fas fa-check-circle"></i>
-    </div>
-    <div class="stat-content">
-        <!-- Angka Persentase -->
-        <div class="stat-value" id="statLunasPersen">0%</div>
-        
-        <!-- Label & Detail Jumlah -->
-        <div class="stat-label">Pelunasan Bulan Ini</div>
-        <div class="stat-detail" style="font-size: 12px; color: #666; margin-top: 4px;">
-            <span id="statLunasCount">0</span> Pelanggan
         </div>
-        
-        <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #00b894;">
-            <i class="fas fa-list-ul"></i> Klik untuk lihat detail
+        <div class="card-body">
+            <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;">
+                <div id="pelangganMap" style="height: 100%; width: 100%;"></div>
+            </div>
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Total titik: <span id="mapMarkerCount">0</span> pelanggan
+                    </small>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-map-pin" style="color: #4361ee;"></i> Aktif
+                        <i class="fas fa-map-pin" style="color: #ff6b6b; margin-left: 10px;"></i> Tunggak
+                        <i class="fas fa-map-pin" style="color: #6c757d; margin-left: 10px;"></i> Nonaktif
+                    </small>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-                
-                <!-- CARD 4: TUNGGAKAN -->
-<div class="stat-card" onclick="//showDetailTunggakan()" style="cursor: pointer;">
-    <div class="stat-icon danger">
-        <i class="fas fa-clock"></i>
-    </div>
-    <div class="stat-content">
-    <!-- Nilai Nominal (Rupiah) -->
-    <div class="stat-value" id="statTunggakan">Rp 0</div>
-    
-    <!-- Label -->
-    <div class="stat-label">Tunggakan Bulan Ini</div>
-    
-    <!-- Aksi -->
-    <div class="stat-action" style="margin-top: 8px; font-size: 12px; color: #ff6b6b;">
-        <i class="fas fa-external-link-alt"></i> Klik untuk lihat detail
-    </div>
-</div>
-</div>
-            </div>
-            
-            <div class="charts-container">
-                <div class="chart-card">
-                    <h3>Tagihan 6 Bulan Terakhir</h3>
-                    <canvas id="chartTagihan" height="150"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Status Pelanggan</h3>
-                    <canvas id="chartStatus" height="150"></canvas>
-                </div>
-            </div>
-            
-            <!-- GANTI SECTION AKTIVITAS TERBARU DENGAN PETA -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-map-marked-alt"></i> Peta Lokasi Pelanggan</h3>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline" onclick="refreshPelangganMap()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                        <button class="btn btn-sm btn-primary" onclick="focusOnAllMarkers()">
-                            <i class="fas fa-search"></i> Zoom All
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div id="mapContainer" style="height: 400px; border-radius: 8px; overflow: hidden; background: #f8f9fa;margin-top: 80px;">
-                        <!-- JIKA MAP SUDAH ADA, PAKAI YANG SUDAH -->
-                        <div id="pelangganMap" style="height: 100%; width: 100%;"></div>
-                    </div>
-                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle"></i> 
-                                Total titik: <span id="mapMarkerCount">0</span> pelanggan
-                            </small>
-                        </div>
-                        <div>
-                            <small class="text-muted">
-                                <i class="fas fa-map-pin" style="color: #4361ee;"></i> Aktif
-                                <i class="fas fa-map-pin" style="color: #ff6b6b; margin-left: 10px;"></i> Tunggak
-                                <i class="fas fa-map-pin" style="color: #6c757d; margin-left: 10px;"></i> Nonaktif
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     `;
 }
 
@@ -4407,35 +4397,37 @@ function toggleTunggakanFilter() {
             </div>
             
             <!-- FILTERS (SUDAH DITAMBAHKAN DISINI) -->
-            <div class="filters-card">
-                <div class="filter-row">
-                    <div class="form-group">
-    <label>Server</label>
-    <div style="display: flex; gap: 5px; align-items: center;">
-        <select class="form-control" id="filterServer" 
-                 onchange="handleServerChange(this.value)" 
-        style="flex: 1;">
-    <option value="">Semua Server</option>
-    
-    <option value="+tambah" style="color: #4361ee; font-weight: bold; background: #f0f9ff;">
-        + Tambah Server Baru
-    </option>
-</select>
+            <div class="filters-card" style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px;">
+        
+        <!-- SERVER -->
+        <div style="min-width: 160px; flex: 1 1 auto;">
+            <label style="font-weight: 500; font-size: 13px; margin-bottom: 4px; display: block;">Server</label>
+            <select class="form-control" id="filterServer" onchange="handleServerChange(this.value)" 
+                    style="width: 100%; height: 38px; padding: 0 8px;">
+                <option value="">Semua Server</option>
+                <option value="+tambah" style="color: #4361ee; font-weight: bold;">+ Tambah Server</option>
+            </select>
+        </div>
+
+        <!-- SEARCH -->
+        <div style="min-width: 220px; flex: 2 1 auto;">
+            <label style="font-weight: 500; font-size: 13px; margin-bottom: 4px; display: block;">Cari</label>
+            <input type="text" class="form-control" id="searchPelanggan" 
+                   placeholder="Nama / telepon / alamat..." 
+                   style="width: 100%; height: 38px; padding: 0 10px;" 
+                   oninput="loadPelangganData()">
+        </div>
+
+        <!-- TOMBOL -->
+        <div style="display: flex; gap: 8px; margin-top: 18px;">
+            <button class="btn btn-outline" onclick="loadPelangganData()" style="height: 38px; padding: 0 15px;">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+
     </div>
 </div>
-                    
-                    <div class="form-group">
-                        <label>Cari</label>
-                        <input type="text" class="form-control" id="searchPelanggan" 
-                               placeholder="Nama, alamat, atau telepon..." oninput="loadPelangganData()">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-outline" onclick="loadPelangganData()" style="margin-top: 25px;">
-                            <i class="fas fa-filter"></i> Filter
-                        </button>
-                    </div>
-                </div>
-            </div>
             
             <!-- CARD TABEL PELANGGAN -->
             <div class="card">
@@ -4448,22 +4440,22 @@ function toggleTunggakanFilter() {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Server</th>
-                                    <th>Nama</th>
-                                    <th>Telepon</th>
-                                    <th>Alamat</th>
-                                    <th>Lokasi</th>
-                                    <th>Paket</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
+                            <thead style="background: #4361ee;">
+    <tr>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">No</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Server</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Nama</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Telepon</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Alamat</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Lokasi</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Paket</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Aksi</th>
+    </tr>
+</thead>
                             <tbody id="pelangganTable">
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <div class="spinner" style="width: 30px; height: 30px; margin: 0 auto;"></div>
                                         Memuat data...
                                     </td>
@@ -4507,16 +4499,16 @@ function toggleTunggakanFilter() {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nama Paket</th>
-                                    <th>Kecepatan</th>
-                                    <th>Harga</th>
-                                    <th>Kuota</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
+                             <thead style="background: #4361ee;">
+    <tr>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Nama Paket</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Kecepatan</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Harga</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Kuota</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Aksi</th>
+    </tr>
+</thead>
                             <tbody id="paketTable">
                                 <!-- Data akan diisi -->
                             </tbody>
@@ -4552,30 +4544,36 @@ function toggleTunggakanFilter() {
     </div>
     
     <!-- 2 CARD STATISTIK - RESPONSIF -->
-<div class="stats-grid" style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+
     <!-- CARD TAGIHAN BELUM LUNAS -->
-    <div class="stat-card" style="background: #fff3cd; border-left: 4px solid #ffc107; width: 100%;">
-        <div class="stat-icon warning">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-content" style="min-width: 0; overflow: hidden;">
-            <div class="stat-value" id="totalBelumLunas" style="font-size: clamp(16px, 4vw, 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
-            <div class="stat-label">Total Tagihan Belum Lunas</div>
-            <small class="text-muted" id="jumlahBelumLunas">0 pelanggan</small>
+    <div class="stat-card" style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon warning" style="width: 40px; height: 40px; font-size: 18px;">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="totalBelumLunas" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Tagihan Belum Lunas</div>
+                <small class="text-muted" id="jumlahBelumLunas" style="font-size: 11px;">0 pelanggan</small>
+            </div>
         </div>
     </div>
-    
+
     <!-- CARD TAGIHAN LUNAS -->
-    <div class="stat-card" style="background: #d4edda; border-left: 4px solid #28a745; width: 100%;">
-        <div class="stat-icon success">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-content" style="min-width: 0; overflow: hidden;">
-            <div class="stat-value" id="totalLunas" style="font-size: clamp(16px, 4vw, 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
-            <div class="stat-label">Total Tagihan Lunas</div>
-            <small class="text-muted" id="jumlahLunas">0 pelanggan</small>
+    <div class="stat-card" style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon success" style="width: 40px; height: 40px; font-size: 18px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="totalLunas" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Tagihan Lunas</div>
+                <small class="text-muted" id="jumlahLunas" style="font-size: 11px;">0 pelanggan</small>
+            </div>
         </div>
     </div>
+
 </div>
     
     <!-- CARD DAFTAR TAGIHAN DENGAN FILTER RAPI -->
@@ -4607,18 +4605,23 @@ function toggleTunggakanFilter() {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
-    <tr>
-        <th style="width: 15%;">Server</th>
-        <th style="width: 20%;">Pelanggan</th>
-        <th style="width: 10%;">Lokasi</th>
-        <th style="width: 15%;">Alamat</th>
-        <th style="width: 8%;">Bulan</th>
-        <th style="width: 12%;">Total Tagihan</th>
-        <th style="width: 8%;">Status</th>
-        <th style="width: 12%;">Aksi</th>
-    </tr>
-</thead>
+                           <table class="table">
+    <thead style="background: #4361ee;">
+        <tr>
+            <th style="width: 15%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Server</th>
+            <th style="width: 20%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Pelanggan</th>
+            <th style="width: 10%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Lokasi</th>
+            <th style="width: 15%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Alamat</th>
+            <th style="width: 8%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Bulan</th>
+            <th style="width: 12%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Total Tagihan</th>
+            <th style="width: 8%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+            <th style="width: 12%; padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Aksi</th>
+        </tr>
+    </thead>
+    <tbody id="tagihanTable">
+        <!-- isi tabel -->
+    </tbody>
+</table>
                             <tbody id="tagihanTable">
                                 <tr>
                                     <td colspan="8" class="text-center">Memuat data...</td>
@@ -4791,47 +4794,61 @@ async function getTunggakanHTML() {
             </div>
             
             <!-- KARTU STATISTIK (TETAP ADA) -->
-            <div class="stats-grid">
-                <div class="stat-card" onclick="filterTunggakanTable('ringan')" style="cursor: pointer;">
-                    <div class="stat-icon warning">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="tunggakanRingan">0</div>
-                        <div class="stat-label">Ringan (1-30 Hari)</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card" onclick="filterTunggakanTable('sedang')" style="cursor: pointer;">
-                    <div class="stat-icon danger">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="tunggakanSedang">0</div>
-                        <div class="stat-label">Sedang (31-60 Hari)</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card" onclick="filterTunggakanTable('berat')" style="cursor: pointer;">
-                    <div class="stat-icon primary">
-                        <i class="fas fa-ban"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="tunggakanBerat">0</div>
-                        <div class="stat-label">Berat (>60 Hari)</div>
-                    </div>
-                </div>
-                
-                <div class="stat-card" onclick="filterTunggakanTable('semua')" style="cursor: pointer;">
-                    <div class="stat-icon info">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="totalTunggakanUang">Rp 0</div>
-                        <div class="stat-label">Total Nominal</div>
-                    </div>
-                </div>
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+
+    <!-- CARD TUNGGAKAN RINGAN -->
+    <div class="stat-card" onclick="filterTunggakanTable('ringan')" style="padding: 15px; cursor: pointer; background: #fff3cd; border-left: 4px solid #ffc107;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon warning" style="width: 40px; height: 40px; font-size: 18px; min-width: 40px;">
+                <i class="fas fa-clock"></i>
             </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="tunggakanRingan" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0</div>
+                <div class="stat-label" style="font-size: 12px;">Ringan (1-30 Hari)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD TUNGGAKAN SEDANG -->
+    <div class="stat-card" onclick="filterTunggakanTable('sedang')" style="padding: 15px; cursor: pointer; background: #f8d7da; border-left: 4px solid #dc3545;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon danger" style="width: 40px; height: 40px; font-size: 18px; min-width: 40px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="tunggakanSedang" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0</div>
+                <div class="stat-label" style="font-size: 12px;">Sedang (31-60 Hari)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD TUNGGAKAN BERAT -->
+    <div class="stat-card" onclick="filterTunggakanTable('berat')" style="padding: 15px; cursor: pointer; background: #f8d7da; border-left: 4px solid #721c24;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon primary" style="width: 40px; height: 40px; font-size: 18px; min-width: 40px; background: #721c24;">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="tunggakanBerat" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0</div>
+                <div class="stat-label" style="font-size: 12px;">Berat (>60 Hari)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD TOTAL NOMINAL -->
+    <div class="stat-card" onclick="filterTunggakanTable('semua')" style="padding: 15px; cursor: pointer; background: #d1ecf1; border-left: 4px solid #17a2b8;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon info" style="width: 40px; height: 40px; font-size: 18px; min-width: 40px;">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="totalTunggakanUang" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Total Nominal</div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
             <!-- TABEL DATA TUNGGAKAN (DENGAN INPUT CARI) -->
             <div class="card">
@@ -4850,17 +4867,17 @@ async function getTunggakanHTML() {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Pelanggan</th>
-                                    <th>Bulan Tagihan</th>
-                                    <th>Nominal</th>
-                                    <th>Jatuh Tempo</th>
-                                    <th>Lama Telat</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
+                            <thead style="background: #4361ee;">
+    <tr>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Pelanggan</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Bulan</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Nominal</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Jatuh Tempo</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Lama Telat</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Aksi</th>
+    </tr>
+</thead>
                             <tbody id="tunggakanTable">
                                 <tr>
                                     <td colspan="7" class="text-center">Memuat data...</td>
@@ -5827,41 +5844,104 @@ function gantiHalamanTunggakan(pageNum, kategori) {
                 </div>
             </div>
 
-            <div class="filters-card">
-                <div class="filter-row">
-                    <div class="form-group">
-                        <label>Periode Awal</label>
-                        <input type="date" class="form-control" id="laporanStartDate" value="${moment().startOf('month').format('YYYY-MM-DD')}">
-                    </div>
-                    <div class="form-group">
-                        <label>Periode Akhir</label>
-                        <input type="date" class="form-control" id="laporanEndDate" value="${moment().endOf('month').format('YYYY-MM-DD')}">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-primary" style="margin-top: 25px;" onclick="generateLaporan()">
-                            <i class="fas fa-filter"></i> Tampilkan
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="charts-container">
-                <div class="chart-card">
-                    <h3>Grafik Pendapatan</h3>
-                    <canvas id="laporanChart1" height="150"></canvas>
-                </div>
-                <div class="chart-card">
-    <h3>
-        <i class="fas fa-users"></i> Distribusi Pelanggan
-        <small style="font-size: 12px; color: #666; margin-left: 10px;">
-            <span id="pelangganAktifCount">0</span> Aktif |
-            <span id="pelangganTunggakCount">0</span> Tunggak |
-            <span id="pelangganNonaktifCount">0</span> Nonaktif
-        </small>
-    </h3>
-    <canvas id="laporanChart2" height="150"></canvas>
+            <div class="filters-card" style="padding: 15px; margin-bottom: 20px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <label style="font-weight: 500; white-space: nowrap;">Periode:</label>
+            <input type="date" class="form-control" id="laporanStartDate" 
+                   value="${moment().subtract(5, 'months').startOf('month').format('YYYY-MM-DD')}"
+                   style="width: 140px; height: 38px;">
+            <span style="margin: 0 5px;">—</span>
+            <input type="date" class="form-control" id="laporanEndDate" 
+                   value="${moment().endOf('month').format('YYYY-MM-DD')}"
+                   style="width: 140px; height: 38px;">
+        </div>
+        <button class="btn btn-primary" onclick="generateLaporan()" style="height: 38px;">
+            <i class="fas fa-filter"></i> Tampilkan
+        </button>
+    </div>
 </div>
+
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+    
+    <!-- CARD TOTAL PENDAPATAN -->
+    <div class="stat-card" style="padding: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon primary" style="width: 40px; height: 40px; font-size: 18px;">
+                <i class="fas fa-chart-line"></i>
             </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="totalPendapatanPeriode" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Total Pendapatan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD BULAN INI -->
+    <div class="stat-card" style="padding: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon success" style="width: 40px; height: 40px; font-size: 18px;">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="pendapatanBulanIni" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Bulan Ini</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD KEKURANGAN -->
+    <div class="stat-card" style="padding: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-icon warning" style="width: 40px; height: 40px; font-size: 18px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="stat-value" id="kekuranganPendapatan" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+                <div class="stat-label" style="font-size: 12px;">Kekurangan </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <div class="chart-card">
+    <h3 style="margin-bottom: 15px;">
+        <i class="fas fa-chart-line" style="color: #4361ee;"></i> Analisis Cepat
+    </h3>
+    
+    <!-- 3 CARD INFORMASI KINERJA -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+        
+        <!-- CARD PERTUMBUHAN -->
+        <div style="background: linear-gradient(145deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 5px;">Pertumbuhan</div>
+            <div style="font-size: 28px; font-weight: 700; color: white;" id="pertumbuhanPersen">+0%</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px;">
+                <i class="fas fa-arrow-up"></i> dari bulan lalu
+            </div>
+        </div>
+
+        <!-- CARD TARGET -->
+<div style="background: linear-gradient(145deg, #ff6b6b 0%, #ee5a24 100%); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 5px;">Target Bulan Ini</div>
+    <div style="font-size: 28px; font-weight: 700; color: white;" id="targetTercapai">0%</div>
+    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px;">
+        <i class="fas fa-bullseye"></i> Rp <span id="targetNominal">0</span>
+    </div>
+</div>
+
+        <!-- CARD PELANGGAN BARU -->
+        <div style="background: linear-gradient(145deg, #00b894 0%, #009975 100%); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-bottom: 5px;">Pelanggan Baru</div>
+            <div style="font-size: 28px; font-weight: 700; color: white;" id="pelangganBaru">0</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px;">
+                <i class="fas fa-user-plus"></i> bulan ini
+            </div>
+        </div>
+
+    </div>
+
+   
 
             <div class="card">
                 <div class="card-header">
@@ -5870,22 +5950,23 @@ function gantiHalamanTunggakan(pageNum, kategori) {
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table" id="laporanTable">
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Pelanggan</th>
-                                    <th>Periode</th>
-                                    <th>Nominal</th>
-                                    <th>Status</th>
-                                    <th>Metode</th>
-                                </tr>
-                            </thead>
+                            <thead style="background: #4361ee;">
+    <tr>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Tanggal</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Pelanggan</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Periode</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Nominal</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Metode</th>
+    </tr>
+</thead>
                             <tbody>
                                 <tr>
                                     <td colspan="6" class="text-center">Menunggu generate laporan...</td>
                                 </tr>
                             </tbody>
                         </table>
+                        <div id="laporanPagination" class="mt-3" style="display: flex; justify-content: center;"></div>
                     </div>
                 </div>
             </div>
@@ -20620,107 +20701,126 @@ async function renderDistribusiPelangganChart() {
 }
 
 // -------------------------------------------------------
-// 1. FUNGSI GENERATE LAPORAN (AMAN & LENGKAP)
+// 1. FUNGSI GENERATE LAPORAN (DENGAN CACHE + PAGINATION)
 // -------------------------------------------------------
-async function generateLaporan() {
-    console.log("📊 Generate Laporan: 6 BULAN TERAKHIR");
+let currentPageLaporan = 1;
+let laporanDataCache = null;
 
+async function generateLaporan(page = 1) {
+    console.log(`📊 Generate Laporan: 6 BULAN TERAKHIR - HALAMAN ${page}`);
+
+    // RESET CACHE KALO PERIODE BERUBAH
+const startDate = document.getElementById('laporanStartDate')?.value;
+const endDate = document.getElementById('laporanEndDate')?.value;
+
+// Cek apakah periode berubah dari sebelumnya
+if (window.lastStartDate !== startDate || window.lastEndDate !== endDate) {
+    laporanDataCache = null;  // ← RESET CACHE!
+    window.lastStartDate = startDate;
+    window.lastEndDate = endDate;
+}
     const table = document.getElementById('laporanTable');
     if (!table) return;
 
-    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data 6 Bulan...</td></tr>`;
+    table.innerHTML = `<tr><td colspan="6" class="text-center"><div class="spinner" style="width:30px;height:30px;margin:0 auto;"></div> Memuat Data...</td></tr>`;
 
     try {
-        // 1. TENTUKAN 6 BULAN TERAKHIR
-        const listBulan = [];
-        
-        for (let i = 5; i >= 0; i--) {
-            const m = moment().subtract(i, 'months');
-            const bulanKey = m.format('MM-YYYY');
-            const labelDisplay = m.format('MMM YY');
+        // 1. CEK CACHE
+        if (!laporanDataCache) {
+            console.log("📥 AMBIL DARI FIREBASE");
             
-            listBulan.push({ key: bulanKey, display: labelDisplay });
-        }
-        
-        // 2. AMBIL DATA BATCH
-        const promises = listBulan.map(item => {
-            return db.collection('tagihan')
-                .where('company_id', '==', globalCompanyId)
-                .where('bulan', '==', item.key)
-                .get();
-        });
+            /// TENTUKAN BULAN DARI INPUT PERIODE
+const startDate = document.getElementById('laporanStartDate')?.value;
+const endDate = document.getElementById('laporanEndDate')?.value;
 
-        const snapshots = await Promise.all(promises);
+if (!startDate || !endDate) {
+    showToast('error', 'Error', 'Pilih periode terlebih dahulu');
+    return;
+}
 
-        // 3. GABUNGKAN SEMUA DATA
-        let laporanData = [];
-        let totalPendapatan = 0;
+const start = moment(startDate);
+const end = moment(endDate);
 
-        snapshots.forEach((snap) => {
-            snap.forEach(doc => {
-                const t = doc.data();
-                const nominal = Number(t.jumlah) || 0;
-                
-                // Hitung total (Semua status, atau bisa difilter cuma Lunas)
-                totalPendapatan += nominal;
+const listBulan = [];
+const current = start.clone().startOf('month');
+while (current.isSameOrBefore(end, 'month')) {
+    listBulan.push(current.format('MM-YYYY'));
+    current.add(1, 'month');
+}
 
-                let tglDisplay = '-';
-                if (t.created_at) {
-                    let m = moment(t.created_at);
-                    if (m.isValid()) tglDisplay = m.format('DD/MM/YYYY');
-                }
+            // AMBIL DATA BATCH
+            const promises = listBulan.map(bulan => {
+                return db.collection('tagihan')
+                    .where('company_id', '==', globalCompanyId)
+                    .where('bulan', '==', bulan)
+                    .get();
+            });
 
-                // Cari label bulan yang sesuai dari listBulan
-                const bulanInfo = listBulan.find(b => b.key === t.bulan);
+            const snapshots = await Promise.all(promises);
 
-                laporanData.push({
-                    tanggal: tglDisplay,
-                    bulanKey: t.bulan,          // Kunci untuk sorting
-                    bulanDisplay: bulanInfo ? bulanInfo.display : t.bulan,
-                    pelanggan: t.pelanggan_nama || 'Unknown',
-                    nominal: nominal,
-                    status: t.status || 'belum',
-                    metode: t.metode_bayar || '-'
+            // GABUNGKAN SEMUA DATA
+            laporanDataCache = [];
+            snapshots.forEach((snap) => {
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    laporanDataCache.push({
+                        tanggal: t.tanggal_bayar || '-',
+                        bulan: t.bulan,
+                        pelanggan: t.pelanggan_nama || 'Unknown',
+                        nominal: t.jumlah || 0,
+                        status: t.status || 'belum',
+                        metode: t.metode_bayar || '-'
+                    });
                 });
             });
-        });
 
-        // 4. URUTKAN DATA: LAMA -> BARU (ASCENDING CHRONOLOGIS)
-        laporanData.sort((a, b) => {
-            const dateA = moment(a.bulanKey, 'MM-YYYY');
-            const dateB = moment(b.bulanKey, 'MM-YYYY');
-            
-            if (dateA.isValid() && dateB.isValid()) {
-                return dateA.valueOf() - dateB.valueOf();
-            }
-            return 0;
-        });
+            // URUTKAN: TERBARU DI ATAS
+            laporanDataCache.sort((a, b) => {
+                const dateA = moment(a.bulan, 'MM-YYYY');
+                const dateB = moment(b.bulan, 'MM-YYYY');
+                return dateB.valueOf() - dateA.valueOf();
+            });
 
-        console.log(`💰 Total Pendapatan 6 Bulan: ${formatRupiah(totalPendapatan)}`);
+            console.log(`💾 CACHE DISIMPAN: ${laporanDataCache.length} data`);
+        } else {
+            console.log("⚡ PAKAI CACHE - 0 READ");
+        }
 
-        // 5. RENDER TABEL
+        // 2. PAGINATION
+        const itemsPerPage = 10;
+        const totalData = laporanDataCache.length;
+        const totalPages = Math.ceil(totalData / itemsPerPage);
+
+        if (page > totalPages) page = totalPages || 1;
+        if (page < 1) page = 1;
+        currentPageLaporan = page;
+
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, totalData);
+        const pageData = laporanDataCache.slice(startIndex, endIndex);
+
+        // 3. RENDER TABEL
         let tableHTML = `
-            <thead>
-                <tr>
-                    <th>Periode</th>
-                    <th>Pelanggan</th>
-                    <th>Nominal</th>
-                    <th>Status</th>
-                    <th>Metode</th>
-                </tr>
-            </thead>
+            <thead style="background: #4361ee;">
+    <tr>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Tanggal</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Pelanggan</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Periode</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Nominal</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Status</th>
+        <th style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: white; text-align: left; background: #4361ee;">Metode</th>
+    </tr>
+</thead>
             <tbody>
         `;
 
-        // Tampilkan 50 data terakhir
-        laporanData.slice(-50).reverse().forEach(item => {
-            let badgeClass = 'badge-warning'; 
-            if (item.status === 'lunas') badgeClass = 'badge-success';
-
+        pageData.forEach(item => {
+            let badgeClass = item.status === 'lunas' ? 'badge-success' : 'badge-warning';
             tableHTML += `
                 <tr>
-                    <td><span class="badge badge-info">${item.bulanDisplay}</span></td>
+                    <td>${item.tanggal}</td>
                     <td><strong>${item.pelanggan}</strong></td>
+                    <td><span class="badge badge-info">${item.bulan}</span></td>
                     <td>${formatRupiah(item.nominal)}</td>
                     <td><span class="badge ${badgeClass}">${item.status.toUpperCase()}</span></td>
                     <td>${item.metode}</td>
@@ -20731,11 +20831,68 @@ async function generateLaporan() {
         tableHTML += `</tbody>`;
         table.innerHTML = tableHTML;
 
-        // 6. UPDATE GRAFIK
-        updateLaporanCharts(laporanData);
+        // 4. RENDER PAGINATION
+        renderLaporanPagination(totalData, page);
 
+        // 5. FILTER DATA SESUAI PERIODE YANG DIPILIH SEBELUM DI-CHART
+const startDate = document.getElementById('laporanStartDate')?.value;
+const endDate = document.getElementById('laporanEndDate')?.value;
+const start = moment(startDate);
+const end = moment(endDate);
+
+const filteredForChart = laporanDataCache.filter(item => {
+    if (!item.bulan) return false;
+    const [bln, thn] = item.bulan.split('-');
+    const tgl = moment(`${thn}-${bln}-01`);
+    return tgl.isSameOrAfter(start, 'month') && tgl.isSameOrBefore(end, 'month');
+});
+
+updateLaporanCharts(filteredForChart);
+
+// 6. HITUNG TARGET BULAN INI
+const bulanIni = moment().format('MM-YYYY');
+let totalTagihanBulanIni = 0;
+
+db.collection('tagihan')
+    .where('company_id', '==', globalCompanyId)
+    .where('bulan', '==', bulanIni)
+    .get()
+    .then(snapshot => {
+        snapshot.forEach(doc => {
+            totalTagihanBulanIni += doc.data().jumlah || 0;
+        });
         
-        console.log("✅ Laporan berhasil digenerate dengan chart distribusi real");
+        // HITUNG PERSENTASE
+        const totalPendapatanEl = document.getElementById('totalPendapatanPeriode');
+        if (totalPendapatanEl) {
+            const totalPendapatan = parseInt(totalPendapatanEl.innerText.replace(/[^0-9]/g, '')) || 0;
+            
+            // 💥 TARGET = TOTAL TAGIHAN BULAN INI (bukan 10jt)
+            const target = totalTagihanBulanIni;
+            
+            // HITUNG KEKURANGAN
+            const kekurangan = target - totalPendapatan;
+            
+            const kekuranganEl = document.getElementById('kekuranganPendapatan');
+            if (kekuranganEl) {
+                if (target === 0) {
+                    kekuranganEl.textContent = 'Rp 0';
+                } else if (kekurangan <= 0) {
+                    kekuranganEl.textContent = '✅ LUNAS ALL';
+                    kekuranganEl.style.color = '#27ae60';
+                } else {
+                    kekuranganEl.textContent = formatRupiah(kekurangan);
+                    kekuranganEl.style.color = '#e74c3c';
+                }
+            }
+            
+            // UPDATE LABEL TARGET
+            const labelEl = document.querySelector('#kekuranganPendapatan').closest('.stat-card').querySelector('.stat-label');
+            if (labelEl) {
+                labelEl.textContent = `Kekurangan (Target ${formatRupiah(target)})`;
+            }
+        }
+    });
 
     } catch (error) {
         console.error("❌ Error generate laporan:", error);
@@ -20743,117 +20900,148 @@ async function generateLaporan() {
     }
 }
 
+// PAGINATION LAPORAN
+function renderLaporanPagination(totalData, currentPage) {
+    const container = document.getElementById('laporanPagination');
+    if (!container) return;
 
+    const itemsPerPage = 10;
+    const totalPages = Math.ceil(totalData / itemsPerPage);
 
-// -------------------------------------------------------
-// 2. FUNGSI UPDATE GRAFIK (MANDIRI & AMAN)
-// -------------------------------------------------------
-function updateLaporanCharts(data) {
-    // CEGAH ERROR JIKA DATA KOSONG ATAU UNDEFINED
-    if (!data || data.length === 0) {
-    console.log("📊 Data kosong, tampilkan chart dengan data 0");
-    
-    // Hapus chart lama kalau ada
-    if (window.laporanChartInstance) window.laporanChartInstance.destroy();
-    
-    // Chart 1 dengan data 0
-    const ctx = document.getElementById('laporanChart1');
-    if (ctx) {
-        window.laporanChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
-                datasets: [{
-                    label: 'Pendapatan (Rp)',
-                    data: [0, 0, 0, 0, 0, 0],
-                    backgroundColor: 'rgba(67, 97, 238, 0.6)'
-                }]
-            }
-        });
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
     }
-    
-    // Chart 2 dengan data kosong
-    const ctx2 = document.getElementById('laporanChart2');
-    if (ctx2) {
-        window.laporanChart2Instance = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['Belum Ada Data'],
-                datasets: [{
-                    data: [1],
-                    backgroundColor: ['#e9ecef']
-                }]
-            }
-        });
+
+    let html = '<div class="pagination">';
+
+    // Prev
+    if (currentPage > 1) {
+        html += `<a class="page-link" onclick="generateLaporan(${currentPage - 1})">&laquo;</a>`;
     }
-    return;
+
+    // Halaman
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            html += `<span class="page-link active">${i}</span>`;
+        } else {
+            html += `<a class="page-link" onclick="generateLaporan(${i})">${i}</a>`;
+        }
+    }
+
+    // Next
+    if (currentPage < totalPages) {
+        html += `<a class="page-link" onclick="generateLaporan(${currentPage + 1})">&raquo;</a>`;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
 }
 
-    // 1. GRAFIK PENDAPATAN
-    if (window.laporanChartInstance) {
-        window.laporanChartInstance.destroy();
+// RESET CACHE (panggil kalau ganti filter/periode)
+function resetLaporanCache() {
+    laporanDataCache = null;
+    currentPageLaporan = 1;
+    generateLaporan();
+}
+
+
+
+function updateLaporanCharts(data) {
+    if (!data || data.length === 0) {
+        console.log("📊 Data kosong");
+        return;
     }
 
-    // Grouping data berdasarkan bulanKey
+    // 🔥 FILTER 6 BULAN TERAKHIR
+    const today = moment();
+    const sixMonthsAgo = moment().subtract(6, 'months').startOf('month');
+
+    const filteredData = data.filter(item => {
+        if (!item.bulan) return false;
+        const [bln, thn] = item.bulan.split('-');
+        const tgl = moment(`${thn}-${bln}-01`);
+        return tgl.isValid() && tgl.isSameOrAfter(sixMonthsAgo);
+    });
+
+    // 💰 TOTAL PENDAPATAN 6 BULAN
+    const totalPendapatan = filteredData.reduce((sum, item) => sum + (item.nominal || 0), 0);
+
+    // 📅 PENDAPATAN BULAN INI
+    const bulanIni = today.format('MM-YYYY');
+    const pendapatanBulanIni = filteredData
+        .filter(item => item.bulan === bulanIni)
+        .reduce((sum, item) => sum + (item.nominal || 0), 0);
+
+    // 📊 DATA PER BULAN UNTUK GRAFIK
     const monthlyData = {};
-    // Ambil semua key bulan yang unik dari data untuk label sumbu X
-    const uniqueBulanKeys = [...new Set(data.map(item => item.bulanKey))];
-
-    // Inisialisasi 0
-    uniqueBulanKeys.forEach(key => {
-        monthlyData[key] = 0;
+    filteredData.forEach(item => {
+        const bulan = item.bulan;
+        if (!monthlyData[bulan]) monthlyData[bulan] = 0;
+        monthlyData[bulan] += item.nominal || 0;
     });
 
-    // Hitung total per bulan
-    data.forEach(item => {
-        if (monthlyData[item.bulanKey] !== undefined) {
-            monthlyData[item.bulanKey] += item.nominal;
-        }
+    // URUTKAN BULAN (DARI LAMA KE BARU)
+    const sortedBulan = Object.keys(monthlyData).sort((a, b) => {
+        const [a1, a2] = a.split('-');
+        const [b1, b2] = b.split('-');
+        return new Date(`${a2}-${a1}-01`) - new Date(`${b2}-${b1}-01`);
     });
 
-    // Urutkan Label Bulan (Ascending: Jan, Feb, Mar...)
-    uniqueBulanKeys.sort((a, b) => {
-        const dateA = moment(a, 'MM-YYYY');
-        const dateB = moment(b, 'MM-YYYY');
-        return dateA.valueOf() - dateB.valueOf();
+    const labels = sortedBulan.map(b => {
+        const [bln, thn] = b.split('-');
+        const bulanNama = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][parseInt(bln) - 1];
+        return `${bulanNama} ${thn}`;
     });
 
-    // Ambil total pendapatan berdasarkan urutan key
-    const monthlyTotals = uniqueBulanKeys.map(key => monthlyData[key]);
+    const values = sortedBulan.map(b => monthlyData[b]);
 
-    // Format Labels agar cantik
-    const formattedLabels = uniqueBulanKeys.map(bulan => {
-        const parts = bulan.split('-');
-        if (parts.length === 2) {
-            const dateObj = moment(`${parts[1]}-${parts[0]}-01`);
-            return dateObj.isValid() ? dateObj.format('MMM YY') : bulan;
-        }
-        return bulan;
-    });
+    // 🧾 UPDATE TOTAL DI HTML (pastikan elemen ini ada)
+    const totalEl = document.getElementById('totalPendapatan6Bulan');
+    const bulanIniEl = document.getElementById('pendapatanBulanIni');
+    const kekuranganEl = document.getElementById('kekuranganPendapatan');
 
-    const ctx = document.getElementById('laporanChart1');
-    if (ctx) {
-        window.laporanChartInstance = new Chart(ctx, {
+    if (totalEl) totalEl.textContent = formatRupiah(totalPendapatan);
+    if (bulanIniEl) bulanIniEl.textContent = formatRupiah(pendapatanBulanIni);
+
+    // HITUNG KEKURANGAN (misal target 10 juta per bulan)
+    const targetPerBulan = 10000000; // Rp 10.000.000
+    const kekurangan = targetPerBulan - pendapatanBulanIni;
+    if (kekuranganEl) {
+        kekuranganEl.textContent = kekurangan > 0 ? formatRupiah(kekurangan) : '✅ Tercapai';
+        kekuranganEl.style.color = kekurangan > 0 ? '#e74c3c' : '#27ae60';
+    }
+
+    // 📈 GRAFIK PENDAPATAN
+    const ctx1 = document.getElementById('laporanChart1');
+    if (ctx1) {
+        if (window.laporanChartInstance) window.laporanChartInstance.destroy();
+        window.laporanChartInstance = new Chart(ctx1, {
             type: 'bar',
             data: {
-                labels: formattedLabels,
+                labels: labels,
                 datasets: [{
                     label: 'Pendapatan (Rp)',
-                    data: monthlyTotals,
-                    backgroundColor: 'rgba(67, 97, 238, 0.6)',
-                    borderColor: '#4361ee',
-                    borderWidth: 1
+                    data: values,
+                    backgroundColor: '#4361ee',
+                    borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => formatRupiah(ctx.raw)
+                        }
+                    },
+                    legend: { display: false }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return formatRupiah(value);
-                            }
+                            callback: v => formatRupiah(v)
                         }
                     }
                 }
@@ -20861,27 +21049,37 @@ function updateLaporanCharts(data) {
         });
     }
 
-    // 2. GRAFIK DISTRIBUSI (PIE CHART - METODE PEMBAYARAN)
-    // 2. GRAFIK DISTRIBUSI (PIE CHART - METODE PEMBAYARAN)
-const ctx2 = document.getElementById('laporanChart2');
-if (ctx2) {
-    const metodeCounts = {};
-    data.forEach(item => {
-        const metode = item.metode || 'Lainnya'; // "Tunai", "Transfer", dll
-        metodeCounts[metode] = (metodeCounts[metode] || 0) + 1;
+    // 🥧 GRAFIK DISTRIBUSI (METODE)
+    const metodeCount = {};
+    filteredData.forEach(item => {
+        const m = item.metode || 'Lainnya';
+        metodeCount[m] = (metodeCount[m] || 0) + 1;
     });
 
-    window.laporanChart2Instance = new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(metodeCounts), // Contoh: ["Tunai", "Transfer"]
-            datasets: [{
-                data: Object.values(metodeCounts), // Contoh: [45, 55]
-                backgroundColor: ['#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#ff7675']
-            }]
-        }
-    });
-}};
+    const ctx2 = document.getElementById('laporanChart2');
+    if (ctx2) {
+        if (window.laporanChart2Instance) window.laporanChart2Instance.destroy();
+        window.laporanChart2Instance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(metodeCount),
+                datasets: [{
+                    data: Object.values(metodeCount),
+                    backgroundColor: ['#00b894', '#0984e3', '#6c5ce7', '#fdcb6e', '#ff7675']
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.label}: ${ctx.raw} transaksi`
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
         
 
 
