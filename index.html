@@ -3985,7 +3985,7 @@ function confirmDialog(message, callback) {
                 </div>
                 
                 <!-- CARD 3: LUNAS -->
-                <div class="stat-card" onclick="showLunasBulanIni()" style="cursor: pointer;">
+                <div class="stat-card" onclick="//showLunasBulanIni()" style="cursor: pointer;">
     <div class="stat-icon success">
         <i class="fas fa-check-circle"></i>
     </div>
@@ -4006,7 +4006,7 @@ function confirmDialog(message, callback) {
 </div>
                 
                 <!-- CARD 4: TUNGGAKAN -->
-<div class="stat-card" onclick="showDetailTunggakan()" style="cursor: pointer;">
+<div class="stat-card" onclick="//showDetailTunggakan()" style="cursor: pointer;">
     <div class="stat-icon danger">
         <i class="fas fa-clock"></i>
     </div>
@@ -4583,16 +4583,22 @@ function toggleTunggakanFilter() {
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
     <h3 style="margin: 0;">Daftar Tagihan</h3>
     <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-        <select id="filterServerTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
-            <option value="">Semua Server</option>
-        </select>
-        <select id="filterStatusTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
-            <option value="">Semua Status</option>
-        </select>
-        <select id="filterBulanTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
-            <option value="">Semua Bulan</option>
-        </select>
-        <input type="text" id="searchTagihan" class="form-control" placeholder="Cari..." style="width:auto; min-width:140px;" oninput="filterTagihanSearch(this.value)">
+        <select id="filterServerTagihan" class="form-control" style="width:auto; min-width:140px;" onchange="filterTagihan()">
+    <option value="">Semua Server</option>
+</select>
+
+<select id="filterStatusTagihan" class="form-control" style="width:auto; min-width:140px;" onchange="filterTagihan()">
+    <option value="">Semua Status</option>
+    <option value="lunas">Lunas</option>
+    <option value="belum">Belum Lunas</option>
+    <option value="telat">Telat</option>
+</select>
+
+<select id="filterBulanTagihan" class="form-control" style="width:auto; min-width:140px;" onchange="filterTagihan()">
+    <option value="">Semua Bulan</option>
+</select>
+
+<input type="text" id="searchTagihan" class="form-control" placeholder="Cari..." style="width:auto; min-width:140px;" autocomplete="off" oninput="filterTagihanSearch(this.value)">
         <button class="btn btn-outline" onclick="resetFilterTagihan()" style="white-space:nowrap;">
             <i class="fas fa-times"></i> Reset
         </button>
@@ -12155,13 +12161,17 @@ console.log('DEBUG VARIABLES SET:', {
 });
 
 
-    } catch (error) {
-        console.error("❌ Error load tagihan:", error);
-        table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
-    }
-   
+   // ⭐⭐ SIMPAN KE CACHE UNTUK FILTER ⭐⭐
+if (groupedData && groupedData.length > 0) {
+    rawTagihanData = groupedData;
+    filteredTagihanData = [...groupedData];
 }
 
+} catch (error) {
+    console.error("❌ Error load tagihan:", error);
+    table.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error: ${error.message}</td></tr>`;
+}
+}
 
 
 
@@ -12205,19 +12215,55 @@ async function initFilterBulanTagihan() {
     }
 }
 
-// Fungsi utama filter (dipanggil dari onchange)
 function filterTagihan() {
-    // Ambil nilai filter
-    activeStatusFilter = document.getElementById('filterStatusTagihan')?.value || '';
-    activeBulanFilter = document.getElementById('filterBulanTagihan')?.value || '';
+    if (!window.rawTagihanData) {
+        loadTagihanData();
+        return;
+    }
     
-    console.log('Filter aktif:', { status: activeStatusFilter, bulan: activeBulanFilter });
+    const status = document.getElementById('filterStatusTagihan')?.value || '';
+    const bulan = document.getElementById('filterBulanTagihan')?.value || '';
     
-    // Reset ke halaman 1
-    currentPageTagihan = 1;
+    let hasil = [...window.rawTagihanData];
     
-    // Panggil loadTagihanData dengan parameter filter
-    loadTagihanData();
+    // Filter status (di data yang sudah di-group)
+    if (status === 'lunas') {
+        hasil = hasil.filter(item => item.list_tagihan.every(t => t.status === 'lunas'));
+    } else if (status === 'belum') {
+        hasil = hasil.filter(item => item.list_tagihan.some(t => t.status === 'belum'));
+    } else if (status === 'telat') {
+        hasil = hasil.filter(item => item.list_tagihan.some(t => t.status === 'telat'));
+    }
+    
+    // Filter bulan
+    if (bulan) {
+        hasil = hasil.filter(item => item.list_tagihan.some(t => t.bulan === bulan));
+    }
+    
+    window.filteredTagihanData = hasil;
+    
+    // Render ulang pake data yang sudah difilter
+    renderTagihanFromCache(hasil);
+}
+
+function renderTagihanFromCache(data) {
+    const table = document.getElementById('tagihanTable');
+    if (!table) return;
+    
+    // Pagination
+    const itemsPerPage = 10;
+    const totalData = data.length;
+    const startIndex = (currentPageTagihan - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageData = data.slice(startIndex, endIndex);
+    
+    // Render tabel (copy paste dari render biasa)
+    table.innerHTML = pageData.map(item => {
+        // ... kode render yang sama persis seperti di loadTagihanData()
+    }).join('');
+    
+    // Render pagination
+    renderTagihanPagination(totalData);
 }
 
 // Fungsi reset filter
@@ -12965,6 +13011,7 @@ break;
             case 'tagihan':
     pageHTML = await getTagihanHTML();
     mainContent.innerHTML = pageHTML;
+    await initFilterBulanTagihan();
     await loadTagihanData();
     await loadServerOptions();
 
@@ -19784,28 +19831,31 @@ const cachedTagihan = localStorage.getItem(cacheKey);
 let filteredDocs = [];
 
 if (cachedTagihan) {
-    // AMBIL LANGSUNG DARI FIREBASE
-const snapshot = await db.collection('tagihan')
-    .where('company_id', '==', globalCompanyId)
-    .where('bulan', '==', currentMonthText)
-    .where('status', '==', 'lunas')
-    .get();
-
-let filteredDocs = [];
-snapshot.forEach(doc => {
-    const data = doc.data();
-    filteredDocs.push({
-        pelanggan_id: data.pelanggan_id,
-        pelanggan_nama: data.pelanggan_nama,
-        jumlah: data.jumlah,
-        bulan: data.bulan,
-        tanggal_bayar: data.tanggal_bayar,
-        petugas: data.updated_by || 'System'
+    const allTagihan = JSON.parse(cachedTagihan);
+    
+    // Filter tagihan lunas bulan ini
+    const tagihanLunas = allTagihan.filter(item =>
+        (item.data.status || '').toLowerCase() === 'lunas' &&
+        item.data.bulan === currentMonthText
+    );
+    
+    // TAMBAHKAN SEMUA KE filteredDocs
+    tagihanLunas.forEach(item => {
+        filteredDocs.push({
+            pelanggan_id: item.data.pelanggan_id,
+            pelanggan_nama: item.data.pelanggan_nama,
+            jumlah: item.data.jumlah,
+            bulan: item.data.bulan,
+            tanggal_bayar: item.data.tanggal_bayar,
+            petugas: item.data.updated_by || 'System'
+        });
     });
-});
 
-// SIMPAN KE CACHE (UPDATE)
-localStorage.setItem(`tagihanData_${globalCompanyId}`, JSON.stringify(filteredDocs));
+
+
+
+
+    
 
 } else {
     console.log("📥 Cache kosong, ambil dari Firebase");
