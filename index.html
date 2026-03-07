@@ -4538,9 +4538,9 @@ function toggleTunggakanFilter() {
         
        async function getTagihanHTML() {
     return `
-        <div class="page tagihan-page">
+       <div class="page tagihan-page">
     <div class="page-header">
-        <h2 class="page-title"><i class="fas fa-receipt"></i> Tagihan </h2>
+        <h2 class="page-title"><i class="fas fa-receipt"></i> Tagihan</h2>
         <div class="action-buttons">
             <button class="btn btn-warning" onclick="resetGenerate()">
                 <i class="fas fa-trash-restore"></i> Reset Generate
@@ -4551,77 +4551,65 @@ function toggleTunggakanFilter() {
         </div>
     </div>
     
-    <!-- 🆕 TAMBAHKAN 2 CARD INI -->
-    <div class="stats-grid" style="margin-bottom: 20px; grid-template-columns: 1fr 1fr;">
-        <!-- CARD TAGIHAN BELUM LUNAS -->
-        <div class="stat-card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
-            <div class="stat-icon warning">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value" id="totalBelumLunas">Rp 0</div>
-                <div class="stat-label">Total Tagihan Belum Lunas</div>
-                <small class="text-muted" id="jumlahBelumLunas">0 pelanggan</small>
-            </div>
+    <!-- 2 CARD STATISTIK - RESPONSIF -->
+<div class="stats-grid" style="margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+    <!-- CARD TAGIHAN BELUM LUNAS -->
+    <div class="stat-card" style="background: #fff3cd; border-left: 4px solid #ffc107; width: 100%;">
+        <div class="stat-icon warning">
+            <i class="fas fa-clock"></i>
         </div>
-        
-        <!-- CARD TAGIHAN LUNAS -->
-        <div class="stat-card" style="background: #d4edda; border-left: 4px solid #28a745;">
-            <div class="stat-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value" id="totalLunas">Rp 0</div>
-                <div class="stat-label">Total Tagihan Lunas</div>
-                <small class="text-muted" id="jumlahLunas">0 pelanggan</small>
-            </div>
+        <div class="stat-content" style="min-width: 0; overflow: hidden;">
+            <div class="stat-value" id="totalBelumLunas" style="font-size: clamp(16px, 4vw, 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+            <div class="stat-label">Total Tagihan Belum Lunas</div>
+            <small class="text-muted" id="jumlahBelumLunas">0 pelanggan</small>
         </div>
     </div>
     
-    <div class="card">
-        <div class="card-header">
-            <h3>Daftar Tagihan </h3>
-            <!-- ... sisa kode filter ... -->
-
-    <div class="btn-group" style="gap: 5px; flex-wrap: wrap;">
-        <!-- FILTER SERVER -->
-        <select id="filterServerTagihan" class="form-control" 
-                style="width: 130px; display: inline-block; height: 38px; padding: 5px 10px;"
-                onchange="filterTagihan()">
-            <option value="">Semua Server</option>
-        </select>
-        
-        <!-- FILTER STATUS (BARU) -->
-        <select id="filterStatusTagihan" class="form-control" 
-                style="width: 130px; display: inline-block; height: 38px; padding: 5px 10px;"
-                onchange="filterTagihan()">
-            <option value="">Semua Status</option>
-            <option value="lunas">Lunas</option>
-            <option value="belum">Belum Lunas</option>
-            <option value="telat">Telat</option>
-        </select>
-        
-        <!-- FILTER PERIODE/BULAN (BARU) -->
-        <select id="filterBulanTagihan" class="form-control" 
-                style="width: 130px; display: inline-block; height: 38px; padding: 5px 10px;"
-                onchange="filterTagihan()">
-            <option value="">Semua Bulan</option>
-        </select>
-        
-        <!-- INPUT PENCARIAN -->
-        <input type="text" id="searchTagihan" 
-               class="form-control" 
-               placeholder="Cari..." 
-               style="width: 150px; display: inline-block; height: 38px; padding: 5px 10px;" 
-               autocomplete="off" 
-               oninput="filterTagihanSearch(this.value)">
-        
-        <!-- TOMBOL RESET FILTER (BARU) -->
-        <button class="btn btn-sm btn-outline" onclick="resetFilterTagihan()" style="height: 38px;">
-            <i class="fas fa-times"></i> Reset
-        </button>
+    <!-- CARD TAGIHAN LUNAS -->
+    <div class="stat-card" style="background: #d4edda; border-left: 4px solid #28a745; width: 100%;">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content" style="min-width: 0; overflow: hidden;">
+            <div class="stat-value" id="totalLunas" style="font-size: clamp(16px, 4vw, 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rp 0</div>
+            <div class="stat-label">Total Tagihan Lunas</div>
+            <small class="text-muted" id="jumlahLunas">0 pelanggan</small>
+        </div>
     </div>
 </div>
+    
+    <!-- CARD DAFTAR TAGIHAN DENGAN FILTER RAPI -->
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin: 0;">Daftar Tagihan</h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <!-- FILTER SERVER -->
+                <select id="filterServerTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
+                    <option value="">Semua Server</option>
+                </select>
+                
+                <!-- FILTER STATUS -->
+                <select id="filterStatusTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
+                    <option value="">Semua Status</option>
+                    <option value="lunas">Lunas</option>
+                    <option value="belum">Belum Lunas</option>
+                    <option value="telat">Telat</option>
+                </select>
+                
+                <!-- FILTER BULAN -->
+                <select id="filterBulanTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
+                    <option value="">Semua Bulan</option>
+                </select>
+                
+                <!-- SEARCH -->
+                <input type="text" id="searchTagihan" class="form-control" placeholder="Cari nama/telepon..." style="width: 180px; height: 38px;" autocomplete="off" oninput="filterTagihanSearch(this.value)">
+                
+                <!-- RESET -->
+                <button class="btn btn-outline" onclick="resetFilterTagihan()" style="height: 38px; padding: 0 15px;">
+                    <i class="fas fa-times"></i> Reset
+                </button>
+            </div>
+        </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
@@ -11937,6 +11925,41 @@ if (cachedTagihan) {
         });
                 const groupedData = Object.values(groupedMap);
 
+
+                // 🆕 HITUNG TOTAL BELUM LUNAS DAN LUNAS
+let totalBelum = 0;
+let totalLunas = 0;
+let jumlahPelangganBelum = 0;
+let jumlahPelangganLunas = 0;
+
+groupedData.forEach(item => {
+    const listBelum = item.list_tagihan.filter(t => t.status !== 'lunas');
+    const listLunas = item.list_tagihan.filter(t => t.status === 'lunas');
+    
+    if (listBelum.length > 0) {
+        totalBelum += item.total_nominal;
+        jumlahPelangganBelum++;
+    }
+    
+    if (listLunas.length > 0) {
+        // Hitung total lunas (jumlah dari semua tagihan lunas)
+        const totalLunasPelanggan = listLunas.reduce((sum, t) => sum + (t.jumlah || 0), 0);
+        totalLunas += totalLunasPelanggan;
+        jumlahPelangganLunas++;
+    }
+});
+
+// Update UI
+const totalBelumEl = document.getElementById('totalBelumLunas');
+const totalLunasEl = document.getElementById('totalLunas');
+const jumlahBelumEl = document.getElementById('jumlahBelumLunas');
+const jumlahLunasEl = document.getElementById('jumlahLunas');
+
+if (totalBelumEl) totalBelumEl.textContent = formatRupiah(totalBelum);
+if (totalLunasEl) totalLunasEl.textContent = formatRupiah(totalLunas);
+if (jumlahBelumEl) jumlahBelumEl.textContent = `${jumlahPelangganBelum} pelanggan`;
+if (jumlahLunasEl) jumlahLunasEl.textContent = `${jumlahPelangganLunas} pelanggan`;
+
 // ⭐⭐ FILTER BERDASARKAN SERVER ⭐⭐
 let filteredData = [...groupedData];
 if (serverFilter) {
@@ -12150,6 +12173,9 @@ console.log('DEBUG VARIABLES SET:', {
     }
    
 }
+
+
+
 
 
 // ============================================
