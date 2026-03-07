@@ -4580,36 +4580,24 @@ function toggleTunggakanFilter() {
     
     <!-- CARD DAFTAR TAGIHAN DENGAN FILTER RAPI -->
     <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <h3 style="margin: 0;">Daftar Tagihan</h3>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <!-- FILTER SERVER -->
-                <select id="filterServerTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
-                    <option value="">Semua Server</option>
-                </select>
-                
-                <!-- FILTER STATUS -->
-                <select id="filterStatusTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
-                    <option value="">Semua Status</option>
-                    <option value="lunas">Lunas</option>
-                    <option value="belum">Belum Lunas</option>
-                    <option value="telat">Telat</option>
-                </select>
-                
-                <!-- FILTER BULAN -->
-                <select id="filterBulanTagihan" class="form-control" style="width: 130px; height: 38px;" onchange="filterTagihan()">
-                    <option value="">Semua Bulan</option>
-                </select>
-                
-                <!-- SEARCH -->
-                <input type="text" id="searchTagihan" class="form-control" placeholder="Cari nama/telepon..." style="width: 180px; height: 38px;" autocomplete="off" oninput="filterTagihanSearch(this.value)">
-                
-                <!-- RESET -->
-                <button class="btn btn-outline" onclick="resetFilterTagihan()" style="height: 38px; padding: 0 15px;">
-                    <i class="fas fa-times"></i> Reset
-                </button>
-            </div>
-        </div>
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <h3 style="margin: 0;">Daftar Tagihan</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <select id="filterServerTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
+            <option value="">Semua Server</option>
+        </select>
+        <select id="filterStatusTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
+            <option value="">Semua Status</option>
+        </select>
+        <select id="filterBulanTagihan" class="form-control" style="width:auto; min-width:120px;" onchange="filterTagihan()">
+            <option value="">Semua Bulan</option>
+        </select>
+        <input type="text" id="searchTagihan" class="form-control" placeholder="Cari..." style="width:auto; min-width:140px;" oninput="filterTagihanSearch(this.value)">
+        <button class="btn btn-outline" onclick="resetFilterTagihan()" style="white-space:nowrap;">
+            <i class="fas fa-times"></i> Reset
+        </button>
+    </div>
+</div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table">
@@ -19796,31 +19784,28 @@ const cachedTagihan = localStorage.getItem(cacheKey);
 let filteredDocs = [];
 
 if (cachedTagihan) {
-    const allTagihan = JSON.parse(cachedTagihan);
-    
-    // Filter tagihan lunas bulan ini
-    const tagihanLunas = allTagihan.filter(item =>
-        (item.data.status || '').toLowerCase() === 'lunas' &&
-        item.data.bulan === currentMonthText
-    );
-    
-    // TAMBAHKAN SEMUA KE filteredDocs
-    tagihanLunas.forEach(item => {
-        filteredDocs.push({
-            pelanggan_id: item.data.pelanggan_id,
-            pelanggan_nama: item.data.pelanggan_nama,
-            jumlah: item.data.jumlah,
-            bulan: item.data.bulan,
-            tanggal_bayar: item.data.tanggal_bayar,
-            petugas: item.data.updated_by || 'System'
-        });
+    // AMBIL LANGSUNG DARI FIREBASE
+const snapshot = await db.collection('tagihan')
+    .where('company_id', '==', globalCompanyId)
+    .where('bulan', '==', currentMonthText)
+    .where('status', '==', 'lunas')
+    .get();
+
+let filteredDocs = [];
+snapshot.forEach(doc => {
+    const data = doc.data();
+    filteredDocs.push({
+        pelanggan_id: data.pelanggan_id,
+        pelanggan_nama: data.pelanggan_nama,
+        jumlah: data.jumlah,
+        bulan: data.bulan,
+        tanggal_bayar: data.tanggal_bayar,
+        petugas: data.updated_by || 'System'
     });
+});
 
-
-
-
-
-    
+// SIMPAN KE CACHE (UPDATE)
+localStorage.setItem(`tagihanData_${globalCompanyId}`, JSON.stringify(filteredDocs));
 
 } else {
     console.log("📥 Cache kosong, ambil dari Firebase");
