@@ -3221,6 +3221,9 @@ Terima kasih,
             window._tagihanCacheTime = 0;
             window._loadingTagihan = false;
             const TAGIHAN_CACHE_TTL = 60 * 1000; // 60 detik
+            // ===== VARIABEL UNTUK FILTER TAGIHAN =====
+            window.rawTagihanData = [];
+            window.filteredTagihanData = [];
 
             // ============================================
             // CACHE GLOBAL SYSTEM
@@ -12252,7 +12255,15 @@ console.log('DEBUG VARIABLES SET:', {
     groupedMap: Object.keys(groupedMap).length, 
     groupedData: groupedData.length,
     filteredData: filteredData.length 
+    
 });
+
+// ⭐⭐ SIMPAN KE VARIABEL GLOBAL UNTUK FILTER ⭐⭐
+window.rawTagihanData = groupedData || [];
+window.filteredTagihanData = [...window.rawTagihanData];
+
+console.log('📊 RAW DATA DISIMPAN:', window.rawTagihanData.length);
+console.log('📊 FILTERED DATA:', window.filteredTagihanData.length);
 
 
    // ⭐⭐ SIMPAN KE CACHE UNTUK FILTER ⭐⭐
@@ -12310,77 +12321,219 @@ async function initFilterBulanTagihan() {
 }
 
 function filterTagihan() {
-    if (!window.rawTagihanData) {
+    console.log("🔍 FILTER TAGIHAN DIPANGGIL");
+    
+    // CEK APAKAH DATA SUDAH ADA
+    if (!window.rawTagihanData || window.rawTagihanData.length === 0) {
+        console.warn("⚠️ rawTagihanData kosong, panggil loadTagihanData()");
         loadTagihanData();
         return;
     }
-    
+
+    // AMBIL NILAI FILTER
+    const server = document.getElementById('filterServerTagihan')?.value || '';
     const status = document.getElementById('filterStatusTagihan')?.value || '';
     const bulan = document.getElementById('filterBulanTagihan')?.value || '';
-    
+
+    console.log('📋 FILTER:', { server, status, bulan });
+
+    // MULAI DARI DATA MENTAH
     let hasil = [...window.rawTagihanData];
-    
-    // Filter status (di data yang sudah di-group)
-    if (status === 'lunas') {
-        hasil = hasil.filter(item => item.list_tagihan.every(t => t.status === 'lunas'));
-    } else if (status === 'belum') {
-        hasil = hasil.filter(item => item.list_tagihan.some(t => t.status === 'belum'));
-    } else if (status === 'telat') {
-        hasil = hasil.filter(item => item.list_tagihan.some(t => t.status === 'telat'));
+
+    // 1. FILTER SERVER
+    if (server) {
+        console.log('🔍 Filter server:', server);
+        hasil = hasil.filter(item => item.pelanggan_server === server);
     }
-    
-    // Filter bulan
-    if (bulan) {
-        hasil = hasil.filter(item => item.list_tagihan.some(t => t.bulan === bulan));
+
+    // 2. FILTER STATUS DAN BULAN (DI DALAM LIST TAGIHAN)
+    if (status || bulan) {
+        const filteredItems = [];
+        
+        hasil.forEach(item => {
+            // Filter tagihan di dalam list
+            const tagihanTersaring = item.list_tagihan.filter(t => {
+                let cocok = true;
+                
+                if (status) {
+                    const statusItem = (t.status || '').toLowerCase();
+                    cocok = cocok && statusItem === status.toLowerCase();
+                }
+                
+                if (bulan) {
+                    cocok = cocok && t.bulan === bulan;
+                }
+                
+                return cocok;
+            });
+            
+            // Jika masih ada tagihan setelah filter, simpan item dengan list yang sudah difilter
+            if (tagihanTersaring.length > 0) {
+                filteredItems.push({
+                    ...item,
+                    list_tagihan: tagihanTersaring,
+                    // Hitung ulang total nominal berdasarkan tagihan yang tersaring
+                    total_nominal: tagihanTersaring.reduce((sum, t) => sum + (t.jumlah || 0), 0)
+                });
+            }
+        });
+        
+        hasil = filteredItems;
     }
-    
+
+    console.log('📊 HASIL FILTER:', hasil.length);
+
+    // SIMPAN HASIL FILTER KE VARIABEL GLOBAL
     window.filteredTagihanData = hasil;
-    
-    // Render ulang pake data yang sudah difilter
-    renderTagihanFromCache(hasil);
+
+    // RESET KE HALAMAN 1
+    currentPageTagihan = 1;
+
+    // RENDER ULANG TABEL DENGAN HASIL FILTER
+    renderTagihanFromFilter(hasil);
 }
 
-function renderTagihanFromCache(data) {
+function renderTagihanFromFilter(data) {
+    console.log('🎨 RENDER TAGIHAN DARI FILTER, data:', data.length);
+    
     const table = document.getElementById('tagihanTable');
     if (!table) return;
-    
-    // Pagination
+
     const itemsPerPage = 10;
     const totalData = data.length;
+    const totalPages = Math.ceil(totalData / itemsPerPage);
+
+    if (currentPageTagihan > totalPages) currentPageTagihan = 1;
+
     const startIndex = (currentPageTagihan - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const pageData = data.slice(startIndex, endIndex);
-    
-    // Render tabel (copy paste dari render biasa)
-    table.innerHTML = pageData.map(item => {
-        // ... kode render yang sama persis seperti di loadTagihanData()
+
+    // RENDER TABEL
+    if (pageData.length === 0) {
+        table.innerHTML = `<tr><td colspan="8" class="text-center">Tidak ada data dengan filter ini</td></tr>`;
+        document.getElementById('tagihanPagination').innerHTML = '';
+        return;
+    }
+
+    table.innerHTML = pageData.map((item) => {
+        const listBelumLunas = item.list_tagihan.filter(t => t.status !== 'lunas');
+        const isAllLunas = listBelumLunas.length === 0;
+
+        let displayBulan = `<strong>${listBelumLunas.length} Bulan</strong>`;
+        let displayNominal = `<strong>${formatRupiah(item.total_nominal)}</strong>`;
+
+        if (isAllLunas) {
+            displayBulan = `<span style="color: var(--gray);">-</span>`;
+            displayNominal = `<div style="color: var(--success); font-weight: bold;"><i class="fas fa-check-circle"></i> LUNAS</div>`;
+        }
+
+        let tombolBayar = '';
+        if (!isAllLunas) {
+            const tagihanPertama = listBelumLunas[0];
+            const idTagihan = tagihanPertama.id;
+
+            tombolBayar = `
+                <button class="btn btn-sm btn-success"
+                    data-id="${idTagihan}"
+                    data-pid="${item.pelanggan_id}"
+                    data-nama="${item.pelanggan_nama}"
+                    data-nominal="${tagihanPertama.jumlah}"
+                    data-bulan="${tagihanPertama.bulan}"
+                    onclick="handleBayarClick(this)"
+                    title="Bayar Tagihan">
+                    <i class="fas fa-money-bill-wave"></i> Bayar
+                </button>
+            `;
+        }
+
+        return `
+            <tr>
+                <td><strong>${item.pelanggan_server || '-'}</strong></td>
+                <td>
+                    <strong>${item.pelanggan_nama}</strong><br>
+                    <small class="text-muted">${item.pelanggan_telepon}</small>
+                </td>
+                <td>
+                    <small class="text-muted">${item.pelanggan_koordinat || '-'}</small><br>
+                    <button class="btn btn-sm btn-outline btn-sm" onclick="openGoogleMaps('${item.pelanggan_koordinat}')" title="Buka di Google Maps">
+                        <i class="fas fa-external-link-alt"></i> Maps
+                    </button>
+                </td>
+                <td>${item.pelanggan_alamat || '-'}</td>
+                <td>${displayBulan}</td>
+                <td>${displayNominal}</td>
+                <td>
+                    ${isAllLunas 
+                        ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Lunas</span>' 
+                        : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Belum Lunas</span>'}
+                </td>
+                <td>
+                    <div class="btn-group">
+                        ${tombolBayar}
+                        <button class="btn btn-sm btn-info" onclick="viewTagihanDetails('${item.pelanggan_id}')" title="Detail">
+                            <i class="fas fa-list"></i> Detail
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }).join('');
-    
-    // Render pagination
-    renderTagihanPagination(totalData);
+
+    // RENDER PAGINATION
+    renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
 }
 
-// Fungsi reset filter
+function renderTagihanFromCache(data) {
+
+    const table = document.getElementById('tagihanTable');
+    if (!table) return;
+
+    const itemsPerPage = 10;
+
+    const totalData = data.length;
+
+    const totalPages = Math.ceil(totalData / itemsPerPage);
+
+    if (currentPageTagihan > totalPages) {
+        currentPageTagihan = 1;
+    }
+
+    const startIndex = (currentPageTagihan - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    const pageData = data.slice(startIndex, endIndex);
+
+        table.innerHTML = pageData.map(item => {
+    // kode render row yang sudah kamu punya
+    }).join('');
+
+    renderPagination(totalData, currentPageTagihan, 'tagihan', 'tagihanPagination');
+}
+
 function resetFilterTagihan() {
-    // Reset dropdown
+    console.log('🔄 RESET FILTER TAGIHAN');
+    
     const statusSelect = document.getElementById('filterStatusTagihan');
     const bulanSelect = document.getElementById('filterBulanTagihan');
     const serverSelect = document.getElementById('filterServerTagihan');
     const searchInput = document.getElementById('searchTagihan');
-    
+
     if (statusSelect) statusSelect.value = '';
     if (bulanSelect) bulanSelect.value = '';
     if (serverSelect) serverSelect.value = '';
     if (searchInput) searchInput.value = '';
-    
-    // Reset variabel filter
-    activeStatusFilter = '';
-    activeBulanFilter = '';
-    
-    // Reset ke halaman 1 dan load ulang
-    currentPageTagihan = 1;
-    loadTagihanData();
-    
+
+    // KEMBALIKAN KE DATA MENTAH
+    if (window.rawTagihanData && window.rawTagihanData.length > 0) {
+        window.filteredTagihanData = [...window.rawTagihanData];
+        currentPageTagihan = 1;
+        renderTagihanFromFilter(window.rawTagihanData);
+    } else {
+        // JIKA DATA MENTAH KOSONG, LOAD ULANG
+        loadTagihanData();
+    }
+
     showToast('info', 'Filter Direset', 'Menampilkan semua data');
 }
 
@@ -13372,23 +13525,46 @@ function updateUIBasedOnRole() {
 
         // PERBAIKAN: GANTI FUNGSI showAddPelangganModal
 function showAddPelangganModal() {
-    // Reset form
+    console.log("🆕 Membuka modal tambah pelanggan - RESET FORM");
+    
+    // 1. Reset semua field form
     document.getElementById('formPelanggan').reset();
+    
+    // 2. Kosongkan ID (untuk mode tambah, bukan edit)
     document.getElementById('pelangganId').value = '';
-
-    // Set tanggal default
-    document.getElementById('pelangganTanggalPasang').value = new Date().toISOString().split('T')[0];
-
-    // ⭐⭐ TAMBAHKAN INI: ⭐⭐
+    
+    // 3. Set tanggal default ke hari ini
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('pelangganTanggalPasang').value = today;
+    
+    // 4. Reset field khusus yang mungkin tidak ter-reset oleh .reset()
+    document.getElementById('pelangganServer').value = '';
+    document.getElementById('pelangganNama').value = '';
+    document.getElementById('pelangganTelepon').value = '';
+    document.getElementById('pelangganAlamat').value = '';
+    document.getElementById('pelangganHarga').value = '';
+    document.getElementById('pelangganPaket').value = '';
+    document.getElementById('pelangganStatus').value = 'aktif';
+    document.getElementById('pelangganKoordinat').value = '';
+    document.getElementById('pelangganCatatan').value = '';
+    
+    // 5. Reset hidden server select jika ada
+    const serverSelect = document.getElementById('pelangganServerSelect');
+    if (serverSelect) {
+        serverSelect.value = '';
+    }
+    
+    // 6. Load paket ke dropdown
     loadPaketSelectOptions();
-
-    // Tampilkan modal
-    showModal('modalPelanggan');
-
+    
+    // 7. Load server ke dropdown
     setTimeout(loadServerDropdownToModal, 0);
-
+    
+    // 8. Tampilkan modal
+    showModal('modalPelanggan');
+    
+    console.log("✅ Form sudah direset");
 }
-
 console.log("✅ Function updated");
 
 function setupAutoProrata() {
