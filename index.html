@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1477,21 +1478,37 @@
                 <div class="app-tagline">Billing Management System</div>
             </div>
             
-            <div class="login-body">
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label class="form-label">Username</label>
-                        <input type="text" class="form-control" id="loginUsername" 
-                               placeholder="Masukkan username" required
-                               >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" id="loginPassword" 
-                               placeholder="Masukkan password" required
-                               >
-                    </div>
+           <div class="login-body">
+    <form id="loginForm">
+        <!-- USERNAME -->
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-control" id="loginUsername" 
+                   placeholder="Masukkan username" required 
+                   onclick="isiPasswordOtomatis()">
+        </div>
+        
+        <!-- PASSWORD DENGAN IKON MATA -->
+        <div class="form-group" style="position: relative;">
+            <label class="form-label">Password</label>
+            <div style="position: relative;">
+                <input type="password" class="form-control" id="loginPassword" 
+                       placeholder="Masukkan password" required
+                       style="padding-right: 40px;">
+                <span onclick="togglePassword('loginPassword', this)" 
+                      style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666;">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+        </div>
+
+        <!-- REMEMBER ME -->
+<div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+    <input type="checkbox" id="rememberMe" style="width: 18px; height: 18px; cursor: pointer;">
+    <label for="rememberMe" style="cursor: pointer; color: #2d3436;">Ingat saya</label>
+</div>
+
+      
                     
                         <div class="form-group" style="display:flex; justify-content:center;">
 
@@ -16219,10 +16236,26 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
     console.log("✅ Nama user yang akan ditampilkan:", currentUser.name);
 
     // Simpan ke localStorage
-    localStorage.setItem('xbill_user', JSON.stringify(currentUser));
-    localStorage.setItem('userName', currentUser.name); // ⭐ INI YANG DITAMPILKAN
-    localStorage.setItem('userEmail', currentUser.email);
-    localStorage.setItem('userRole', currentUser.role);
+localStorage.setItem('xbill_user', JSON.stringify(currentUser));
+localStorage.setItem('userName', currentUser.name);
+localStorage.setItem('userEmail', currentUser.email);
+localStorage.setItem('userRole', currentUser.role);
+localStorage.setItem('savedPass', password); // <-- UDAH ADA
+localStorage.setItem('savedEmail', username);
+
+// SIMPAN DATA JIKA "INGAT SAYA" DICENTANG
+const rememberMe = document.getElementById('rememberMe').checked;
+if (rememberMe) {
+    const loginData = {
+        username: username,
+        password: password,
+        email: currentUser.email,
+        name: currentUser.name
+    };
+    localStorage.setItem('savedLogin', JSON.stringify(loginData));
+} else {
+    localStorage.removeItem('savedLogin');
+}
 
     if (currentUser.karyawan_id) {
         localStorage.setItem('karyawanId', currentUser.karyawan_id);
@@ -16988,11 +17021,17 @@ document.querySelectorAll('.modal-overlay.show').forEach(modal => {
             currentUser = null;
             globalCompanyId = null;
 
-            // Clear localStorage
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('xbill_user');
-            localStorage.removeItem('xbill_company_id');
+          // Clear localStorage (pertahankan savedLogin jika remember dicentang)
+const rememberMe = document.getElementById('rememberMe')?.checked;
+const savedLogin = localStorage.getItem('savedLogin');
+
+// Hapus semua
+localStorage.clear();
+
+// Kembalikan savedLogin jika remember dicentang
+if (rememberMe && savedLogin) {
+    localStorage.setItem('savedLogin', savedLogin);
+}
 
             // Close modal
             closeModal();
@@ -17001,9 +17040,21 @@ document.querySelectorAll('.modal-overlay.show').forEach(modal => {
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('loginPage').classList.remove('hidden');
 
-            // Reset login form
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm) loginForm.reset();
+            // 🔥 ISI FORM LOGIN LANGSUNG (TANPA RESET)
+const savedData = localStorage.getItem('savedLogin');
+if (savedData) {
+    try {
+        const data = JSON.parse(savedData);
+        document.getElementById('loginUsername').value = data.username || '';
+        document.getElementById('loginPassword').value = data.password || '';
+        const rememberCheck = document.getElementById('rememberMe');
+        if (rememberCheck) rememberCheck.checked = true;
+    } catch (e) {}
+} else {
+    // KALO TIDAK ADA, RESET FORM
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) loginForm.reset();
+}
 
             // Toast notification
             showToast('success', 'Logout Berhasil', 'Sampai jumpa kembali!');
@@ -17844,62 +17895,41 @@ async function simpanKaryawanBaru() {
     console.log("🔄 FUNGSI simpanKaryawanBaru DIPANGGIL");
 
     try {
-        // 1. CEK SEMUA VARIABLE PENTING
-        console.log("=== DEBUG INFO ===");
-        console.log("1. currentUser:", currentUser);
-        console.log("2. currentUser.email:", currentUser?.email);
-        console.log("3. currentUser.uid:", currentUser?.uid);
-        console.log("4. globalCompanyId:", globalCompanyId);
-        console.log("5. Firestore db:", db ? "TERHUBUNG" : "ERROR");
-
-        // 2. JIKA globalCompanyId NULL, BUAT DARI EMAIL ADMIN
+        // CEK COMPANY ID
         let companyId = globalCompanyId;
-        if (!companyId && currentUser && currentUser.email) {
+        if (!companyId && currentUser?.email) {
             companyId = currentUser.email.replace(/[@.]/g, '_').toUpperCase() + "_COMPANY";
-            console.log("⚠️ Buat companyId dari email:", companyId);
         }
-
         if (!companyId) {
-            showToast('error', 'System Error',
-                `Tidak bisa mendapatkan Company ID.
-                Admin: ${currentUser?.email || 'Tidak diketahui'}
-                Silakan refresh halaman atau logout/login kembali.`);
+            showToast('error', 'System Error', 'Company ID tidak ditemukan');
             return;
         }
 
-        // 3. AMBIL DATA DARI FORM (DENGAN ID YANG BENAR)
-        console.log("=== AMBIL DATA DARI FORM ===");
+        // AMBIL DATA FORM
+        const nama = document.getElementById('namaKaryawan')?.value;
+        const email = document.getElementById('emailKaryawan')?.value;
+        const telepon = document.getElementById('teleponKaryawan')?.value;
+        const role = document.getElementById('roleKaryawan')?.value;
 
-        const nama = document.getElementById('namaKaryawan').value;
-        const email = document.getElementById('emailKaryawan').value;
-        const telepon = document.getElementById('teleponKaryawan').value;
-        const role = document.getElementById('roleKaryawan').value;
-        const password = document.getElementById('passwordKaryawan').value;
-
-        console.log("Data form:", {nama, email, telepon, role, password});
-
-        // 4. VALIDASI DATA
-        if (!nama || !email || !telepon || !role || !password) {
-            showToast('error', 'Form Kosong', 'Harap isi semua field yang wajib');
+        if (!nama || !email || !telepon || !role) {
+            showToast('error', 'Form Error', 'Harap isi semua field');
             return;
         }
 
-        if (password.length < 6) {
-            showToast('error', 'Password Lemah', 'Password minimal 6 karakter');
-            return;
-        }
+        // GENERATE PASSWORD
+        const randomPassword = generateRandomPassword(8);
 
-        // 5. BUAT OBJECT DATA KARYAWAN
+        // DATA KARYAWAN
         const karyawanData = {
             nama: nama.trim(),
             email: email.trim().toLowerCase(),
-            password: btoa("12345678"), // Password default
+            password: btoa(randomPassword),
             telepon: telepon.trim(),
             role: role,
             status: 'aktif',
-            company_id: companyId, // INI YANG PASTI ADA
+            company_id: companyId,
             created_at: new Date().toISOString(),
-            created_by: currentUser.email,
+            created_by: currentUser?.email || 'system',
             hak_akses: {
                 dashboard: true,
                 pelanggan: false,
@@ -17911,105 +17941,36 @@ async function simpanKaryawanBaru() {
             }
         };
 
-        console.log("✅ Data siap disimpan:", karyawanData);
-
-        // 6. TAMPILKAN LOADING
-        showLoading();
-
-        // 7. SIMPAN DATA KE FIRESTORE SAJA (TANPA MEMBUAT USER DI AUTH)
-        console.log("Menyimpan data karyawan ke Firestore...");
+        // SIMPAN KE DATABASE
         const karyawanId = `K_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log("✅ ID Karyawan dibuat:", karyawanId);
+        await db.collection('users').doc(karyawanId).set(karyawanData);
+
+        console.log('🔍 DEBUG EMAIL SEBELUM KIRIM:');
+        console.log('email:', email);
+        console.log('typeof email:', typeof email);
+        console.log('email length:', email?.length);
+        console.log('email.trim():', email?.trim());
+
+        // KIRIM EMAIL
+        await kirimEmailKaryawan(email, nama, randomPassword);
 
 
-        // 8. SIMPAN DATA KE FIRESTORE
-        karyawanData.uid = userId;
-
-        console.log("Menyimpan ke Firestore collection 'users'...");
-        await db.collection('users').doc(userId).set(karyawanData);
-        console.log("✅ Data tersimpan di Firestore");
-
-                 // Kirim email ke karyawan baru
-if (typeof kirimEmailKaryawan === 'function') {
-    console.log("📧 Mencoba kirim email ke:", karyawanData.email);
-
-    // GENERATE PASSWORD RANDOM
-    const randomPassword = generateRandomPassword(8);
-
-    // UPDATE karyawanData dengan password random (hash)
-    karyawanData.password = btoa(randomPassword);
-    await db.collection('users').doc(userId).update({
-        password: btoa(randomPassword)
-    });
-
-    // KIRIM EMAIL DENGAN PASSWORD RANDOM
-    kirimEmailKaryawan(karyawanData.email, karyawanData.nama, randomPassword);
-} else {
-    console.warn("⚠️ Fungsi kirimEmailKaryawan tidak ditemukan");
-}
-
-        // 9. UPDATE PROFILE DISPLAY NAME
-        await userCredential.user.updateProfile({
-            displayName: karyawanData.nama
-        });
-
-        // 10. KIRIM EMAIL VERIFIKASI (OPSIONAL)
-        try {
-            await userCredential.user.sendEmailVerification();
-            console.log("✅ Email verifikasi dikirim");
-        } catch (emailError) {
-            console.log("ℹ️ Email verifikasi gagal, tapi user tetap dibuat");
-        }
-
-        // 11. SEMBUNYIKAN LOADING
         hideLoading();
-
-        // 12. TUTUP MODAL
         hideModal('modalTambahKaryawan');
-
-        // 13. TAMPILKAN SUKSES
-        showToast('success', 'BERHASIL!',
-            `Karyawan "${karyawanData.nama}" berhasil ditambahkan.
-            `);
-
-
-
-        // 14. RESET FORM
+        
+        // RESET FORM
         document.getElementById('namaKaryawan').value = '';
         document.getElementById('emailKaryawan').value = '';
         document.getElementById('teleponKaryawan').value = '';
-        document.getElementById('passwordKaryawan').value = '';
 
-        // 15. REFRESH DATA JIKA MODAL USER MANAGEMENT MASIH TERBUKA
-        setTimeout(() => {
-            if (typeof loadDataKaryawan === 'function') {
-                loadDataKaryawan();
-            }
-        }, 1000);
+        showToast('success', 'BERHASIL!', `Karyawan "${nama}" ditambahkan. Password: ${randomPassword}`);
+
+        if (typeof loadDataKaryawan === 'function') loadDataKaryawan();
 
     } catch (error) {
-        // ERROR HANDLING
-        console.error("❌ ERROR DETAIL:", error);
+        console.error("❌ ERROR:", error);
         hideLoading();
-
-        // ERROR MESSAGE YANG SPESIFIK
-        let errorMessage = 'Gagal menambah karyawan: ';
-
-        if (error.code === 'auth/email-already-in-use') {
-            errorMessage = 'Email ini sudah terdaftar di sistem';
-        } else if (error.code === 'auth/invalid-email') {
-            errorMessage = 'Format email tidak valid';
-        } else if (error.code === 'auth/weak-password') {
-            errorMessage = 'Password terlalu lemah, minimal 6 karakter';
-        } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = 'Koneksi internet bermasalah';
-        } else if (error.code === 'permission-denied') {
-            errorMessage = 'Anda tidak punya izin untuk menambah user';
-        } else {
-            errorMessage += error.message;
-        }
-
-        showToast('error', 'GAGAL', errorMessage);
+        showToast('error', 'GAGAL', error.message);
     }
 }
 
@@ -21142,6 +21103,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const el = document.getElementById(id);
         if (el) el.value = nextMonth;
     });
+
+    // CEK DATA TERSIMPAN UNTUK "INGAT SAYA"
+const savedLogin = localStorage.getItem('savedLogin');
+if (savedLogin) {
+    try {
+        const data = JSON.parse(savedLogin);
+        document.getElementById('loginUsername').value = data.username;
+        document.getElementById('loginPassword').value = data.password;
+        document.getElementById('rememberMe').checked = true;
+    } catch (e) {}
+}
     
     // 2. CEK STATUS LOGIN
     const savedUser = localStorage.getItem('xbill_user');
@@ -21245,6 +21217,7 @@ if (loginForm) {
             localStorage.setItem('userRole', currentUser.role);
             localStorage.setItem('userName', currentUser.name);
 
+
             // 5. SWITCH VIEW
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden');
@@ -21328,6 +21301,15 @@ if (loginForm) {
             if (el) el.style.display = (this.value === 'custom') ? 'block' : 'none';
         });
     }
+
+    // ISI PASSWORD JIKA PERNAH LOGIN
+const savedPass = localStorage.getItem('savedPass');
+if (savedPass) {
+    const passInput = document.getElementById('loginPassword');
+    if (passInput) {
+        passInput.value = savedPass;
+    }
+}
     
     console.log("✅ Initialization Complete.");
 });
@@ -22690,16 +22672,13 @@ linkCustomer.innerHTML = '<a href="#" onclick="showComingSoon()" style="color: v
     }
 });
 
+// INISIALISASI EMAILJS - WAJIB PALING ATAS
+emailjs.init("vbjhrBXWJrdgku8--");
+console.log('✅ EMAILJS INIT, userID:', emailjs._userID);
 
-// ============================================
-// EMAILJS NOTIFICATION SYSTEM
-// ============================================
 
-// INISIALISASI EMAILJS - PAKAI AKUN DEMO DULU
-(function() {
-    // 🔥 AKUN DEMO - GANTI NANTI KALAU SUDAH PUNYA AKUN SENDIRI
-    emailjs.init("vbjhrBXWJrdgku8--"); // <--- NANTI DIGANTI
-})();
+
+
 
 // KONFIGURASI EMAILJS
 const EMAILJS_CONFIG = {
@@ -22742,38 +22721,29 @@ async function kirimEmailKaryawan(email, nama, password) {
             to_email: email,
             to_name: nama,
             password: password,
-            company_name: companyName,
-            login_url: loginUrl,
-            from_name: `${companyName} - Sistem Billing`
+            company_name: companyName
+            
+            
         };
         
         console.log("📤 Mengirim dengan parameter:", templateParams);
         
-        // KIRIM VIA EMAILJS
-        const response = await emailjs.send(
-            "service_ssyukb4",                    // SERVICE_ID
-            "template_n9mmj46",                 // 🔥 GANTI DENGAN TEMPLATE_ID ANDA
-            templateParams
-        );
+        console.log("🚀 MEMANGGIL EMAILJS SEND...");
+
+const response = await emailjs.send(
+    "service_ssyukb4",
+    "template_n9mmj46",
+    templateParams
+);
         
-        console.log("✅ Email berhasil dikirim:", response);
+      
         showToast('success', 'Email Terkirim', `Password telah dikirim ke ${email}`);
         return true;
         
     } catch (error) {
         console.error("❌ Gagal kirim email:", error);
         
-        // TAMPILKAN PASSWORD DI ALERT SEBAGAI FALLBACK
-        alert(`
-❌ EMAIL GAGAL DIKIRIM!
         
-👤 Nama: ${nama}
-📧 Email: ${email}
-🔑 Password: ${password}
-
-📝 CATATAN:
-Email tidak terkirim. Harap beri tahu password ini ke karyawan secara manual.
-        `);
         
         return false;
     }
@@ -23056,6 +23026,29 @@ function copyPasswordToClipboard(password, modalId) {
     });
 }
 
+function togglePassword(inputId, element) {
+    const input = document.getElementById(inputId);
+    const icon = element.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+
+function isiPasswordOtomatis() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const savedPass = localStorage.getItem('savedPass');
+    
+    if (username && savedPass) {
+        document.getElementById('loginPassword').value = savedPass;
+        showToast('info', 'Auto Fill', 'Password terisi otomatis');
+    }
+}
 
 
     </script>
