@@ -3577,16 +3577,16 @@ document.getElementById('loginForm').onsubmit = async function(e) {
     const password = document.getElementById('loginPassword').value.trim();
 
     // ===== DEMO ADMIN LOGIN =====
-    if (email === "admin" && password === "admin123") {
+  //  if (email === "admin" && password === "admin123") {
 
-        showToast('success', 'Login Demo Berhasil', '');
+   //     showToast('success', 'Login Demo Berhasil', '');
 
         // tampilkan dashboard
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("dashboardPage").style.display = "block";
+   //     document.getElementById("loginPage").style.display = "none";
+   //     document.getElementById("dashboardPage").style.display = "block";
 
-        return; // PENTING: HENTIKAN di sini
-    }
+   //     return; // PENTING: HENTIKAN di sini
+   // }
 
     // ===== FIREBASE LOGIN =====
     try {
@@ -16056,101 +16056,120 @@ function refreshTunggakan() {
         // EVENT HANDLERS
         // ============================================
 
-        // Login Handler
-        // Event Listener Login
-document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
+            // Login Handler
+            // Event Listener Login
+    document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value;
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
 
-    // Validasi input kosong
-    if (!username || !password) {
-        showToast('error', 'Login Gagal', 'Email dan Password wajib diisi');
-        return;
-    }
-
-    // ⭐⭐ CEK LOCKOUT STATUS ⭐⭐
-    const lockoutCheck = checkLoginLockout();
-    if (lockoutCheck.locked) {
-        showToast('error', 'Akun Terkunci',
-            `Terlalu banyak percobaan gagal. Coba lagi dalam ${lockoutCheck.remainingMinutes} menit.`);
-        return;
-    }
-
-    // Ambil elemen tombol submit untuk efek loading
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-
-    try {
-        // Ubah tombol jadi loading
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Login...';
-        showLoading();
-
-        let loginSuccess = false;
-        let userData = null;
-
-        // 1. COBA LOGIN SEBAGAI ADMIN HARDCODED
-        if (username === 'admin' && password === 'admin123') {
-            console.log("🔐 Login sebagai Admin Hardcoded");
-
-            userData = {
-                uid: 'admin_hardcoded',
-                name: 'Administrator',
-                email: 'admin@xbill.com',
-                role: 'admin'
-            };
-
-            loginSuccess = true;
+        // Validasi input kosong
+        if (!username || !password) {
+            showToast('error', 'Login Gagal', 'Email dan Password wajib diisi');
+            return;
         }
-        // 2. COBA LOGIN SEBAGAI KARYAWAN (EMAIL)
-        else if (username.includes('@')) {
-            console.log("🔐 Login dengan email:", username);
 
-            // ⭐⭐ PERBAIKAN: CEK DI KARYAWAN DULU ⭐⭐
-            const karyawanSnapshot = await db.collection('karyawan')
-                .where('email', '==', username.toLowerCase())
-                .limit(1)
-                .get();
+        // ⭐⭐ CEK LOCKOUT STATUS ⭐⭐
+        const lockoutCheck = checkLoginLockout();
+        if (lockoutCheck.locked) {
+            showToast('error', 'Akun Terkunci',
+                `Terlalu banyak percobaan gagal. Coba lagi dalam ${lockoutCheck.remainingMinutes} menit.`);
+            return;
+        }
 
-            if (!karyawanSnapshot.empty) {
-                const karyawanDoc = karyawanSnapshot.docs[0];
-                const karyawan = karyawanDoc.data();
+        // Ambil elemen tombol submit untuk efek loading
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
 
-                // ⭐⭐ CEK STATUS AKTIF ⭐⭐
-                if (karyawan.status !== 'aktif') {
-                    throw new Error("Akun karyawan tidak aktif");
+        try {
+            // Ubah tombol jadi loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Login...';
+            showLoading();
+
+            let loginSuccess = false;
+            let userData = null;
+
+                
+            // 2. COBA LOGIN SEBAGAI KARYAWAN (EMAIL)
+            if (username.includes('@')) {
+                console.log("🔐 Login dengan email:", username);
+
+                // ⭐⭐ PERBAIKAN: CEK DI KARYAWAN DULU ⭐⭐
+                const karyawanSnapshot = await db.collection('karyawan')
+                    .where('email', '==', username.toLowerCase())
+                    .limit(1)
+                    .get();
+
+                if (!karyawanSnapshot.empty) {
+                    const karyawanDoc = karyawanSnapshot.docs[0];
+                    const karyawan = karyawanDoc.data();
+
+                    // ⭐⭐ CEK STATUS AKTIF ⭐⭐
+                    if (karyawan.status !== 'aktif') {
+                        throw new Error("Akun karyawan tidak aktif");
+                    }
+
+                    // Verifikasi password (base64 hash sederhana)
+                    if (karyawan.password === btoa(password)) {
+                        userData = {
+                            uid: karyawanDoc.id,
+                            name: karyawan.nama,
+                            email: karyawan.email,
+                            role: karyawan.role,
+                            telepon: karyawan.telepon || '',
+                            karyawan_id: karyawanDoc.id
+                        };
+                        loginSuccess = true;
+
+                        // Update last login
+                        await db.collection('karyawan').doc(karyawanDoc.id).update({
+                            last_login: new Date().toISOString()
+                        });
+
+                        console.log("✅ Login karyawan berhasil:", karyawan.nama);
+                    } else {
+                        throw new Error("Password salah");
+                    }
                 }
+                // ⭐⭐ PERBAIKAN: JIKA TIDAK ADA DI KARYAWAN, CEK DI FIREBASE AUTH ⭐⭐
+                else {
+                    console.log("⚠️ Email tidak ada di karyawan, coba login sebagai user...");
 
-                // Verifikasi password (base64 hash sederhana)
-                if (karyawan.password === btoa(password)) {
-                    userData = {
-                        uid: karyawanDoc.id,
-                        name: karyawan.nama,
-                        email: karyawan.email,
-                        role: karyawan.role,
-                        telepon: karyawan.telepon || '',
-                        karyawan_id: karyawanDoc.id
-                    };
-                    loginSuccess = true;
+                    try {
+                        const authResult = await firebase.auth().signInWithEmailAndPassword(username, password);
+                        const user = authResult.user;
 
-                    // Update last login
-                    await db.collection('karyawan').doc(karyawanDoc.id).update({
-                        last_login: new Date().toISOString()
-                    });
+                        // Ambil data user dari collection users
+                        const userDoc = await db.collection('users').doc(user.uid).get();
 
-                    console.log("✅ Login karyawan berhasil:", karyawan.nama);
-                } else {
-                    throw new Error("Password salah");
+                        if (userDoc.exists) {
+                            const userDataDB = userDoc.data();
+                            userData = {
+                                uid: user.uid,
+                                name: userDataDB.name || user.email.split('@')[0],
+                                email: user.email,
+                                role: userDataDB.role || 'user'
+                            };
+                            loginSuccess = true;
+
+                        } else {
+                            throw new Error("Akun tidak terdaftar di sistem");
+                        }
+
+                    } catch (error) {
+
+                    }
                 }
             }
-            // ⭐⭐ PERBAIKAN: JIKA TIDAK ADA DI KARYAWAN, CEK DI FIREBASE AUTH ⭐⭐
+            // 3. COBA LOGIN DENGAN USERNAME (BUKAN EMAIL)
             else {
-                console.log("⚠️ Email tidak ada di karyawan, coba login sebagai user...");
+                console.log("🔐 Login dengan username:", username);
 
+                const email = `${username}@xbill.com`;
                 try {
-                    const authResult = await firebase.auth().signInWithEmailAndPassword(username, password);
+                    const authResult = await firebase.auth().signInWithEmailAndPassword(email, password);
                     const user = authResult.user;
 
                     // Ambil data user dari collection users
@@ -16162,10 +16181,10 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
                             uid: user.uid,
                             name: userDataDB.name || user.email.split('@')[0],
                             email: user.email,
-                            role: userDataDB.role || 'user'
+                            role: userDataDB.role || 'admin'
                         };
                         loginSuccess = true;
-
+                        console.log("✅ Login user berhasil:", user.email);
                     } else {
                         throw new Error("Akun tidak terdaftar di sistem");
                     }
@@ -16174,108 +16193,100 @@ document.getElementById('loginForm')?.addEventListener('submit', async function(
 
                 }
             }
+
+            // ⭐⭐ JIKA LOGIN SUKSES ⭐⭐
+            if (loginSuccess && userData) {
+        // Set current user
+        currentUser = userData;
+
+        // ⭐⭐ VALIDASI: JIKA NAME ADALAH EMAIL, UBAH ⭐⭐
+        if (currentUser.name && currentUser.name.includes('@')) {
+            // Name adalah email, ambil bagian sebelum @
+            const nameFromEmail = currentUser.name.split('@')[0];
+            currentUser.name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+            console.log("⚠️ Name diubah dari email:", currentUser.name);
         }
-        // 3. COBA LOGIN DENGAN USERNAME (BUKAN EMAIL)
-        else {
-            console.log("🔐 Login dengan username:", username);
 
-            const email = `${username}@xbill.com`;
-            try {
-                const authResult = await firebase.auth().signInWithEmailAndPassword(email, password);
-                const user = authResult.user;
-
-                // Ambil data user dari collection users
-                const userDoc = await db.collection('users').doc(user.uid).get();
-
-                if (userDoc.exists) {
-                    const userDataDB = userDoc.data();
-                    userData = {
-                        uid: user.uid,
-                        name: userDataDB.name || user.email.split('@')[0],
-                        email: user.email,
-                        role: userDataDB.role || 'admin'
-                    };
-                    loginSuccess = true;
-                    console.log("✅ Login user berhasil:", user.email);
-                } else {
-                    throw new Error("Akun tidak terdaftar di sistem");
-                }
-
-            } catch (error) {
-
+        // ⭐⭐ JIKA NAME KOSONG, BUAT DARI EMAIL ⭐⭐
+        if (!currentUser.name || currentUser.name.trim() === '') {
+            if (currentUser.email) {
+                const nameFromEmail = currentUser.email.split('@')[0];
+                currentUser.name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+            } else {
+                currentUser.name = 'User';
             }
         }
 
-        // ⭐⭐ JIKA LOGIN SUKSES ⭐⭐
-        if (loginSuccess && userData) {
-    // Set current user
-    currentUser = userData;
+        console.log("✅ Nama user yang akan ditampilkan:", currentUser.name);
 
-    // ⭐⭐ VALIDASI: JIKA NAME ADALAH EMAIL, UBAH ⭐⭐
-    if (currentUser.name && currentUser.name.includes('@')) {
-        // Name adalah email, ambil bagian sebelum @
-        const nameFromEmail = currentUser.name.split('@')[0];
-        currentUser.name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-        console.log("⚠️ Name diubah dari email:", currentUser.name);
+        // Simpan ke localStorage
+    localStorage.setItem('xbill_user', JSON.stringify(currentUser));
+    localStorage.setItem('userName', currentUser.name);
+    localStorage.setItem('userEmail', currentUser.email);
+    localStorage.setItem('userRole', currentUser.role);
+    localStorage.setItem('savedPass', password); // <-- UDAH ADA
+    localStorage.setItem('savedEmail', username);
+
+    // SIMPAN DATA JIKA "INGAT SAYA" DICENTANG
+    const rememberMe = document.getElementById('rememberMe').checked;
+    if (rememberMe) {
+        const loginData = {
+            username: username,
+            password: password,
+            email: currentUser.email,
+            name: currentUser.name
+        };
+        localStorage.setItem('savedLogin', JSON.stringify(loginData));
+    } else {
+        localStorage.removeItem('savedLogin');
     }
 
-    // ⭐⭐ JIKA NAME KOSONG, BUAT DARI EMAIL ⭐⭐
-    if (!currentUser.name || currentUser.name.trim() === '') {
-        if (currentUser.email) {
-            const nameFromEmail = currentUser.email.split('@')[0];
-            currentUser.name = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-        } else {
-            currentUser.name = 'User';
+        if (currentUser.karyawan_id) {
+            localStorage.setItem('karyawanId', currentUser.karyawan_id);
         }
-    }
+                // ⭐⭐ INISIALISASI COMPANY ID ⭐⭐
+                console.log("🏢 Menginisialisasi Company ID...");
 
-    console.log("✅ Nama user yang akan ditampilkan:", currentUser.name);
+                // Cek apakah sudah punya company_id di database
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                const userDoc = await userDocRef.get();
 
-    // Simpan ke localStorage
-localStorage.setItem('xbill_user', JSON.stringify(currentUser));
-localStorage.setItem('userName', currentUser.name);
-localStorage.setItem('userEmail', currentUser.email);
-localStorage.setItem('userRole', currentUser.role);
-localStorage.setItem('savedPass', password); // <-- UDAH ADA
-localStorage.setItem('savedEmail', username);
+                if (userDoc.exists) {
+                    const existingData = userDoc.data();
+                    globalCompanyId = existingData.company_id || null;
 
-// SIMPAN DATA JIKA "INGAT SAYA" DICENTANG
-const rememberMe = document.getElementById('rememberMe').checked;
-if (rememberMe) {
-    const loginData = {
-        username: username,
-        password: password,
-        email: currentUser.email,
-        name: currentUser.name
-    };
-    localStorage.setItem('savedLogin', JSON.stringify(loginData));
-} else {
-    localStorage.removeItem('savedLogin');
-}
+                    if (globalCompanyId) {
+                        console.log("✅ Company ID ditemukan:", globalCompanyId);
+                    } else {
+                        console.warn("⚠️ Data user ada tapi company_id kosong. Membuat baru...");
+                        const newCompanyId = `COMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    if (currentUser.karyawan_id) {
-        localStorage.setItem('karyawanId', currentUser.karyawan_id);
-    }
-            // ⭐⭐ INISIALISASI COMPANY ID ⭐⭐
-            console.log("🏢 Menginisialisasi Company ID...");
+                        await userDocRef.update({
+                            company_id: newCompanyId,
+                            updated_at: new Date().toISOString()
+                        });
 
-            // Cek apakah sudah punya company_id di database
-            const userDocRef = db.collection('users').doc(currentUser.uid);
-            const userDoc = await userDocRef.get();
+                        await db.collection('company_settings').doc(newCompanyId).set({
+                            id: newCompanyId,
+                            admin_email: currentUser.email,
+                            admin_name: currentUser.name,
+                            created_at: new Date().toISOString()
+                        });
 
-            if (userDoc.exists) {
-                const existingData = userDoc.data();
-                globalCompanyId = existingData.company_id || null;
-
-                if (globalCompanyId) {
-                    console.log("✅ Company ID ditemukan:", globalCompanyId);
+                        globalCompanyId = newCompanyId;
+                        console.log("✅ Company ID baru dibuat:", globalCompanyId);
+                    }
                 } else {
-                    console.warn("⚠️ Data user ada tapi company_id kosong. Membuat baru...");
+                    console.log("📝 Data user belum ada. Membuat dokumen user baru...");
                     const newCompanyId = `COMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-                    await userDocRef.update({
+                    await userDocRef.set({
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        name: currentUser.name,
+                        role: currentUser.role,
                         company_id: newCompanyId,
-                        updated_at: new Date().toISOString()
+                        created_at: new Date().toISOString()
                     });
 
                     await db.collection('company_settings').doc(newCompanyId).set({
@@ -16286,122 +16297,113 @@ if (rememberMe) {
                     });
 
                     globalCompanyId = newCompanyId;
-                    console.log("✅ Company ID baru dibuat:", globalCompanyId);
+                    console.log("✅ User & Company ID baru dibuat:", globalCompanyId);
                 }
-            } else {
-                console.log("📝 Data user belum ada. Membuat dokumen user baru...");
-                const newCompanyId = `COMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-                await userDocRef.set({
-                    uid: currentUser.uid,
-                    email: currentUser.email,
-                    name: currentUser.name,
+                // ⭐⭐ RESET LOGIN ATTEMPTS JIKA BERHASIL ⭐⭐
+                resetLoginAttempts();
+
+                // ⭐⭐ LOG AKTIVITAS LOGIN ⭐⭐
+                await db.collection('aktivitas').add({
+                    aktivitas: `Login: ${currentUser.name} (${currentUser.role})`,
+                    user: currentUser.name,
+                    user_id: currentUser.uid,
                     role: currentUser.role,
-                    company_id: newCompanyId,
-                    created_at: new Date().toISOString()
+                    company_id: globalCompanyId,
+                    timestamp: new Date().toISOString()
                 });
 
-                await db.collection('company_settings').doc(newCompanyId).set({
-                    id: newCompanyId,
-                    admin_email: currentUser.email,
-                    admin_name: currentUser.name,
-                    created_at: new Date().toISOString()
-                });
+                // ⭐⭐ UPDATE UI DAN LOAD APLIKASI ⭐⭐
 
-                globalCompanyId = newCompanyId;
-                console.log("✅ User & Company ID baru dibuat:", globalCompanyId);
+                // Update UI User Info
+                const userNameEl = document.getElementById('userName');
+                const userAvatarEl = document.getElementById('userAvatar');
+                const userRoleEl = document.getElementById('userRole');
+
+                if (userNameEl) userNameEl.textContent = currentUser.name;
+                if (userAvatarEl) userAvatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+                if (userRoleEl) {
+                    // Tampilkan role yang user-friendly
+                    const roleDisplay = {
+                        'admin': 'Admin',
+                        'staff_billing': 'Staff Billing',
+                        'staff_teknis': 'Staff Teknis',
+                        'supervisor': 'Supervisor'
+                    };
+                    userRoleEl.textContent = roleDisplay[currentUser.role] || currentUser.role;
+                }
+
+                // Switch View: Sembunyikan Login, Tampilkan App
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+
+                // Load Dashboard
+                // await handleLoginSuccess();
+
+                // Reset tombol
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                hideLoading();
+
+
             }
 
-            // ⭐⭐ RESET LOGIN ATTEMPTS JIKA BERHASIL ⭐⭐
-            resetLoginAttempts();
+        } catch (error) {
+            console.error("❌ Error Login:", error);
 
-            // ⭐⭐ LOG AKTIVITAS LOGIN ⭐⭐
-            await db.collection('aktivitas').add({
-                aktivitas: `Login: ${currentUser.name} (${currentUser.role})`,
-                user: currentUser.name,
-                user_id: currentUser.uid,
-                role: currentUser.role,
-                company_id: globalCompanyId,
-                timestamp: new Date().toISOString()
-            });
+            // ⭐⭐ RECORD FAILED ATTEMPT UNTUK LOGIN GAGAL ⭐⭐
+            recordFailedLogin();
 
-            // ⭐⭐ UPDATE UI DAN LOAD APLIKASI ⭐⭐
-
-            // Update UI User Info
-            const userNameEl = document.getElementById('userName');
-            const userAvatarEl = document.getElementById('userAvatar');
-            const userRoleEl = document.getElementById('userRole');
-
-            if (userNameEl) userNameEl.textContent = currentUser.name;
-            if (userAvatarEl) userAvatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
-            if (userRoleEl) {
-                // Tampilkan role yang user-friendly
-                const roleDisplay = {
-                    'admin': 'Admin',
-                    'staff_billing': 'Staff Billing',
-                    'staff_teknis': 'Staff Teknis',
-                    'supervisor': 'Supervisor'
-                };
-                userRoleEl.textContent = roleDisplay[currentUser.role] || currentUser.role;
+            // Cek apakah sekarang terkunci
+            const newLockoutCheck = checkLoginLockout();
+            if (newLockoutCheck.locked) {
+                error.message = `Terlalu banyak percobaan gagal. Akun terkunci selama ${newLockoutCheck.remainingMinutes} menit.`;
+            } else {
+                const remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts;
+                error.message = `${error.message} (Sisa percobaan: ${remainingAttempts})`;
             }
-
-            // Switch View: Sembunyikan Login, Tampilkan App
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-
-            // Load Dashboard
-            // await handleLoginSuccess();
 
             // Reset tombol
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
             hideLoading();
 
-
-        }
-
-    } catch (error) {
-        console.error("❌ Error Login:", error);
-
-        // ⭐⭐ RECORD FAILED ATTEMPT UNTUK LOGIN GAGAL ⭐⭐
-        recordFailedLogin();
-
-        // Cek apakah sekarang terkunci
-        const newLockoutCheck = checkLoginLockout();
-        if (newLockoutCheck.locked) {
-            error.message = `Terlalu banyak percobaan gagal. Akun terkunci selama ${newLockoutCheck.remainingMinutes} menit.`;
-        } else {
-            const remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts;
-            error.message = `${error.message} (Sisa percobaan: ${remainingAttempts})`;
-        }
-
-        // Reset tombol
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-        hideLoading();
-// TAMPILKAN NOTIF BERDASARKAN ERROR CODE
-if (error.code === 'auth/too-many-requests') {
-    showToast('error', '⛔ TERLALU BANYAK PERCOBAAN!', 
-        'Perangkat Anda diblokir sementara karena aktivitas mencurigakan.\n' +
-        'Coba lagi dalam 30 menit - 1 jam.\n\n' +
-        'Atau gunakan jaringan/perangkat lain.');
-} else if (error.code === 'auth/invalid-credential') {
-    showToast('error', 'Login Gagal', 'Email atau password salah');
+// PASTIKAN TOMBOL KEMBALI NORMAL
+if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText || 'Login';
 } else {
-    showToast('error', 'Login Gagal', error.message);
-}
+    // FALLBACK: cari tombol manual
+    const btn = document.querySelector('#loginForm button[type="submit"]');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Login';
     }
-});
+}
 
-        // Navigation Handler
-        document.addEventListener('click', function(e) {
-            const navItem = e.target.closest('.nav-item');
-            if (navItem) {
-                e.preventDefault();
-                const page = navItem.getAttribute('data-page');
-                loadPage(page);
-            }
-        });
+    // TAMPILKAN NOTIF BERDASARKAN ERROR CODE
+    if (error.code === 'auth/too-many-requests') {
+        showToast('error', '⛔ TERLALU BANYAK PERCOBAAN!', 
+            'Perangkat Anda diblokir sementara karena aktivitas mencurigakan.\n' +
+            'Coba lagi dalam 30 menit - 1 jam.\n\n' +
+            'Atau gunakan jaringan/perangkat lain.');
+    } else if (error.code === 'auth/invalid-credential') {
+        showToast('error', 'Login Gagal', 'Email atau password salah');
+    } else {
+        showToast('error', 'Login Gagal', error.message);
+    }
+        }
+    });
+
+            // Navigation Handler
+            document.addEventListener('click', function(e) {
+                const navItem = e.target.closest('.nav-item');
+                if (navItem) {
+                    e.preventDefault();
+                    const page = navItem.getAttribute('data-page');
+                    loadPage(page);
+                }
+            });
 
 
 
@@ -21171,27 +21173,27 @@ if (loginForm) {
             let userUid = null; // Variabel untuk menyimpan UID Firebase
 
             // 1. COBA LOGIN MENGGUNAKAN HARDCODE ADMIN
-            if (username === 'admin' && password === 'admin123') {
-                userCredential = {
-                    uid: 'admin_hardcoded',
-                    name: 'Administrator',
-                    email: 'admin@xbill.com',
-                    role: 'admin' // Default hardcoded
-                };
-                userUid = 'admin_hardcoded';
-            } else {
+            //if (username === 'admin' && password === 'admin123') {
+              //  userCredential = {
+                //    uid: 'admin_hardcoded',
+                  //  name: 'Administrator',
+                    //email: 'admin@xbill.com',
+                    //role: 'admin' // Default hardcoded
+                //};
+                //userUid = 'admin_hardcoded';
+            //} else {
                 // 2. COBA LOGIN MENGGUNAKAN FIREBASE AUTH
-                const email = username.includes('@') ? username : `${username}@xbill.com`;
-                const authResult = await firebase.auth().signInWithEmailAndPassword(email, password);
+          //      const email = username.includes('@') ? username : `${username}@xbill.com`;
+            //    const authResult = await firebase.auth().signInWithEmailAndPassword(email, password);
                 
-                userCredential = {
-                    uid: authResult.user.uid,
-                    name: authResult.user.displayName || authResult.user.email.split('@')[0],
-                    email: authResult.user.email,
-                    role: null // Akan diisi dari database nanti
-                };
-                userUid = authResult.user.uid;
-            }
+           //     userCredential = {
+            //        uid: authResult.user.uid,
+            //        name: authResult.user.displayName || authResult.user.email.split('@')[0],
+            //        email: authResult.user.email,
+            //        role: null // Akan diisi dari database nanti
+            //    };
+            //    userUid = authResult.user.uid;
+          //  }
 
             // 3. AMBIL DATA USER LENGKAP DARI FIRESTORE (AMBIL ROLE YANG ASLI)
             console.log("Mengambil data user dari Firestore untuk UID:", userUid);
@@ -21246,20 +21248,14 @@ if (loginForm) {
 
             hideLoading();
             
-            // Kembalikan tombol
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
-            
-            // Opsional: Tampilkan pesan error hanya jika benar-benar gagal total
-            // showToast('error', 'Login Gagal', error.message);
-        } finally {
-            // Pastikan tombol kembali normal
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
+           } finally {
+    // PASTIKAN TOMBOL KEMBALI NORMAL PAKE QUERY LANGSUNG
+    const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+    if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = 'Login';
+    }
+
         }
     });
 }
