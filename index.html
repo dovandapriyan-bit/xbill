@@ -3009,7 +3009,7 @@ Terima kasih,
                         </tr>
                     </thead>
                     <tbody id="lunasBulanIniTable">
-                        
+                        <tr><td colspan="8" class="text-center">Memuat data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -4535,10 +4535,7 @@ function toggleTunggakanFilter() {
                     <!-- PAGINATION CONTAINER -->
                     <div id="paketPagination"></div>
                     
-                    <div style="margin-top: 10px; color: var(--gray); font-size: 14px;">
-                        Menampilkan <span id="paketStart">0</span>-<span id="paketEnd">0</span> dari 
-                        <span id="paketTotal">0</span> paket
-                    </div>
+                   
                 </div>
             </div>
         </div>
@@ -4641,7 +4638,7 @@ function toggleTunggakanFilter() {
 </table>
                             <tbody id="tagihanTable">
                                 <tr>
-                                    <td colspan="8" class="text-center">Memuat data...</td>
+                               
                                 </tr>
                             </tbody>
                         </table>
@@ -5661,7 +5658,6 @@ if (item.list_tagihan.length > 0) {
         }
 
         paginationHTML += `</div><div style="text-align:center; margin-top:10px; color:var(--gray); font-size:12px;">
-            Menampilkan ${startIndex + 1}-${Math.min(endIndex, totalData)} dari ${totalData} data tunggakan
         </div>`;
 
         paginationContainer.innerHTML = paginationHTML;
@@ -18188,7 +18184,7 @@ async function showAboutInfo() {
                     <p>Billing Management System untuk ISP</p>
                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
                     <p>Developed by <strong>X-Software</strong></p>
-                    <p>&copy; 2024 X-BILL Systems.</p>
+                    <p>&copy; 2026 X-BILL Systems.</p>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove()">Tutup</button>
